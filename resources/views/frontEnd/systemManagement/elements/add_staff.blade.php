@@ -796,7 +796,7 @@
                 $btn.attr('data-emergency_contact_relationship') || $btn.data('emergency_contact_relationship') || $btn.data('emergencyContactRelationship') || ''
             );
             let profile_img = $btn.attr('data-image') || $btn.data('image') || '';
-            const BASE_URL = window.location.origin + '/socialcareitsolutions/public/images/userProfileImages/';
+            const BASE_URL = '{{ asset("images/userProfileImages") }}/';
             document.getElementById('profile-picture').style.display = 'block';
             // populate hidden existing_image field so backend can decide whether to keep it
             $('#existing_image').val(profile_img ? profile_img : '');

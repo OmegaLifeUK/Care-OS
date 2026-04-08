@@ -230,8 +230,8 @@
                                         $logo_url = "/images/scits.png";
                                         $scits = "Scits";
                                         $facebook_slug = "https://www.facebook.com/login";
-                                        $twitter_slug = "https://twitter.com/intent/tweet?url=http://www.socialcareitsolutions.co.uk&pictures";
-                                        $instagram_slug = "https://instagram.com/share?url=http://www.socialcareitsolutions.co.uk&pictures";
+                                        $twitter_slug = "https://twitter.com/intent/tweet?url=" . url('/') . "&pictures";
+                                        $instagram_slug = "https://instagram.com/share?url=" . url('/') . "&pictures";
                                         define('HTTP_ROOT', url('/'));
                                         ?>
 

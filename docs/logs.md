@@ -405,10 +405,35 @@ DB_PASSWORD=
 
 ---
 
-## Status: Ready for Phase 0 + Phase 1
+---
+
+## Session: 2026-04-09
+
+### Log 18 — Phase 0 Complete
+**Action:** Implemented all Phase 0 fixes (P0–P4).
+
+**P0 — Image upload path:** Replaced hardcoded `/socialcareitsolutions/public/images/userProfileImages/` with `{{ asset("images/userProfileImages") }}/` in `add_staff.blade.php`.
+
+**P1 — Schedule shifts:** Routes already exist (lines 173-197 in web.php). Audit was incorrect — no fix needed.
+
+**P1 — Leave tracker:** Removed broken council_tax.js references. Real implementation deferred to Phase 1.
+
+**P2 — Hardcoded URLs fixed across ~35 files:**
+- Copyright footers in 4 master layouts → `{{ config('app.url') }}`
+- Social share slugs in profile pages, logbook PDF → `url('/')`
+- File manager download paths → `{{ asset('...') }}`
+- Validation JS host variable → removed `/socialcareitsolutions/` prefix
+- 23 email templates → `url('/')`
+
+**P3 — Deleted 34 files:** 10 misplaced files, 21 backup/duplicate files, 2 backup JS items, 1 dead route file.
+
+**P4 — Deleted `routes/user.php`** (unused, wrong namespace).
+
+**Git note:** Aborted a stale rebase from the repo migration (komal→OmegaLifeUK), reset komal to origin/main.
+
+---
+
+## Status: Phase 0 Complete — Ready for Phase 1
 
 **What's next:**
-- [ ] Fix P0: Image upload path in add_staff.blade.php
-- [ ] Fix P1: Schedule shifts API routes
-- [ ] Fix P1: Leave tracker stub
-- [ ] Phase 1 — Patch & Polish (MAR Sheets, DoLS, Handover Notes, etc.)
+- [ ] Phase 1 — Patch & Polish (MAR Sheets, DoLS, Handover Notes, Body Maps, Safeguarding, Notifications, Staff Training, SOS Alerts, Incidents)

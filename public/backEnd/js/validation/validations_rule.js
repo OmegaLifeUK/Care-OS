@@ -2,7 +2,7 @@
 var protocol = $(location).attr('protocol');
 var hostname = $(location).attr('hostname');
 var path     = protocol+'//'+hostname;
-var host     = path+'/socialcareitsolutions/';
+var host     = path+'/';
 
 //admin user  account
 $('#add_user_form').formValidation({

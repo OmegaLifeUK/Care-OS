@@ -426,24 +426,10 @@
     </div>
 </div>
 
-<script src="{{ url('public/js/salesFinance/council_tax.js') }}"></script>
-
 <script>
-    deleteURL = "{{ url('finance/delete-council-tax') }}/";
-    saveData = "{{ url('finance/save-council-tax') }}";
-    editData = "{{ url('finance/edit-council-tax') }}";
     $(document).ready(function() {
-        $('#myTable2').DataTable();
+        $('#myTable').DataTable();
     });
-
-
-
-    document.getElementById('openModal').addEventListener('click', function() {
-        document.getElementById('addLeaveTracker').style.display = 'block';
-        document.getElementById('viewMonthDate').style.display = 'block';
-    });
-
-
 </script>
 <!-- Add Staff Modal end here -->
 @endsection

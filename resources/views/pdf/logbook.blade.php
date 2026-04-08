@@ -11,14 +11,14 @@ if ($image_id != '') {
 $url = "/";
 $logo_url = "/images/scits.png";
 $scits = "Scits";
-$facebook_slug = "http://www.facebook.com/sharer.php?u=http://www.socialcareitsolutions.co.uk&pictures=" . asset('public/images/scits.png') . "&p[title]=Scits";
+$facebook_slug = "http://www.facebook.com/sharer.php?u=" . url('/') . "&pictures=" . asset('public/images/scits.png') . "&p[title]=Scits";
 
 //$facebook_slug="http://www.facebook.com/sharer.php?u=".url($url)."&t=Scits&p[url]=".asset($logo_url)."&p[title]=".$scits;
 /*    $twitter_slug="https://twitter.com/intent/tweet?url=".url('/');
 $google_slug="https://plus.google.com/share?url=".url('/');
 */
-$twitter_slug = "https://twitter.com/intent/tweet?url=http://www.socialcareitsolutions.co.uk&pictures";
-$google_slug = "https://plus.google.com/share?url=http://www.socialcareitsolutions.co.uk&pictures";
+$twitter_slug = "https://twitter.com/intent/tweet?url=" . url('/') . "&pictures";
+$google_slug = "https://plus.google.com/share?url=" . url('/') . "&pictures";
 
 ?>
 <!DOCTYPE html>
@@ -123,7 +123,7 @@ $google_slug = "https://plus.google.com/share?url=http://www.socialcareitsolutio
 	</table>
 	<div class="footer">
 		<div style="color:#fff;text-decoration:uppercase;margin:0;">
-			<p style="font-size: 12px;">© {{ date('Y') }} Omega Care Group (SCITS). All Rights Reserved | www.socialcareitsolutions.co.uk</p>
+			<p style="font-size: 12px;">© {{ date('Y') }} Omega Care Group (SCITS). All Rights Reserved | {{ config('app.url') }}</p>
 			<!-- <ul type="none" style="padding:10px;"> -->
 
 			<!-- <li style="display:inline-block;margin-right:5px;"><a href="{{$facebook_slug}}"><img src="{{ asset('public/images/facebook.png') }}" style="max-width:30px;"></a></li>

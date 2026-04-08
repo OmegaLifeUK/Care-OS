@@ -1273,7 +1273,7 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
             printWindow.document.write('<div class="footer">');
             printWindow.document.write('<div class="footer-section-area">');
             printWindow.document.write('© {{ date('
-                Y ') }} Omega Care Group (SCITS). All Rights Reserved | www.socialcareitsolutions.co.uk ');
+                Y ') }} Omega Care Group (SCITS). All Rights Reserved | {{ config('app.url') }} ');
             printWindow.document.write('</div>');
             printWindow.document.write('</div>');
             printWindow.document.write('</div> </body></html>');

@@ -397,7 +397,7 @@ i.fa.fa-cloud-upload {
                                 var zipFilename = name+'-'+id+".zip";
                                 links.forEach(function (url, i) {
                                         var filename = links[i];
-                                        filename = filename.replace(/[\/\*\|\:\<\>\?\"\\]/gi, '').replace("https://itdevelopmentservices.com/socialcareitsolutions/public/images/serviceUserFiles/"+id+"/","");
+                                        filename = filename.replace(/[\/\*\|\:\<\>\?\"\\]/gi, '').replace("{{ asset('images/serviceUserFiles') }}/"+id+"/","");
                                         // loading a file and add it in a zip file
                                         JSZipUtils.getBinaryContent(url, function (err, data) {
                                         if (err) {
