@@ -370,7 +370,45 @@ DB_PASSWORD=
 
 ---
 
-## Status: Ready for Phase 1 Integration
+### Log 16 — Deleted Large Files & Pushed to GitHub
+**Action:** Cleaned up 4.6 GB of junk files, updated .gitignore, pushed to new GitHub repo.
+
+**Deleted files (4.6 GB):**
+- `v2.zip` (1.9 GB), `Old1.zip` (808 MB), `scits_07_03_26.zip` (660 MB), `scits_v2_23_01_2026.zip` (606 MB), `socialcareitsolutions (4).zip` (576 MB)
+- `sdb-90_hosting_stackcp_net.sql` (35 MB), `socialcareitsolution.sql` (27 MB), `.DS_Store`
+
+**Added to .gitignore:** `.DS_Store`, `*.sql`, `*.zip`, `storage/logs/*.log`, `laravel.log`
+
+**Git remote changed:** `komalgautm/socialcareitsolution.git` → `OmegaLifeUK/Care-OS.git`
+
+**Pushed:** komal branch → main on `OmegaLifeUK/Care-OS`
+
+**Also:** Removed 90 MB `laravel.log` from git tracking, reinstalled `node_modules` after macOS Storage manager accidentally deleted it.
+
+---
+
+### Log 17 — Codebase Audit & Phase 0 Created
+**Action:** Ran a full codebase audit and created `phases/phase0.md` documenting all existing issues.
+
+**Issues found:**
+- **2 missing API routes** — Schedule shifts page calls endpoints that don't exist, Leave tracker is a copy-paste stub
+- **496 hardcoded production URLs** — `socialcareitsolutions.co.uk` throughout, including a critical image upload path in add_staff.blade.php
+- **9 files in wrong locations** — controllers in views dir, views in controllers dir, autoload.php in views
+- **22 backup/duplicate files** — old controller and view backups cluttering the codebase
+- **1 dead route file** — `routes/user.php` with wrong namespace
+
+**Priority order:** P0 (image uploads broken) → P1 (missing routes) → P2 (hardcoded URLs) → P3 (file cleanup) → P4 (dead route)
+
+**Teaching notes:**
+- A "Phase 0" is a common practice — fix what's broken before building new features. Otherwise you're building on an unstable foundation.
+- The audit used grep patterns to find AJAX calls in JS, cross-referenced with route files, and scanned for backup files, misplaced files, and hardcoded URLs.
+
+---
+
+## Status: Ready for Phase 0 + Phase 1
 
 **What's next:**
-- [ ] Start Phase 1 — Patch & Polish (MAR Sheets first, then DoLS, Handover Notes, etc.)
+- [ ] Fix P0: Image upload path in add_staff.blade.php
+- [ ] Fix P1: Schedule shifts API routes
+- [ ] Fix P1: Leave tracker stub
+- [ ] Phase 1 — Patch & Polish (MAR Sheets, DoLS, Handover Notes, etc.)
