@@ -2,7 +2,7 @@
 $home_id = Auth::user()->home_id;
 $service_users = App\ServiceUser::where('home_id', $home_id)->where('is_deleted', 0)->get()->toArray();
 $dynamic_forms = App\DynamicFormBuilder::getFormList();
-$service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
+$service_user_id = isset($service_user_id) ? $service_user_id : 0;
 ?>
 
 <style>
@@ -48,9 +48,10 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                                     <div class="select-style">
                                         <select name="service_user_id" class="su_n_id">
                                             <!--<option value=""> Child </option>-->
-                                            @foreach($service_users as $value)
-                                            <option value="{{ $value['id'] }}" {{ ($service_user_id==$value['id'])
-                                                ? 'selected' : '' }}>{{ ucfirst($value['name']) }}</option>
+                                            @foreach ($service_users as $value)
+                                                <option value="{{ $value['id'] }}"
+                                                    {{ $service_user_id == $value['id'] ? 'selected' : '' }}>
+                                                    {{ ucfirst($value['name']) }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -70,7 +71,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                                                 $location_ids_arr = explode(',', $value['location_ids']);
                                                 if (in_array($this_location_id, $location_ids_arr)) {
                                             ?>
-                                                    <option value="{{ $value['id'] }}"> {{ ucfirst($value['title']) }} </option>
+                                            <option value="{{ $value['id'] }}"> {{ ucfirst($value['title']) }}
+                                            </option>
                                             <?php }
                                             } ?>
                                         </select>
@@ -92,7 +94,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                                 <!--  <input type="hidden" name="service_user_id" value="{{ $service_user_id }}"> -->
                                 <input type="hidden" name="location_id" value="{{ $this_location_id }}">
                                 <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                <button class="btn btn-default" type="button" data-dismiss="modal" aria-hidden="true">Cancel </button>
+                                <button class="btn btn-default" type="button" data-dismiss="modal"
+                                    aria-hidden="true">Cancel </button>
                                 <button class="btn btn-warning sbt-dyn-form-btn" type="submit"> Confirm </button>
                                 <!-- sbt-bmp-btn  -->
                             </div>
@@ -172,7 +175,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
 <!-- dynmic Form Modal End -->
 
 <!-- View/Edit dynamic form -->
-<div class="modal fade" id="DynFormViewModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="DynFormViewModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -189,13 +193,13 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                 <form method="" id="dynFormFormData">
                     <div class="row">
                         <div class="form-group col-md-12 col-sm-12 col-xs-12 p-0">
-                            <label class="col-md-1 col-sm-1 col-xs-12 p-t-7">User: </label>
+                            <label class="col-md-1 col-sm-1 col-xs-12 p-t-7">Child: </label>
                             <div class="col-md-11 col-sm-11 col-xs-12">
                                 <div class="select-style">
                                     <select name="service_user_id" class="su_id" disabled="">
                                         <option value="0"> N/A Child </option>
-                                        @foreach($service_users as $value)
-                                        <option value="{{ $value['id'] }}">{{ $value['name'] }}</option>
+                                        @foreach ($service_users as $value)
+                                            <option value="{{ $value['id'] }}">{{ $value['name'] }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -205,11 +209,12 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                             <label class="col-md-1 col-sm-1 col-xs-12 p-t-7"> Form: </label>
                             <div class="col-md-11 col-sm-11 col-xs-12">
                                 <div class="select-style">
-                                    <select name="dynamic_form_builder_id" class="dynamic_form_select" disabled="">
+                                    <select name="dynamic_form_builder_id" class="dynamic_form_select"
+                                        disabled="">
                                         <option value="0"> Select Form </option>
                                         <?php foreach ($dynamic_forms as $value) {
                                             $location_ids_arr = explode(',', $value['location_ids']); ?>
-                                            <option value="{{ $value['id'] }}"> {{ $value['title'] }} </option>
+                                        <option value="{{ $value['id'] }}"> {{ $value['title'] }} </option>
                                         <?php  } ?>
                                     </select>
                                 </div>
@@ -235,21 +240,24 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="dynamic_form_id" class="dynamic_form_id" value="">
                         <input type="hidden" name="formdata" id="setformdata" value="">
-                        <button class="btn btn-default" type="button" data-dismiss="modal" aria-hidden="true"> Cancel
+                        <button class="btn btn-default" type="button" data-dismiss="modal" aria-hidden="true">
+                            Cancel
                         </button>
                         <!-- <button class="btn btn-warning sbt_edit_bmp_btn" id="vw-sbt-bmp-plan" type="button"> Continue </button> -->
-                        <button class="btn btn-warning e-sbt-dyn-form-btn" disabled="" id="" type="button" data-dismiss="modal" aria-hidden="true"> Save </button>
+                        <button class="btn btn-warning e-sbt-dyn-form-btn" disabled="" id=""
+                            type="button" data-dismiss="modal" aria-hidden="true"> Save </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-<!-- View/Edit dynamic form End -->
+<!-- View/Edit dynamic form End --> 
 
 
 <!-- Su Daily Log Book Modal -->
-<div class="modal fade" id="suDailyLogBook" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="suDailyLogBook" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -266,10 +274,11 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                                 <label class="col-md-4 col-sm-2 col-xs-12 p-t-7 text-right"> Select Child: </label>
                                 <div class="col-md-8 col-sm-10 col-xs-12">
                                     <div class="select-bi" style="width:100%;float:left;">
-                                        <select name="s_user_id" class="form-control" required id="records_list" style="width:100%;">
+                                        <select name="s_user_id" class="form-control" required id="records_list"
+                                            style="width:100%;">
                                             <option value="0"> Select Child </option>
-                                            @foreach($service_users as $value)
-                                            <option value="{{ $value['id'] }}">{{ $value['name'] }}</option>
+                                            @foreach ($service_users as $value)
+                                                <option value="{{ $value['id'] }}">{{ $value['name'] }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -279,39 +288,58 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                             <div class="form-group col-md-12 col-sm-12 col-xs-12 p-0 add-rcrd" id="weekly">
                                 <label class="col-md-4 col-sm-2 col-xs-12 p-t-7 text-right"> Weekly log date:</label>
                                 <div class="col-md-4 col-sm-10 col-xs-12 ">
-                                    <div data-date-viewmode="" data-date-format="dd-mm-yyyy" data-date="" class="input-group date dpYears">
-                                        <input name="start_date" readonly="" class="form-control trans" id="week_start_date" type="text" value="">
+                                    <div data-date-viewmode="" data-date-format="dd-mm-yyyy" data-date=""
+                                        class="input-group date dpYears">
+                                        <input name="start_date" readonly="" class="form-control trans"
+                                            id="week_start_date" type="text" value="">
                                         <span class="input-group-btn add-on">
-                                            <button class="btn btn-primary" type="button"><i class="fa fa-calendar"></i></button>
+                                            <button class="btn btn-primary" type="button"><i
+                                                    class="fa fa-calendar"></i></button>
                                         </span>
                                     </div>
                                 </div>
                                 <div class="col-md-4 col-sm-10 col-xs-12 ">
-                                    <div data-date-viewmode="" data-date-format="dd-mm-yyyy" data-date="" class="input-group date dpYears">
-                                        <input name="end_date" readonly="" id="week_end_date" class="form-control trans" type="text" value="">
+                                    <div data-date-viewmode="" data-date-format="dd-mm-yyyy" data-date=""
+                                        class="input-group date dpYears">
+                                        <input name="end_date" readonly="" id="week_end_date"
+                                            class="form-control trans" type="text" value="">
                                         <span class="input-group-btn add-on">
-                                            <button class="btn btn-primary" type="button"><i class="fa fa-calendar"></i></button>
+                                            <button class="btn btn-primary" type="button"><i
+                                                    class="fa fa-calendar"></i></button>
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="col-md-12 col-sm-12 col-xs-12 cog-panel datepicker-sttng" id="monthly">
-                                <div class="form-group col-md-12 col-sm-12 col-xs-12 p-0">
-                                    <label class="col-md-4 col-sm-2 col-xs-12 p-t-7 text-right"> Date: </label>
-                                    <div class="col-md-8 col-sm-10 col-xs-12">
-                                        <div data-date-viewmode="" data-date-format="dd-mm-yyyy" data-date="" class="input-group date dpYears">
-                                            <input name="date" size="16" readonly="" class="form-control trans" type="text" value="">
-                                            <span class="input-group-btn add-on">
-                                                <button class="btn btn-primary" type="button"><i class="fa fa-calendar"></i></button>
-                                            </span>
-                                        </div>
+                            <div class="col-md-12 col-sm-12 col-xs-12 cog-panel p-0 datepicker-sttng" id="monthly">
+                                <label class="col-md-4 col-sm-2 col-xs-12 p-t-7 text-right"> Monthly Log Date: </label>
+                                <div class="col-md-4 col-sm-10 col-xs-12">
+                                    <div data-date-viewmode="" data-date-format="dd-mm-yyyy" data-date=""
+                                        class="input-group date dpYears">
+                                        <input name="start_date" readonly="" id="month_start_date"
+                                            class="form-control trans" type="text" value="">
+                                        <span class="input-group-btn add-on">
+                                            <button class="btn btn-primary" type="button"><i
+                                                    class="fa fa-calendar"></i></button>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-10 col-xs-12">
+                                    <div data-date-viewmode="" data-date-format="dd-mm-yyyy" data-date=""
+                                        class="input-group date dpYears">
+                                        <input name="end_date" readonly="" id="month_end_date"
+                                            class="form-control trans" type="text" value="">
+                                        <span class="input-group-btn add-on">
+                                            <button class="btn btn-primary" type="button"><i
+                                                    class="fa fa-calendar"></i></button>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
-
+                            
                             <div class="form-group modal-footer m-t-0 modal-bttm">
-                                <button class="btn btn-default" type="button" data-dismiss="modal" aria-hidden="true"> Cancel </button>
+                                <button class="btn btn-default" type="button" data-dismiss="modal"
+                                    aria-hidden="true"> Cancel </button>
                                 <input type="hidden" name="dyn_form_id" value="" id="dyn_form_id">
                                 <input type="hidden" name="logtype" value="" id="logtype">
                                 <input type="hidden" name="_token" value="{{ csrf_token() }}">
@@ -364,7 +392,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
 
                             var pattern = resp['pattern'];
                             $('#' + model_id + ' .dynamic-form-fields').html(pattern);
-                            $('#' + model_id + ' .dynamic_form_h3').html(form_title + ' Details');
+                            $('#' + model_id + ' .dynamic_form_h3').html(form_title +
+                                ' Details');
 
                             $('.dpYears').datepicker({
                                 //format: 'dd/mm/yyyy',
@@ -482,12 +511,14 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                     if (resp == "true") {
 
                         console.log("true");
-                        $('#' + form_id + ' span.popup_success_txt').text('Record has been Added Successfully');
+                        $('#' + form_id + ' span.popup_success_txt').text(
+                            'Record has been Added Successfully');
                         $('#' + form_id + ' .popup_success').show();
                         setTimeout(function() {
-                            $('#' + form_id + ' .popup_success').fadeOut(function() {
-                                location.reload()
-                            })
+                            $('#' + form_id + ' .popup_success').fadeOut(
+                                function() {
+                                    location.reload()
+                                })
                         }, 5000);
 
                         $('#' + model_id + ' .dynamic_form_select').val('0');
@@ -502,7 +533,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                     } else {
                         //console.log("false");
                         //show error message
-                        $('#' + form_id + '  span.popup_error_txt').text("{{ COMMON_ERROR }}");
+                        $('#' + form_id + '  span.popup_error_txt').text(
+                            "{{ COMMON_ERROR }}");
                         $('#' + form_id + ' .popup_error').show();
                         setTimeout(function() {
                             $('#' + form_id + ' .popup_error').fadeOut()
@@ -570,7 +602,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
 
                     if (resp == true) {
 
-                        $('#' + previous_model_id + ' span.popup_success_txt').text('Record has been Edited Successfully');
+                        $('#' + previous_model_id + ' span.popup_success_txt').text(
+                            'Record has been Edited Successfully');
                         $('#' + previous_model_id + ' .popup_success').show();
                         setTimeout(function() {
                             $('#' + previous_model_id + ' .popup_success').fadeOut()
@@ -581,7 +614,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                         $('.e-sbt-dyn-form-btn').attr('disabled', true);
                     } else {
                         //show error message
-                        $('#' + previous_model_id + '  span.popup_error_txt').text("{{ COMMON_ERROR }}");
+                        $('#' + previous_model_id + '  span.popup_error_txt').text(
+                            "{{ COMMON_ERROR }}");
                         $('#' + previous_model_id + ' .popup_error').show();
                         setTimeout(function() {
                             $('#' + previous_model_id + ' .popup_error').fadeOut()
@@ -605,7 +639,7 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
             var previous_model_id = $(this).closest('.modal').attr('id');
             var dynamic_form_id = $(this).attr('id');
             var form_id = $(this).closest('form').attr('id');
-
+            console.log("dynamic_form_id2", dynamic_form_id);
             $('.loader').show();
             $('body').addClass('body-overflow');
 
@@ -632,7 +666,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                         var view_modal = '#DynFormViewModal';
 
                         $(view_modal).modal('show');
-                        $(view_modal + ' .mdl-back-btn').attr('pre_modal', previous_model_id);
+                        $(view_modal + ' .mdl-back-btn').attr('pre_modal',
+                            previous_model_id);
 
                         $(view_modal + ' .dynamic_form_select').val(form_builder_id);
                         if (service_user_id != null) {
@@ -662,7 +697,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
 
                     } else {
                         //show error message
-                        $('#' + form_id + '  span.popup_error_txt').text("{{ COMMON_ERROR }}");
+                        $('#' + form_id + '  span.popup_error_txt').text(
+                            "{{ COMMON_ERROR }}");
                         $('#' + form_id + ' .popup_error').show();
                         setTimeout(function() {
                             $('#' + form_id + ' .popup_error').fadeOut()
@@ -728,7 +764,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                         var view_modal = '#DynFormViewModal';
 
                         $(view_modal).modal('show');
-                        $(view_modal + ' .mdl-back-btn').attr('pre_modal', previous_model_id);
+                        $(view_modal + ' .mdl-back-btn').attr('pre_modal',
+                            previous_model_id);
 
                         $(view_modal + ' .dynamic_form_select').val(form_builder_id);
                         if (service_user_id != null) {
@@ -758,7 +795,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
 
                     } else {
                         //show error message
-                        $('#' + form_id + '  span.popup_error_txt').text("{{ COMMON_ERROR }}");
+                        $('#' + form_id + '  span.popup_error_txt').text(
+                            "{{ COMMON_ERROR }}");
                         $('#' + form_id + ' .popup_error').show();
                         setTimeout(function() {
                             $('#' + form_id + ' .popup_error').fadeOut()
@@ -822,8 +860,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
             var this_record = $(this);
             var dyn_form_id = this_record.attr('id');
 
-            // $('.loader').show();
-            // $('body').addClass('body-overflow');
+            $('.loader').show();
+            $('body').addClass('body-overflow');
 
             $.ajax({
                 type: 'get',
@@ -834,6 +872,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                     }
                     if (resp == 1) {
                         this_record.closest('.rows').remove();
+                        $('.loader').show();
+                        $('body').addClass('body-overflow');
                         location.reload();
                         //show success delete message
                         // $('span.popup_success_txt').text("{{ DEL_RECORD }}");
@@ -873,7 +913,9 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                         return false;
                     }
                     if (resp == '') {
-                        $('.view-dyn-record').html('<div class="text-center p-b-20" style="width:100%">No Records found.</div>');
+                        $('.view-dyn-record').html(
+                            '<div class="text-center p-b-20" style="width:100%">No Records found.</div>'
+                        );
                     } else {
                         $('.view-dyn-record').html(resp);
                     }
@@ -937,7 +979,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
         function update_search_list() {
             // var searchType = document.getElementById('search_type').value;
             var searchType = 2;
-            var search_input = (searchType == 1) ? $('input[name="search_dyn_title"]') : $('input[name="search_dyn_date"]');
+            var search_input = (searchType == 1) ? $('input[name="search_dyn_title"]') : $(
+                'input[name="search_dyn_date"]');
             var search = search_input.val();
             // console.log(searchType);
             // console.log(search_input);
@@ -962,7 +1005,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
 
             $.ajax({
                 type: 'post',
-                url: "{{ url('/service/dynamic-forms') }}" + '?search=' + search + '&searchType=' + searchType,
+                url: "{{ url('/service/dynamic-forms') }}" + '?search=' + search + '&searchType=' +
+                    searchType,
                 data: formdata,
                 success: function(resp) {
                     if (isAuthenticated(resp) == false) {
@@ -1026,10 +1070,36 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                 var endDate = `${dd2}-${mm2}-${yyyy2}`;
                 endInput.value = endDate;
 
-
+                monthly.style.display = 'none';
                 weekly.style.display = 'block';
                 $('.logtitle').text("Add Record To Child's Weekly Log");
             } else if (logtype == 3) {
+
+                var startInput = document.getElementById('month_start_date');
+                var endInput = document.getElementById('month_end_date');
+
+                var today = new Date();
+
+                // Format today's date
+                var yyyy = today.getFullYear();
+                var mm = String(today.getMonth() + 1).padStart(2, '0'); // month is 0-indexed
+                var dd = String(today.getDate()).padStart(2, '0');
+
+                var startDate = `${dd}-${mm}-${yyyy}`;
+                startInput.value = startDate;
+
+                // Add 1 month for end date
+                var nextMonth = new Date(today);
+                nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+                var yyyy2 = nextMonth.getFullYear();
+                var mm2 = String(nextMonth.getMonth() + 1).padStart(2, '0');
+                var dd2 = String(nextMonth.getDate()).padStart(2, '0');
+
+                var endDate = `${dd2}-${mm2}-${yyyy2}`;
+                endInput.value = endDate;
+
+
                 weekly.style.display = 'none';
                 monthly.style.display = 'block';
                 $('.logtitle').text("Add Record To Child's Monthly Log");
@@ -1041,7 +1111,7 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
 
 
         $('.sbt-su-dyn-frm-log').click(function() {
-            alert("save");
+            // alert("save");
             var dyn_form_id = $('input[name=\'dyn_form_id\']').val();
             var s_user_id = $('select[name=\'s_user_id\']').val();
             var s_category_id = $('select[name=\'s_category_id\']').val();
@@ -1088,6 +1158,9 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
             if (logtype == 2) {
                 dataToSend.start_date = $('#week_start_date').val();
                 dataToSend.end_date = $('#week_end_date').val();
+            } else if(logtype == 3){
+                dataToSend.start_date = $('#month_start_date').val();
+                dataToSend.end_date = $('#month_end_date').val();
             }
             console.log("dataToSend", dataToSend);
 
@@ -1107,16 +1180,18 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                         $('.popup_error').show();
 
                     } else if (res == '1') {
-                        $('span.popup_success_txt').text('Record has been added to Child ' + logtext + ' log successfully.');
+                        $('span.popup_success_txt').text('Record has been added to Child ' +
+                            logtext + ' log successfully.');
                         $('.popup_success').show();
                         setTimeout(function() {
                             $('.popup_success').fadeOut()
                         }, 5000);
 
-                        window.location.href = "{{ url('/service/daily-logs?key=') }}" + s_user_id;
+                        window.location.href = "{{ url('/service/daily-logs?key=') }}" +
+                            s_user_id;
 
 
-                    // only one page load and show the data for daily weekly and monthly
+                        // only one page load and show the data for daily weekly and monthly
                         // if (logtype == 1) {
                         //     window.location.href = "{{ url('/service/daily-logs?key=') }}" + s_user_id;
                         // } else if (logtype == 2) {
@@ -1129,7 +1204,8 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                         $('.dyn-logged-btn').click();
 
                     } else {
-                        $('span.popup_error_txt').text('Record is already added to YP log book');
+                        $('span.popup_error_txt').text(
+                            'Record is already added to YP log book');
                         $('.popup_error').show();
                         setTimeout(function() {
                             $('.popup_error').fadeOut()
@@ -1158,20 +1234,17 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
             printWindow.document.write('<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">');
             printWindow.document.write('<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">');
             printWindow.document.write('<link rel="stylesheet" href="https://cdn.form.io/formiojs/formio.full.min.css">');
-            printWindow.document.write('<link href="{{ url('
-                public / backEnd / css / amarjeet.css ')}}" rel="stylesheet" type="text/css" >');
-            printWindow.document.write('<link href="{{ url('
-                public / backEnd / css / pdfstyle.css ')}}" rel="stylesheet" type="text/css" >');
+            printWindow.document.write('<link href="{{ url('public/backEnd/css/amarjeet.css') }}" rel="stylesheet" type="text/css">');
+            printWindow.document.write('<link href="{{ url('public/backEnd/css/pdfstyle.css') }}" rel="stylesheet" type="text/css" >');
             printWindow.document.write('</head><body > <div class="masterprintmainarea">');
             printWindow.document.write('<div class="header">');
-            printWindow.document.write('<img src="{{url(' / public / images / scits.png ')}}" style="float:right;height:80px;">');
+            printWindow.document.write('<img src="{{ url('/public/images/scits.png') }}" style="float:right;height:80px;">');
             printWindow.document.write('</div>');
             // printWindow.document.write(divContents);
             printWindow.document.write('</div>');
             printWindow.document.write('<div class="footer">');
             printWindow.document.write('<div class="footer-section-area">');
-            printWindow.document.write('© {{ date('
-                Y ') }} Omega Care Group (SCITS). All Rights Reserved | www.socialcareitsolutions.co.uk ');
+            printWindow.document.write('© {{ date('Y') }} Omega Care Group (SCITS). All Rights Reserved | www.socialcareitsolutions.co.uk ');
             printWindow.document.write('</div>');
             printWindow.document.write('</div>');
             printWindow.document.write('</div> </body></html>');
@@ -1182,11 +1255,11 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
 
 <!-- <script>
     //making editable click on edit of listing
-    $(document).ready(function(){
-        $(document).on('click','.edit_dyn_details', function(){
+    $(document).ready(function() {
+        $(document).on('click', '.edit_dyn_details', function() {
             var dyn_form_id = $(this).attr('id');
-            $('.edit_dyn_details_'+dyn_form_id).removeAttr('disabled');
-            $('.edit_dyn_id_'+dyn_form_id).removeAttr('disabled');
+            $('.edit_dyn_details_' + dyn_form_id).removeAttr('disabled');
+            $('.edit_dyn_id_' + dyn_form_id).removeAttr('disabled');
 
             $(this).closest('.cog-panel').find('.input-plusbox').toggle();
             return false;
@@ -1195,35 +1268,37 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
 </script> -->
 <!-- <script>
     //saving all editable record
-    $(document).ready(function(){
-        $(document).on('click','.sbt-edit-dyn-record', function(){
+    $(document).ready(function() {
+        $(document).on('click', '.sbt-edit-dyn-record', function() {
             var enabled = 0;
             $('.view-dyn-record .edit_rcrd').each(function(index) {
                 var is_disable = $(this).attr('disabled');
-                if(is_disable == undefined) {
+                if (is_disable == undefined) {
                     enabled = 1;
                 }
             });
-            if(enabled == 0) {
+            if (enabled == 0) {
                 return false;
             }
-            var formdata =  $('#edit-bmp-form').serialize();
+            var formdata = $('#edit-bmp-form').serialize();
 
             $('.loader').show();
             $('body').addClass('body-overflow');
 
             $.ajax({
-                type : 'post',
-                url  : "{{ url('service/dynamic-form/edit-details')  }}",
-                data : formdata,
-                success : function(resp) {
-                    if(isAuthenticated(resp) == false){
+                type: 'post',
+                url: "{{ url('service/dynamic-form/edit-details') }}",
+                data: formdata,
+                success: function(resp) {
+                    if (isAuthenticated(resp) == false) {
                         return false;
                     }
                     $('.view-dyn-record').html(resp);
                     $('span.popup_success_txt').text('Updated Successsfully');
                     $('.popup_success').show();
-                    setTimeout(function(){$(".popup_success").fadeOut()}, 5000);
+                    setTimeout(function() {
+                        $(".popup_success").fadeOut()
+                    }, 5000);
 
                     $('.loader').hide();
                     $('body').removeClass('body-overflow');
@@ -1237,40 +1312,41 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
 <!-- dynamic form end -->
 
 <!-- <script>
-    $(document).ready(function(){
+    $(document).ready(function() {
         $('.dynamic_form_select').on('change', function() {
 
             var form_select = $(this);
-            var model_id    = form_select.closest('.modal').attr('id');
+            var model_id = form_select.closest('.modal').attr('id');
 
-            var form_id     = form_select.val();
-            var form_title  = $('.dynamic_form_select option:selected').text();
+            var form_id = form_select.val();
+            var form_title = $('.dynamic_form_select option:selected').text();
 
-            if(form_id > 0){
+            if (form_id > 0) {
 
                 $('.loader').show();
                 $('body').addClass('body-overflow');
 
                 $.ajax({
-                    type:'get',
-                    url : "{{ url('/service/dynamic-form/view/pattern') }}"+'/'+form_id,
+                    type: 'get',
+                    url: "{{ url('/service/dynamic-form/view/pattern') }}" + '/' + form_id,
                     dataType: "json",
-                    success:function(resp){
+                    success: function(resp) {
 
-                        if(isAuthenticated(resp) == false){
+                        if (isAuthenticated(resp) == false) {
                             return false;
                         }
 
                         var response = resp['response'];
-                        if(response == true){
+                        if (response == true) {
 
                             var pattern = resp['pattern'];
-                            $('#'+model_id+' .dynamic-form-fields').html(pattern);
-                            $('#'+model_id+' .dynamic_form_h3').html(form_title+' Details');
+                            $('#' + model_id + ' .dynamic-form-fields').html(pattern);
+                            $('#' + model_id + ' .dynamic_form_h3').html(form_title +
+                                ' Details');
 
                             $('.dpYears').datepicker({
                                 //format: 'dd/mm/yyyy',
-                            }).on('changeDate', function(e){
+                            }).on('changeDate', function(e) {
                                 $(this).datepicker('hide');
                             });
 
@@ -1282,7 +1358,7 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
                     }
                 });
 
-            } else{
+            } else {
                 //$('.dynamic-form-fields').
                 //$('.entry-default-fields').hide();
             }
@@ -1297,7 +1373,7 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
         var token = "<?= csrf_token() ?>";
         //alert(token);
         var settings = {
-            "url": "{{url('/service/patterndataformio')}}",
+            "url": "{{ url('/service/patterndataformio') }}",
             "method": "POST",
             "data": {
                 patterndata: formid,
@@ -1310,7 +1386,7 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
             if (isAuthenticated(response) == false) {
                 return false;
             }
-            //console.log(response);
+            console.log("responselogss", response);
             Formio.createForm(document.getElementById('formiotest'), {
                 components: JSON.parse(response)
             });
@@ -1329,7 +1405,7 @@ $service_user_id = (isset($service_user_id)) ? $service_user_id : 0;
         let dynamic_form_idformio = $("#dynamic_form_idformio").val();
         var token = "<?= csrf_token() ?>";
         var settings = {
-            "url": "{{url('/service/patterndataformiovaule')}}",
+            "url": "{{ url('/service/patterndataformiovaule') }}",
             "method": "POST",
             "data": {
                 dynamic_form_idformio: dynamic_form_idformio,

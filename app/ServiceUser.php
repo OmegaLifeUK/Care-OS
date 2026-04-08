@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Mail;
 use DB,Auth,Hash;
 use App\ServiceUserAFC;
+use App\Models\suUserCourse;
 
 class ServiceUser extends Model
 {
@@ -88,6 +89,13 @@ class ServiceUser extends Model
         return $location_get_interval;
     }
 
+    public static function getServiceUserByResidentialId($department)
+    {
+        return self::where('home_id', Auth::user()->home_id)->where('department', $department)->where('status', 1)->where('is_deleted', 0)->count();
+    }
+    public function courses(){
+        return $this->hasMany(suUserCourse::class, 'su_user_id', 'id');
+    }
 
 
 }

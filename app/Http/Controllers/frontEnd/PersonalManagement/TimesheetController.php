@@ -17,8 +17,10 @@ class TimesheetController extends Controller
     public function index($manager_id)
     {
         $data['manager_id'] = $manager_id;
-
-        $data['users'] = User::getHomeUsers(Auth::user()->home_id);
+        $home_ids = Auth::user()->home_id;
+        $ex_home_ids = explode(',', $home_ids);
+        $home_id = $ex_home_ids[0];
+        $data['users'] = User::getHomeUsers($home_id);
         // $data['time_sheets'] = TimeSheet::with('user')->where('deleted_at', null)->orderBy('created_at', 'desc')->get();
         return view('frontEnd.personalManagement.elements.time_sheet.index', $data);
     }
@@ -27,17 +29,25 @@ class TimesheetController extends Controller
         try {
             $validated = $request->validated();
             // dd($validated);
-            $validated['home_id'] = Auth::user()->home_id;
-            $validated['date'] = \Carbon\Carbon::parse($validated['date'])->format('Y-m-d');
+            $home_ids = Auth::user()->home_id;
+            $ex_home_ids = explode(',', $home_ids);
+            $home_id = $ex_home_ids[0];
+            $validated['home_id'] = $home_id;
+            if (empty($validated['time_sheet_id'])) {
+                $validated['time'] = \Carbon\Carbon::now()->format('H:i:s');
+                $validated['date'] = \Carbon\Carbon::now()->format('Y-m-d');
+            }
             TimeSheet::updateOrCreate(['id' => $validated['time_sheet_id']], $validated);
 
             if (empty($validated['time_sheet_id'])) {
                 return response()->json([
+                    'success'=>true,
                     'message' => 'Time sheet saved successfully.',
                     'data' => $validated
                 ], 201);
             } else {
                 return response()->json([
+                    'success'=>true,
                     'message' => 'Time sheet updated successfully.',
                     'data' => $validated
                 ], 200);
@@ -51,6 +61,7 @@ class TimesheetController extends Controller
             Log::error('TimeSheet Store Error: ' . $e->getMessage());
 
             return response()->json([
+                'success'=>false,
                 'message' => 'Failed to save time sheet.',
                 'error' => $e->getMessage()
             ], 500);

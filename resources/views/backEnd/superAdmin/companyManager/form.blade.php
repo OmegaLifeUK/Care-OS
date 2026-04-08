@@ -300,14 +300,14 @@ if (isset($user_info)) {
                                 </div>
                                 @endif
 
-                                <div class="form-group">
+                                {{--<div class="form-group">
                                     <label class="col-lg-3 control-label"></label>
                                     <div class="col-lg-9">
                                         <div class="checkbox">
                                             <label class="assign-access"><input type="checkbox" value="yes" name="assign_right_check" {{ (isset($user_info->access_rights)) ? 'checked' : '' }}>Assign access rights according to the access level</label>
                                         </div>
                                     </div>
-                                </div>
+                                </div>--}}
 
                                 <div class="form-actions">
                                     <div class="row">
@@ -354,9 +354,9 @@ if (isset($user_info)) {
                 return date.valueOf();
             }
         }).on('changeDate', function(ev) {
-            var newDate = new Date(ev.date);
-            newDate.setDate(newDate.getDate() + 1);
-            leaving_date.setValue(newDate);
+            // var newDate = new Date(ev.date);
+            // newDate.setDate(newDate.getDate() + 1);
+            // leaving_date.setValue(newDate);
 
             joining_date.hide();
 
@@ -372,9 +372,9 @@ if (isset($user_info)) {
         //console.log(joining_date);
         var leaving_date = $('#leaving-date').datepicker({
             format: 'dd-mm-yyyy',
-            onRender: function(date) {
-                return date.valueOf() <= joining_date.date.valueOf() ? 'disabled' : '';
-            }
+            // onRender: function(date) {
+            //     return date.valueOf() <= joining_date.date.valueOf() ? 'disabled' : '';
+            // }
         }).on('changeDate', function(ev) {
             leaving_date.hide();
         }).data('datepicker');

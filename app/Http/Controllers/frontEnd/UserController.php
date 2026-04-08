@@ -4,10 +4,12 @@ namespace App\Http\Controllers\frontEnd;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Auth, DB,Log;
+use DB;
 use App\User, App\ServiceUser, App\Admin, App\Home, App\LogBook;
 use Hash, Session;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -17,7 +19,8 @@ class UserController extends Controller
 		// echo "check";
 		// die();
 		if (Auth::check()) {
-			return redirect('/');
+			return redirect('/roster');
+			// return redirect('/');
 		}
 		if ($request->isMethod('post')) {
 			// dd($request);
@@ -79,21 +82,22 @@ class UserController extends Controller
 										if ($diff_mint > SESSION_TIMEOUT) {
 										} else {
 											Auth::logout();
-											Session::put('user_name',$data['username']);
-											Session::put('password',$data['password']);
-											Session::put('home_id',$data['home']);
+											Session::put('user_name', $data['username']);
+											Session::put('password', $data['password']);
+											Session::put('home_id', $data['home']);
 											// return redirect()->back()->with('error', 'You are already logged in from some other device.');
 											return redirect()->back()->with('login_error', 'This account is currently logged in on another device.Do you want to log out from the other device and continue logging in here?');
 										}
 									}
-									$session_id_update=User::find(Auth::user()->id);
-									$session_id_update->login_ip=$login_ip;
+									$session_id_update = User::find(Auth::user()->id);
+									$session_id_update->login_ip = $login_ip;
 									$session_id_update->save();
 									User::setUserLogInStatus(1);
 									//echo csrf_token(); die;
 									//echo "222"; die;
-									return redirect('/')->with('success', 'Welcome back ' . Auth::user()->user_name);
-								}else {
+									return redirect('/roster')->with('success', 'Welcome back ' . Auth::user()->user_name);
+									// return redirect('/roster/')->with('success', 'Welcome back ' . Auth::user()->user_name);
+								} else {
 									return redirect()->back()->with('error', 'Incorrect email or password combination.');
 								}
 							} elseif ($user_info->user_type == 'N') {
@@ -125,9 +129,9 @@ class UserController extends Controller
 										if ($diff_mint > SESSION_TIMEOUT) {
 										} else {
 											Auth::logout();
-											Session::put('user_name',$data['username']);
-											Session::put('password',$data['password']);
-											Session::put('home_id',$data['home']);
+											Session::put('user_name', $data['username']);
+											Session::put('password', $data['password']);
+											Session::put('home_id', $data['home']);
 											return redirect()->back()->with('login_error', 'This account is currently logged in on another device.Do you want to log out from the other device and continue logging in here?');
 										}
 									}
@@ -143,12 +147,13 @@ class UserController extends Controller
 											//this function is used to login staff user with their previous home, not to assigned home because assigned staff user date is expired.
 										}
 									}
-									$session_id_update=User::find(Auth::user()->id);
-									$session_id_update->login_ip=$login_ip;
+									$session_id_update = User::find(Auth::user()->id);
+									$session_id_update->login_ip = $login_ip;
 									$session_id_update->save();
 									User::setUserLogInStatus(1);
 									//echo csrf_token(); die;
-									return redirect('/')->with('success', 'Welcome back ' . Auth::user()->user_name);
+									// return redirect('/roster/')->with('success', 'Welcome back ' . Auth::user()->user_name);
+									return redirect('/roster')->with('success', 'Welcome back ' . Auth::user()->user_name);
 								} else {  //echo "string3"; die;
 									return redirect()->back()->with('error', 'Incorrect email or password combination.');
 								}
@@ -178,9 +183,9 @@ class UserController extends Controller
 									if ($diff_mint > SESSION_TIMEOUT) {
 									} else {
 										Auth::logout();
-										Session::put('user_name',$data['username']);
-										Session::put('password',$data['password']);
-										Session::put('home_id',$data['home']);
+										Session::put('user_name', $data['username']);
+										Session::put('password', $data['password']);
+										Session::put('home_id', $data['home']);
 										// return redirect()->back()->with('error', 'You are already logged in from some other device.');
 										return redirect()->back()->with('login_error', 'This account is currently logged in on another device.Do you want to log out from the other device and continue logging in here?');
 									}
@@ -188,12 +193,13 @@ class UserController extends Controller
 								$home_id  = $user_info->login_home_id . ',' . $user_info->home_id;
 								$update   = User::where('id', $user_info->id)->update(['home_id' => $home_id]);
 								// echo "<pre>"; print_r($home_id); die;
-								$session_id_update=User::find(Auth::user()->id);
-								$session_id_update->login_ip=$login_ip;
+								$session_id_update = User::find(Auth::user()->id);
+								$session_id_update->login_ip = $login_ip;
 								$session_id_update->save();
 								User::setUserLogInStatus(1);
 								//echo csrf_token(); die;
-								return redirect('/')->with('success', 'Welcome back ' . Auth::user()->user_name);
+								// return redirect('/roster/')->with('success', 'Welcome back ' . Auth::user()->user_name);
+								return redirect('/roster')->with('success', 'Welcome back ' . Auth::user()->user_name);
 							} else {
 								return redirect()->back()->with('error', 'Incorrect email or password combination.');
 							}
@@ -230,9 +236,9 @@ class UserController extends Controller
 							if ($diff_mint > SESSION_TIMEOUT) {
 							} else {
 								Auth::logout();
-								Session::put('user_name',$data['username']);
-								Session::put('password',$data['password']);
-								Session::put('home_id',$data['home']);
+								Session::put('user_name', $data['username']);
+								Session::put('password', $data['password']);
+								Session::put('home_id', $data['home']);
 								// return redirect()->back()->with('error', 'You are already logged in from some other device.');
 								return redirect()->back()->with('login_error', 'This account is currently logged in on another device.Do you want to log out from the other device and continue logging in here?');
 							}
@@ -249,12 +255,13 @@ class UserController extends Controller
 								}
 							}
 						}
-						$session_id_update=User::find(Auth::user()->id);
-						$session_id_update->login_ip=$login_ip;
+						$session_id_update = User::find(Auth::user()->id);
+						$session_id_update->login_ip = $login_ip;
 						$session_id_update->save();
 						User::setUserLogInStatus(1);
 						//echo csrf_token(); die;
-						return redirect('/')->with('success', 'Welcome back ' . Auth::user()->user_name);
+						return redirect('/roster')->with('success', 'Welcome back ' . Auth::user()->user_name);
+						// return redirect('/')->with('success', 'Welcome back ' . Auth::user()->user_name);
 					} else {
 						return redirect()->back()->with('error', 'Incorrect email or password combination.');
 					}
@@ -265,15 +272,16 @@ class UserController extends Controller
 		}
 		return view('frontEnd.login');
 	}
-	public function yes_logout(Request $request){
-		try{
+	public function yes_logout(Request $request)
+	{
+		try {
 			if (Auth::attempt(['user_name' => Session()->get('user_name'), 'password' => Session()->get('password')])) {
-				
+
 				DB::beginTransaction();
-				$user=User::find(Auth::user()->id);
-				$user->login_ip='';
-				$user->session_token='';
-				$user->logged_in=0;
+				$user = User::find(Auth::user()->id);
+				$user->login_ip = '';
+				$user->session_token = '';
+				$user->logged_in = 0;
 				$user->save();
 				DB::commit();
 				$request->merge([
@@ -288,24 +296,25 @@ class UserController extends Controller
 				Session::forget('password');
 				Session::forget('home_id');
 				return app()->call([new self, 'login'], ['request' => $request]);
-			}else{
-				return response()->json(['success'=>false,'message'=>'Something went wrong! Please try again later']);
+			} else {
+				return response()->json(['success' => false, 'message' => 'Something went wrong! Please try again later']);
 			}
-		}catch (\Exception $e) {
+		} catch (\Exception $e) {
 			DB::rollBack();
 			Log::error("Yes Logout Error:(" . date('d-m-Y H:i') . "): " . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Something went wrong!',
-                'data'   => $e->getMessage()
-            ], 500);
-        }
+			return response()->json([
+				'success' => false,
+				'message' => 'Something went wrong!',
+				'data'   => $e->getMessage()
+			], 500);
+		}
 	}
-	public function no_logout(){
+	public function no_logout()
+	{
 		Session::forget('user_name');
 		Session::forget('password');
 		Session::forget('home_id');
-		return response()->json(['success'=>true,'message'=>'Session Deleted']);
+		return response()->json(['success' => true, 'message' => 'Session Deleted']);
 	}
 	function login_staff_user($data, $user_info)
 	{
@@ -337,7 +346,7 @@ class UserController extends Controller
 	    	}*/
 			User::setUserLogInStatus(1);
 			//echo csrf_token(); die;
-			return redirect('/')->with('success', 'Welcome back ' . Auth::user()->user_name);
+			return redirect('/roster')->with('success', 'Welcome back ' . Auth::user()->user_name);
 		} else {
 			return redirect()->back()->with('error', 'Incorrect email or password combination.');
 		}
@@ -411,17 +420,30 @@ class UserController extends Controller
 	}
 	public function check_username_exists(Request $request)
 	{
+		Log::info('check_username_exists called', $request->all());
 
-		$data = $request->input();
+		$username = $request->username;
+		$userId   = $request->staff_id; // null on add, filled on edit
 
-		$user_name = '';
-		if (is_array($data)) {
-			$user_name_arr = array_values($data);
-			$user_name = $user_name_arr[0];
-		}
-		$response = Home::userNameUnique($user_name);
-		echo json_encode($response);
-		//echo $response; die;
+		$exists = User::where('user_name', $username)
+			->when($userId, function ($query) use ($userId) {
+				$query->where('id', '!=', $userId); // 👈 ignore current user
+			})
+			->exists();
+
+		// jQuery validate expects true or false
+		return response()->json(!$exists);
+
+		// $data = $request->input();
+
+		// $user_name = '';
+		// if (is_array($data)) {
+		// 	$user_name_arr = array_values($data);
+		// 	$user_name = $user_name_arr[0];
+		// }
+		// $response = Home::userNameUnique($user_name);
+		// echo json_encode($response);
+		// //echo $response; die;
 
 	}
 
@@ -429,9 +451,9 @@ class UserController extends Controller
 	public function switch_home()
 	{
 		// return "Hello";
-		$admin_id = Admin::where('id',Auth::user()->admn_id)->where('is_deleted', 0)->value('id');
-		$homes = Home::select('id','title')->where('admin_id',$admin_id)->where('is_deleted','0')->get()->toArray();
-		return view('frontEnd.switch_home',compact('admin_id','homes'));
+		$admin_id = Admin::where('id', Auth::user()->admn_id)->where('is_deleted', 0)->value('id');
+		$homes = Home::select('id', 'title')->where('admin_id', $admin_id)->where('is_deleted', '0')->get()->toArray();
+		return view('frontEnd.switch_home', compact('admin_id', 'homes'));
 	}
 
 	public function switch_home_submit(Request $request)
@@ -441,7 +463,7 @@ class UserController extends Controller
 		$array = [$request->home];
 		$array = array_merge($array, [$previouHome]);
 		$string = implode(',', $array);
-	
+
 		User::where('id', Auth::user()->id)->update(['home_id' => $string]);
 
 		return redirect()->route('dashboard');

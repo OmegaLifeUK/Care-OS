@@ -52,34 +52,53 @@ if (isset($system_admin_home)) {
 										<textarea name="address" class="form-control" placeholder="address" rows="3" maxlength="1000">{{ (isset($system_admin_home->address)) ? $system_admin_home->address : '' }}</textarea>
 									</div>
 								</div>
-
+									<div class="form-group">
+									<label class="col-lg-3 control-label">Enable For Home Area</label>
+									<div class="col-lg-9">
+										<div class="checkbox">
+											<label>
+												<input type="checkbox" name="is_home_area" value="1" {{ (isset($system_admin_home->is_home_area) && $system_admin_home->is_home_area == 1) ? 'checked' : '' }}>
+												(Check if this home have home area list)
+											</label>
+										</div>
+									</div>
+								</div>
 								<div class="form-group">
-									<label class="col-lg-3 control-label">Location History Duration</label>
+									<label class="col-lg-3 control-label">Home Area</label>
 									<div class="col-lg-9">
-										<input type="text" name="location_history_duration" class="form-control" placeholder="Location history duration" value="{{ (isset($system_admin_home->location_history_duration)) ? $system_admin_home->location_history_duration : '' }}" maxlength="255">
-										<p>Days for which location history will be saved</p>
+										<input type="text" name="home_area" id="home_area" class="form-control" placeholder="Home area" value="{{ (isset($system_admin_home->home_area)) ? $system_admin_home->home_area : '' }}" maxlength="255">
+									    <span class="help-block">(In meters or min 10 meters)</span>
 									</div>
 								</div>
+							
+
+								<!--<div class="form-group">-->
+								<!--	<label class="col-lg-3 control-label">Location History Duration</label>-->
+								<!--	<div class="col-lg-9">-->
+								<!--		<input type="text" name="location_history_duration" class="form-control" placeholder="Location history duration" value="{{ (isset($system_admin_home->location_history_duration)) ? $system_admin_home->location_history_duration : '' }}" maxlength="255">-->
+								<!--		<p>Days for which location history will be saved</p>-->
+								<!--	</div>-->
+								<!--</div>-->
 								
-								<div class="form-group yes_no_btn">
-									<label class="col-lg-3 control-label">Registered with Ofsted or CIW</label>
-									<div class="col-lg-9 d-flex align-items-center gap-2">
-										<input type="radio" name="is_registered" id="is_registered1" value="1" {{ isset($system_admin_home->is_registered) && $system_admin_home->is_registered == 1 ? 'checked' : '' }}>
-										<label for="is_registered1" class="control-label">Yes </label>
-										<input type="radio" name="is_registered" id="is_registered2" value="0" {{ isset($system_admin_home->is_registered) && $system_admin_home->is_registered == 0 ? 'checked' : '' }}>
-										<label for="is_registered2" class=" control-label">No </label>
-									</div>
-								</div>
+								<!--<div class="form-group yes_no_btn">-->
+								<!--	<label class="col-lg-3 control-label">Registered with Ofsted or CIW</label>-->
+								<!--	<div class="col-lg-9 d-flex align-items-center gap-2">-->
+								<!--		<input type="radio" name="is_registered" id="is_registered1" value="1" {{ isset($system_admin_home->is_registered) && $system_admin_home->is_registered == 1 ? 'checked' : '' }}>-->
+								<!--		<label for="is_registered1" class="control-label">Yes </label>-->
+								<!--		<input type="radio" name="is_registered" id="is_registered2" value="0" {{ isset($system_admin_home->is_registered) && $system_admin_home->is_registered == 0 ? 'checked' : '' }}>-->
+								<!--		<label for="is_registered2" class=" control-label">No </label>-->
+								<!--	</div>-->
+								<!--</div>-->
 								<?php $rota_time_format = (isset($system_admin_home->rota_time_format)) ? $system_admin_home->rota_time_format : ''; ?>
-								<div class="form-group has-feedback">
-									<label class="col-lg-3 control-label">Rota Time Format</label>
-									<div class="col-lg-9">
-										<select name="rota_time_format" class="form-control" data-fv-field="status">
-											<option value="12" {{ $rota_time_format == '12' ? 'selected' : '' }}>12 Hours</option>
-											<option value="24" {{ $rota_time_format == '24' ? 'selected' : '' }}>24 Hours</option>
-										</select>
-									</div>
-								</div>
+								<!--<div class="form-group has-feedback">-->
+								<!--	<label class="col-lg-3 control-label">Rota Time Format</label>-->
+								<!--	<div class="col-lg-9">-->
+								<!--		<select name="rota_time_format" class="form-control" data-fv-field="status">-->
+								<!--			<option value="12" {{ $rota_time_format == '12' ? 'selected' : '' }}>12 Hours</option>-->
+								<!--			<option value="24" {{ $rota_time_format == '24' ? 'selected' : '' }}>24 Hours</option>-->
+								<!--		</select>-->
+								<!--	</div>-->
+								<!--</div>-->
 
 
 								<!--<div class="form-group">
@@ -89,7 +108,8 @@ if (isset($system_admin_home)) {
                                 </div>
                             </div> -->
 								<?php
-								$image = home . '/default_home.png';
+								// $image = home . '/default_home.png';
+								$image = env('APP_URL').home.'/default_home.png';
 
 								if (isset($system_admin_home->image)) {
 									if (!empty($system_admin_home->image)) {

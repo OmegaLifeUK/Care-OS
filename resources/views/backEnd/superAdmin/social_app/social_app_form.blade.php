@@ -42,12 +42,24 @@
                                 </div>
                             </div>
 
-                            <div class="form-group">
-                                <label class="col-lg-2 control-label">Icon</label>
-                                <div class="col-lg-10">
-                                    <input type="text" name="icon" class="form-control" placeholder="name" value="{{ (isset($social_app->icon)) ? $social_app->icon : '' }}" maxlength="255">
-                                </div>
-                            </div>
+                            <!--<div class="form-group">-->
+                            <!--    <label class="col-lg-2 control-label">Icon</label>-->
+                            <!--    <div class="col-lg-10">-->
+                            <!--        <input type="text" name="icon" class="form-control" placeholder="icon" value="{{ (isset($social_app->icon)) ? $social_app->icon : '' }}" maxlength="255">-->
+                            <!--    </div>-->
+                            <!--</div>-->
+                            
+                                  <div class="form-group">
+                                        <label class="col-lg-2 control-label">Icon</label>
+                                        <div class="col-lg-10">
+                                            <span class="group-ico icon-box" data-toggle="modal" href="#socialIcon"><i
+                                                    class="{{ isset($social_app->icon) ? $social_app->icon : 'fa fa-info' }}"></i>
+                                            </span>
+                                            <input type="hidden" name="icon"
+                                                value="{{ isset($social_app->icon) ? $social_app->icon : 'fa fa-info' }}"
+                                                class="risk_icon" maxlength="255">
+                                        </div>
+                                    </div>
                             
 							<div class="form-actions">
 								<div class="row">
@@ -70,5 +82,20 @@
 	</section>
 </section>	
 	
+	    <!-- Font awesome(icons) -->
+    @include('backEnd.common.social_icon_list')
+    <!-- Font awesome(icons) end -->
+
+    <script>
+        $(document).ready(function() {
+            $('#icons-fonts .fa-hover a').on('click', function(e) {
+                e.preventDefault();
+                var selectedIcon = $(this).find('i').attr('class');
+                $('.icon-box i').attr('class', selectedIcon);
+                $('.risk_icon').val(selectedIcon);
+                $('#socialIcon').modal('hide');
+            });
+        });
+    </script>
 
 @endsection

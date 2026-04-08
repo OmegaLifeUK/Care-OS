@@ -220,16 +220,16 @@ $('#add_user_form').formValidation({
 
             }
         },
-        "date_of_leaving":
-        {
-            validators:
-            {
-                notEmpty:
-                {
-                    message: 'This field is required'
-                }
-            }
-        },
+        // "date_of_leaving":
+        // {
+        //     validators:
+        //     {
+        //         notEmpty:
+        //         {
+        //             message: 'This field is required'
+        //         }
+        //     }
+        // },
         "current_location":
         {
             validators:
@@ -500,16 +500,16 @@ $('#edit_user_form').formValidation({
                 
             }
         },
-        "date_of_leaving":
-        {
-            validators:
-            {
-                notEmpty:
-                {
-                    message: 'This field is required'
-                }
-            }
-        },
+        // "date_of_leaving":
+        // {
+        //     validators:
+        //     {
+        //         notEmpty:
+        //         {
+        //             message: 'This field is required'
+        //         }
+        //     }
+        // },
         "current_location":
         {
             validators:
@@ -768,26 +768,26 @@ $('#add_agent_form').formValidation({
                 }*/
             }
         },
-        "date_of_leaving":
-        {
-            validators:
-            {
-                notEmpty:
-                {
-                    message: 'This field is required'
-                },
-                stringLength: 
-                {
-                    min: 10,
-                    max: 10,
-                    message: 'Please enter valid input'
-                },
-                regexp: {
-                    regexp: /^[0-9-]+$/,
-                    message: 'Name can only consist of digits'   
-                }
-            }
-        },
+        // "date_of_leaving":
+        // {
+        //     validators:
+        //     {
+        //         notEmpty:
+        //         {
+        //             message: 'This field is required'
+        //         },
+        //         stringLength: 
+        //         {
+        //             min: 10,
+        //             max: 10,
+        //             message: 'Please enter valid input'
+        //         },
+        //         regexp: {
+        //             regexp: /^[0-9-]+$/,
+        //             message: 'Name can only consist of digits'   
+        //         }
+        //     }
+        // },
         "current_location":
         {
             validators:
@@ -2857,6 +2857,26 @@ $('#add_homelist_form').formValidation({
                     message: 'This field can only consist of characters'
                 }
             }
+        },
+        "home_area":
+        {
+            validators:
+            {
+                notEmpty:
+                {
+                    message: 'This field is required'
+                },
+                regexp:
+                {
+                    regexp: /^[0-9]+$/,
+                    message: 'This field should contain integer numbers only'
+                },
+                greaterThan:
+                {
+                    value: 10,
+                    message: 'The value must be greater than or equal to 10'
+                }
+            }
         }/*,
         "security_policy":
         {
@@ -2941,6 +2961,26 @@ $('#edit_homelist_form').formValidation({
                 {
                     regexp: /^[A-Z,a-z,0-9&#+-.,:;?£/'" \n]+$/,
                     message: 'This field can only consist of characters'
+                }
+            }
+        },
+        "home_area":
+        {
+            validators:
+            {
+                notEmpty:
+                {
+                    message: 'This field is required'
+                },
+                regexp:
+                {
+                    regexp: /^[0-9]+$/,
+                    message: 'This field should contain integer numbers only'
+                },
+                greaterThan:
+                {
+                    value: 10,
+                    message: 'The value must be greater than or equal to 10'
                 }
             }
         }/*,
@@ -6121,16 +6161,16 @@ $('#add_company_manager_form').formValidation({
                 }
             }
         },
-        "date_of_leaving":
-        {
-            validators:
-            {
-                notEmpty:
-                {
-                    message: 'This field is required'
-                }
-            }
-        },
+        // "date_of_leaving":
+        // {
+        //     validators:
+        //     {
+        //         notEmpty:
+        //         {
+        //             message: 'This field is required'
+        //         }
+        //     }
+        // },
         "current_location":
         {
             validators:

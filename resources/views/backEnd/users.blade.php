@@ -158,6 +158,10 @@
 
                                                 <a href="{{ url('admin/user/sick-leaves/'.$value->id) }}" class="right"s><span style= "color: #000"><i data-toggle="tooltip" title="Sick Leave" class="fa fa-bed fa-lg"></i></span></a>
 
+                                                <a href="{{ url('admin/user/logs/'.$value->id) }}" class="right"s><span style= "color: #000"><i data-toggle="tooltip" title="Logs" class="fa fa-id-card fa-lg"></i></span></a>
+
+                                                <a href="{{ url('admin/user/timesheet/'.$value->id) }}" class="right"s><span style= "color: #000"><i data-toggle="tooltip" title="Timesheet" class="fa fa-clock-o fa-lg"></i></span></a>
+
                                                 <a href="{{ url('admin/users/delete/'.$value->id) }}" class="delete"><i data-toggle="tooltip" title="Delete" class="fa fa-trash-o fa-lg"></i></a>
 
                                             @else

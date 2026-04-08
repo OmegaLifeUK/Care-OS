@@ -26,7 +26,29 @@ use App\Http\Controllers\frontEnd\salesFinance\PreInvoiceController;
 use App\Http\Controllers\Rota\StaffController;
 use App\Http\Controllers\Rota\AnnualLeaveController;
 use App\Http\Controllers\frontEnd\salesFinance\leave_tracker\LeaveTrackerController;
-
+use App\Http\Controllers\frontEnd\ServiceUserManagement\DailyLogsController;
+use App\Http\Controllers\backEnd\user\LatnessLeaveController;
+use App\Http\Controllers\frontEnd\Roster\RosterController;
+use App\Http\Controllers\frontEnd\Roster\DailyLogController;
+use App\Http\Controllers\frontEnd\Roster\ManageDashboardController;
+use App\Http\Controllers\frontEnd\Roster\ScheduleShiftController;
+use App\Http\Controllers\frontEnd\Roster\Staff\CarerAvailabilityController;
+use App\Http\Controllers\frontEnd\Roster\Staff\StaffTaskController;
+use App\Http\Controllers\frontEnd\Roster\Client\ClientController;
+use App\Http\Controllers\frontEnd\Roster\Staff\CarerController;
+use App\Http\Controllers\frontEnd\Roster\Staff\CarerDetailsController;
+use App\Http\Controllers\frontEnd\Roster\Staff\StaffQualificationController;
+use App\Http\Controllers\frontEnd\Roster\CareDocumentController;
+use App\Http\Controllers\frontEnd\Roster\ReportController;
+use App\Http\Controllers\frontEnd\Roster\MessagingCenterController;
+use App\Http\Controllers\frontEnd\Roster\LeaveRequestController;
+use App\Http\Controllers\frontEnd\Roster\IncidentManagementController;
+use App\Http\Controllers\frontEnd\Roster\PayrollFinance\PayrollFinanceController;
+use App\Http\Controllers\frontEnd\Roster\Staff\SupervisionController;
+use App\Http\Controllers\frontEnd\Roster\Staff\invoiceManagementController;
+use App\Http\Controllers\backEnd\homeManage\SafeguardingTypeController;
+use App\Http\Controllers\backEnd\homeManage\StaffTaskTypeController;
+use App\Http\Controllers\frontEnd\Roster\Client\DolsController;
 // Backend Controllers
 use App\Http\Controllers\backEnd\superAdmin\HomeController;
 use App\Http\Controllers\backEnd\salesfinance\LeadController as BackendLeadController;
@@ -47,131 +69,28 @@ use App\Http\Controllers\backEnd\generalAdmin\HomeCostingController;
 use App\Http\Controllers\backEnd\generalAdmin\DepartmentBackendController;
 use App\Http\Controllers\backEnd\systemManage\PlanBuilderAdminController;
 use App\Http\Controllers\backEnd\salesfinance\TimeSheetBackendController;
+use App\Http\Controllers\Rota\RotaController;
+use App\Http\Controllers\backEnd\user\PayRatesTypeController;
+use App\Http\Controllers\backEnd\systemManage\daily_log\DailyLogCategoryController;
+use App\Http\Controllers\backEnd\homeManage\clientManagementController;
+use App\Http\Controllers\backEnd\homeManage\StaffIncidentTypeController;
+
+
 
 
 Route::get('clear', function () {
 	Artisan::call('cache:clear');
 	return "Cleared!";
 });
+Route::get('/proxy/courses', function () {
+	return Http::get("http://thunderingslap.com/api/all-courses-list/")->json();
+});
 
 //  QR code for company
 Route::post('/qrcode', 'App\Http\Controllers\Android\AndroidApiController@QRCode');
 
 Route::match(['get', 'post'], '/change-design-layout/{design_layout_id}',  'App\Http\Controllers\frontEnd\DashboardController@change_layout');
-/*-------Api Routes-------*/
-Route::group(['prefix' => 'api/service'], function () {
-	Route::post('/contact-us', 'App\Http\Controllers\Api\ContactUsController@add_contact_us');
-	Route::post('/login', 'App\Http\Controllers\Api\ServiceUser\UserController@login');
-	Route::get('/personal-detail/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\UserController@personal_details');
 
-	/*-------NoteController--------*/
-	Route::get('/notes/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\NoteController@index');
-	Route::post('/note/add', 'App\Http\Controllers\Api\ServiceUser\NoteController@add');
-	Route::post('/note/edit', 'App\Http\Controllers\Api\ServiceUser\NoteController@edit');
-
-	/*-------UserController---------*/
-	Route::get('/targets/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\TargetController@index');
-	/*DailyTask Controller*/
-	Route::get('/daily-tasks/{su_id}', 'App\Http\Controllers\Api\ServiceUser\DailyTasksController@daily_tasks');
-	Route::get('/living-skill/{su_id}', 'App\Http\Controllers\Api\ServiceUser\DailyTasksController@living_skill');
-	Route::get('/education-records/{su_id}', 'App\Http\Controllers\Api\ServiceUser\DailyTasksController@education_records');
-	Route::get('/earning/daily-tasks/{su_id}', 'App\Http\Controllers\Api\ServiceUser\DailyTasksController@earning_daily_tasks');
-	Route::get('/earning/living-skill/{su_id}', 'App\Http\Controllers\Api\ServiceUser\DailyTasksController@earning_living_skill');
-	Route::get('/earning/education-records/{su_id}', 'App\Http\Controllers\Api\ServiceUser\DailyTasksController@earning_education_records');
-
-	/*-------EarningSchemeController-------*/
-	//view earning categories
-	Route::get('/earning-scheme-categories/{su_id}', 'App\Http\Controllers\Api\ServiceUser\EarningSchemeController@categories');
-	//view incentives of a earning category
-	Route::get('/earning-scheme-details/{earning_scheme_id}', 'App\Http\Controllers\Api\ServiceUser\EarningSchemeController@earning_incentives');
-	//earning history of su
-	Route::get('/earning-schemes/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\EarningSchemeController@earning_history');
-	//booked incentives of a user
-	Route::get('/earning/user-incentives/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\EarningSchemeController@user_incentives');
-
-	Route::post('/earning/incentive/add', 'App\Http\Controllers\Api\ServiceUser\EarningSchemeController@add_to_calendar');
-
-	/*-------MoodController-------*/
-	Route::get('/moods/{su_id}', 'App\Http\Controllers\Api\ServiceUser\MoodController@moods');
-	Route::post('/mood/add', 'App\Http\Controllers\Api\ServiceUser\MoodController@add_mood');
-	Route::get('/mood/user/{id}', 'App\Http\Controllers\Api\ServiceUser\MoodController@listing_mood');
-
-	/*-------MoneyController-------*/
-	Route::get('/money/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\MoneyController@index');
-	Route::post('money/request/add', 'App\Http\Controllers\Api\ServiceUser\MoneyController@add_money_request');
-	Route::get('money/history/{su_id}', 'App\Http\Controllers\Api\ServiceUser\MoneyController@history');
-	Route::get('money/request/view/{money_request_id}', 'App\Http\Controllers\Api\ServiceUser\MoneyController@request_detail');
-
-	/*-------LabelController-------*/
-	Route::match(['get', 'post'], 'labels/{service_user_id}', 'App\Http\Controllers\Api\LabelController@label');
-
-	/*-------CareTeamController-------*/
-	Route::match(['get', 'post'], '/care-team/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\CareTeamController@care_team');
-	Route::match(['get', 'post'], '/care-team/view/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\CareTeamController@care_team_view');
-
-	/*-----AppointmentController-------*/
-	Route::get('/appointments/{su_id}', 'App\Http\Controllers\Api\ServiceUser\AppointmentController@appointments');
-	Route::get('/appointment/forms/{su_id}', 'App\Http\Controllers\Api\ServiceUser\AppointmentController@appointment_forms_list');
-	Route::get('/appointment/form/{form_id}', 'App\Http\Controllers\Api\ServiceUser\AppointmentController@view_add_appointment_form');
-	Route::post('/appointment/save', 'App\Http\Controllers\Api\ServiceUser\AppointmentController@save_appointment');
-	Route::get('/appointment/view/{su_calendar_event_id}', 'App\Http\Controllers\Api\ServiceUser\AppointmentController@view_appointment_detail');
-	Route::get('/staff/members/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\AppointmentController@staff_members');
-
-
-	/*-------CareCenterController-------*/
-	Route::get('care-center/staff-list/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\CareCenterController@staff_list');
-	// Route::post('/care-center/in-danger','Api\ServiceUser\CareCenterController@add_danger');
-	Route::get('/care-center/social-worker/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\CareCenterController@social_worker_list');
-	Route::get('/care-center/external-service-list/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\CareCenterController@external_service_list');
-
-	Route::post('/care-center/in-danger', 'App\Http\Controllers\Api\ServiceUser\CareCenter\DangerController@add');
-
-	//Request callback
-	Route::post('/care-center/request-callback', 'App\Http\Controllers\Api\ServiceUser\CareCenter\RequestCallBackController@add');
-
-	//Need assistance
-	Route::get('/care-center/need-assistance/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\CareCenter\NeedAssistanceController@index');
-	Route::post('/care-center/need-assistance/send-message', 'App\Http\Controllers\Api\ServiceUser\CareCenter\NeedAssistanceController@send_message');
-
-	//Message office
-	Route::get('/care-center/message-office/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\CareCenter\MessageOfficeController@index');
-	Route::post('/care-center/message-office/send-message', 'App\Http\Controllers\Api\ServiceUser\CareCenter\MessageOfficeController@send_message');
-
-	//Make complaint
-	Route::post('/care-center/complaint/add', 'App\Http\Controllers\Api\ServiceUser\CareCenter\ComplaintController@add');
-
-	//yp Calendar 
-	Route::get('/calendar/{service_user_id}', 'App\Http\Controllers\Api\ServiceUser\CalendarController@index');
-	Route::match(['get', 'post'], '/calendar/event/view', 'App\Http\Controllers\Api\ServiceUser\CalendarEventController@index');
-	Route::match(['get', 'post'], '/calendar/change-event-req/{su_id}', 'App\Http\Controllers\Api\ServiceUser\ChangeEventRequestController@index');
-	Route::match(['get', 'post'], '/calendar/change-event-req/add/{su_id}', 'App\Http\Controllers\Api\ServiceUser\ChangeEventRequestController@add');
-
-	//yp Location tracking
-	Route::match(['get', 'post'], '/location/add', 'App\Http\Controllers\Api\ServiceUser\LocationController@add');
-	Route::match(['get', 'post'], '/location/add-missing', 'App\Http\Controllers\Api\ServiceUser\LocationController@add_missing_locations');
-	Route::match(['get', 'post'], '/location/alert/{su_location_history_id}', 'App\Http\Controllers\Api\ServiceUser\LocationController@notify_location_alert_node');
-	Route::match(['get', 'post'], '/logout/location', 'App\Http\Controllers\Api\ServiceUser\LocationController@lat_long_update_logout_tym');
-	//save device id
-	Route::post('/device/add', 'App\Http\Controllers\Api\DeviceController@add_su_device');
-});
-Route::group(['prefix' => 'api/staff'], function () {
-	Route::get('/service-users/{staff_id}', 'App\Http\Controllers\Api\Staff\ServiceUserController@listing_service_user');
-	Route::get('/daily-tasks/{staff_id}', 'App\Http\Controllers\Api\Staff\TaskAllocationController@index');
-	Route::get('/money-requests/{staff_id}', 'App\Http\Controllers\Api\Staff\MoneyRequestController@index');
-	Route::post('/money-request/update', 'App\Http\Controllers\Api\Staff\MoneyRequestController@update_request');
-
-	Route::get('/trainings/{staff_id}', 'App\Http\Controllers\Api\Staff\TrainingController@index');
-
-	Route::post('/mood/add-suggestion', 'App\Http\Controllers\Api\Staff\MoodController@give_suggestion');
-
-	Route::post('/message-office/add-message', 'App\Http\Controllers\Api\Staff\MessageOfficeController@add_message');
-
-	Route::get('/care-center/in-danger/{staff_id}', 'App\Http\Controllers\Api\Staff\CareCenterController@in_danger_requests');
-	Route::get('/care-center/request-callbacks/{staff_id}', 'App\Http\Controllers\Api\Staff\CareCenterController@request_callbacks');
-
-
-	Route::post('/device/add', 'App\Http\Controllers\Api\DeviceController@add_user_device');
-});
 /*Change Password*/
 Route::post('api/change-password', 'App\Http\Controllers\Api\ServiceUser\UserController@change_password');
 Route::post('api/forgot-password', 'App\Http\Controllers\Api\ServiceUser\UserController@forgot_password');
@@ -181,7 +100,7 @@ Route::post('api/remove-device', 'App\Http\Controllers\Api\DeviceController@remo
 /*------Api Routes End here-------*/
 
 // Route::match(['get','post'], '/login', 'App\Http\Controllers\frontEnd\UserController@login');
-Route::match(['get', 'post'], '/login', 'App\Http\Controllers\frontEnd\UserController@login')->middleware('PreventBack');
+Route::match(['get', 'post'], '/login', 'App\Http\Controllers\frontEnd\UserController@login')->middleware('PreventBack')->name('login');
 Route::get('/yes_logout', 'App\Http\Controllers\frontEnd\UserController@yes_logout');
 Route::post('/no_logout', 'App\Http\Controllers\frontEnd\UserController@no_logout');
 
@@ -205,6 +124,149 @@ Route::match(['get', 'post'], '/switch_home_submit', 'App\Http\Controllers\front
 
 
 Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
+    
+    
+// 	Route::prefix('roster')->group(function () {
+  
+// 		Route::get('/', [RosterController::class, 'index'])->name('roster.index');
+// 		Route::get('/dashboard', [RosterController::class, 'dashboard'])->name('roster.dashboard');
+
+// 	});
+
+
+    Route::prefix('roster')->group(function () {
+		Route::get('/', [RosterController::class, 'index'])->name('roster.index');
+		Route::get('/dashboard', [RosterController::class, 'dashboard'])->name('roster.dashboard');
+		Route::get('/manage-dashboard', [ManageDashboardController::class, 'index'])->name('roster.manage.dashboard');
+		Route::get('/carer-availability', [CarerAvailabilityController::class, 'index'])->name('roster.carer.availability');
+		Route::get('/carer-availability/loadData', [CarerAvailabilityController::class, 'loadUserData'])->name('roster.carer.availability.loadUserData');
+        Route::post('/carer-availability/details', [CarerAvailabilityController::class, 'details'])->name('roster.carer.availability.details');
+        Route::post('/carer-availability/working-hours/save', [CarerAvailabilityController::class, 'save_working_hrs'])->name('roster.carer.availability.save_working_hrs');
+        Route::post('/carer-availability/work-preferences/save', [CarerAvailabilityController::class, 'save_work_preferences'])->name('roster.carer.availability.save_work_preferences');
+        Route::post('/carer-availability/unavailability/save', [CarerAvailabilityController::class, 'save_unavailability'])->name('roster.carer.availability.save_unavailability');
+        Route::post('/carer-availability/unavailability/loadData', [CarerAvailabilityController::class, 'load_unavailability_data'])->name('roster.carer.availability.load_unavailability_data');
+        Route::post('/carer-availability/unavailability/delete', [CarerAvailabilityController::class, 'delete_unavailability'])->name('roster.carer.availability.delete_unavailability');
+        Route::post('/carer-availability/overview', [CarerAvailabilityController::class, 'load_overview_data'])->name('roster.carer.availability.load_overview_data');
+        Route::post('/carer-availability/load-working-hours', [CarerAvailabilityController::class, 'loadworkinghours'])->name('roster.carer.availability.loadworkinghours');
+		Route::get('/messaging-center', [MessagingCenterController::class, 'index'])->name('roster.carer.availability');
+		Route::get('/staff-task', [StaffTaskController::class, 'index'])->name('roster.staff.task');
+		Route::get('/staff-task-detail/{id}', [StaffTaskController::class, 'staffTaskDetail'])->name('roster.stafftask.details');
+		 Route::post('/staff-task/save', [StaffTaskController::class, 'staffTaskSave'])->name('roster.stafftask.save');
+        Route::post('/staff-task/form_template/save', [StaffTaskController::class, 'staffTaskFormSave'])->name('roster.stafftask.form.save');
+        Route::post('/staff-task/form_template/fetch', [StaffTaskController::class, 'staffTaskFormFetch'])->name('roster.stafftask.form.fetch');
+        Route::get('/staff-task/fetch_list', [StaffTaskController::class, 'fetch_list'])->name('roster.stafftask.fetch_list');
+        Route::post('/staff-task-detail/complete_notes/save', [StaffTaskController::class, 'save_complete_notes'])->name('roster.stafftask.complete_notes.save');
+        Route::post('/staff-task-detail/status', [StaffTaskController::class, 'status_change'])->name('roster.stafftask.status');
+		Route::get('/care-document', [CareDocumentController::class, 'index'])->name('roster.care.document');
+		Route::get('/reports', [ReportController::class, 'index'])->name('roster.report');
+
+		// Frontend Leave Request
+		Route::get('/leave-request', [LeaveRequestController::class, 'index'])->name('roster.leave.request');
+		Route::post('/leave/update', [LeaveRequestController::class, 'update'])->name('roster.leave.update');
+
+        // Carer Section Start
+		Route::get('/carer', [CarerController::class, 'index'])->name('roster.staff.carer');
+		Route::post('/carer/get-hourly-rate', [CarerController::class, 'getHourlyRate'])->name('roster.staff.carer.get.hourly.rate');
+		Route::put('/carer-update/{carer_id}', [CarerController::class, 'update'])->name('roster.staff.carer.update');
+		Route::post('/carer/getStaffByStatus', [CarerController::class, 'getStaffByStatus']);
+		Route::post('/carer/delete', [CarerController::class, 'deleteCarer'])->name('carer.delete');
+		Route::get('/carer/shift-resources', [CarerController::class, 'shift_resources'])->name('carer.shift');
+		Route::get('/carer/shifts', [CarerController::class, 'allShifts'])->name('carer.shifts.all');
+		Route::get('/carer/shifts/day', [CarerController::class, 'dayShifts'])->name('carer.shifts.day');
+		Route::get('/carer/shifts/week', [CarerController::class, 'weekShifts'])->name('carer.shifts.week');
+		Route::get('/carer/get-shift-carer/{client_id}', [CarerController::class, 'getShiftStaff'])->name('carer.shift.staff');
+		Route::get('/carer/shifts/ninety-days', [CarerController::class, 'ninetyDaysShifts'])->name('carer.shifts.ninety-days');
+
+		Route::get('/carer-details/{carer_id}', [CarerDetailsController::class, 'carer_details'])->name('roster.staff.carer.details');
+		Route::post('/carer/save-documents', [CarerDetailsController::class, 'saveDouments'])->name('carer.save.documents');
+		Route::post('/carer/save-notes', [CarerDetailsController::class, 'saveNote'])->name('carer.save.notes');
+		Route::delete('/carer/delete-notes/{id}', [CarerDetailsController::class, 'destroy_notes'])->name('carer.notes.delete');
+		Route::delete('/carer/delete-documents/{id}', [CarerDetailsController::class, 'destroy_documents'])->name('carer.documents.delete');
+		Route::post('/carer/qualifications/store', [StaffQualificationController::class, 'store'])->name('staff.qualifications.store');
+		// Carer Section End
+		
+		Route::get('/schedule-shift/weekly-data', [ScheduleShiftController::class, 'getWeeklyData']);
+		Route::get('/schedule-shift', [ScheduleShiftController::class, 'index'])->name('roster.schedule.dashboard');
+		Route::post('/schedule-shift/store', [ScheduleShiftController::class, 'store'])->name('roster.schedule.store');
+		Route::post('/schedule-shift/update/{id}', [ScheduleShiftController::class, 'updateShift'])->name('roster.schedule.update');
+		Route::get('/schedule-shift-by-group', [ScheduleShiftController::class, 'scheduleShiftByGroup'])->name('roster.scheduleShiftByGroup');
+		Route::get('/ninety-days-data', [ScheduleShiftController::class, 'get90DaysData'])->name('ninety.days.data');
+		Route::get('/get-monthly-shifts', [ScheduleShiftController::class, 'getMonthlyShifts'])->name('get.monthly.shifts');
+		Route::delete('/schedule-shift/delete/{id}', [ScheduleShiftController::class, 'deleteShift'])->name('roster.schedule.delete');
+		Route::post('/schedule-shift/assign-shift', [ScheduleShiftController::class, 'assignShift'])->name('roster.schedule.assign.shift');
+		Route::post('/schedule-shift/acknowledge/status_change', [ScheduleShiftController::class, 'update_acknowledge'])->name('roster.schedule.acknowledge');
+		
+		Route::get('/client', [ClientController::class, 'index'])->name('roster.client');
+		Route::get('/client-details/{client_id}', [ClientController::class, 'client_details'])->name('roster.client.details');
+		Route::get('/child-courses/{childId}', [ClientController::class, 'child_courses']);
+		Route::post('/client-delete', [ClientController::class, 'client_delete']);
+		Route::post('/client-search', [ClientController::class, 'client_search']);
+		Route::get('/care-task-add', [ClientController::class, 'care_task_add']);
+		Route::get('/care-task-edit', [ClientController::class, 'care_task_add']);
+		Route::post('/care-task-save', [ClientController::class, 'care_task_save']);
+		Route::post('/care-task-delete', [ClientController::class, 'care_task_delete']);
+		Route::post('/client/care-task-list', [ClientController::class, 'care_task_list']);
+		Route::post('/client/medication-log-save', [ClientController::class, 'medication_log_save']);
+		Route::post('/client/medication-log-list', [ClientController::class, 'medication_log_list']);
+		Route::post('/client-alert-save', [ClientController::class, 'client_alert_save']);
+		Route::post('/client/alert-type', [ClientController::class, 'client_alert_type']);
+		Route::post('/client/alert-increase-acknowledge', [ClientController::class, 'alert_increase_acknowledge']);
+		Route::post('/client/alert-resolve', [ClientController::class, 'client_alert_resolve']);
+		Route::post('/client/alert-archived', [ClientController::class, 'client_alert_archived']);
+		Route::post('/client/alert-increase-all-acknowledge', [ClientController::class, 'alert_increase_all_acknowledge']);
+		Route::post('/get-carer-shifts', [ClientController::class, 'get_carer_shifts']);
+		
+// 		Route::get('/carer', [CarerController::class, 'index'])->name('roster.staff.carer');
+		
+		Route::get('/incident-management', [IncidentManagementController::class, 'index'])->name('roster.incident.management');
+        Route::get('/incident-ai-prevention', [IncidentManagementController::class, 'ai_prevention']);
+		Route::get('/incident-report-details/{id}', [IncidentManagementController::class, 'incident_report_details']);
+		Route::post('/incident-report-save', [IncidentManagementController::class, 'incident_report_save']);
+		Route::post('/incident-report-loadData', [IncidentManagementController::class, 'incidentReportLoadData']);
+
+		Route::get('/payroll-finance', [PayrollFinanceController::class, 'index'])->name('roster.payroll.finance');
+		Route::get('/payroll-processing', [PayrollFinanceController::class, 'payrollprocessing']);
+		Route::get('/timesheet-reconciliation', [PayrollFinanceController::class, 'timesheetreconciliation']);
+		// Roster Daily Log frontend
+		Route::get('/daily-log', [DailyLogController::class, 'index']);
+		Route::post('/save-daily-log', [DailyLogController::class, 'save_daily_log']);
+		Route::post('/edit-daily-log', [DailyLogController::class, 'save_daily_log']);
+		Route::post('/daily-log-delete', [DailyLogController::class, 'daily_log_delete']);
+		Route::post('/daily-log-loadData', [DailyLogController::class, 'daily_log_loadData']);
+		// Staff Supervisions
+		Route::get('supervision-management', [SupervisionController::class, 'index']);
+		Route::post('supervision-management/record/save', [SupervisionController::class, 'record_saved'])->name('roster.supervision.save');
+		Route::get('supervision-management/fetch_supervision_list', [SupervisionController::class, 'fetch_supervision'])->name('roster.fetch_supervision.list');
+		Route::post('supervision-management/supervision_list/delete', [SupervisionController::class, 'supervision_delete'])->name('roster.supervision.delete');
+		Route::post('supervision-management/supervision_list/details', [SupervisionController::class, 'supervision_details'])->name('roster.supervision.details');
+		// invoicemanagement
+		Route::get('invoice-management', [invoiceManagementController::class, 'index']);
+		// Client Dols
+		Route::post('client/save-dols',[DolsController::class,'save_dols']);
+		Route::post('client/dols-list',[DolsController::class,'index']);
+		
+		 // Onboarding Configuration
+        Route::get('onboarding-configuration', [OnboardingConfigurationController::class, 'index']);
+		
+	});
+
+
+	// Report Section
+	Route::post('user/record', 'App\Http\Controllers\frontEnd\StaffManagementController@record')->name('staff.record');
+	// Route::get('/staff/record', 'App\Http\Controllers\frontEnd\ViewReportController@recordGet')->name('staff.record.get');
+
+	// Service User Mood Management
+	Route::post('/service/mood/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\MoodController@saveMood')->name('mood.add');
+	Route::post('/service/mood/edit/{id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\MoodController@edit')->name('mood.edit');
+	Route::post('/service/mood/delete/{id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\MoodController@delete')->name('mood.delete');
+
+	// Service User behavior
+	Route::get('/service/behavior/{id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BehaviorController@index')->name('service.behavior');
+	Route::post('/service/behavior/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BehaviorController@saveRating');
+
+	// Service User Dashboard
+	Route::get('service/dashboard/{id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DashboardController@index');
+
 
 	// Rota Management
 	Route::get('/rota-dashboard', 'App\Http\Controllers\Rota\RotaController@index');
@@ -212,6 +274,15 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::get('/rota', 'App\Http\Controllers\Rota\RotaController@create');
 	Route::post('/add-rota-data', 'App\Http\Controllers\Rota\RotaController@store');
 	Route::get('/rota-planner', 'App\Http\Controllers\Rota\RotaController@rota_calender_view');
+
+	// Staff logs
+	Route::get('staff/logs','App\Http\Controllers\Rota\RotaController@staff_logs');
+	Route::get('staff/log/view','App\Http\Controllers\Rota\RotaController@staff_log_view');
+	Route::post('satff/log/view/filter','App\Http\Controllers\Rota\RotaController@satff_log_view_filter');
+	Route::post('satff/log/view/is_valid','App\Http\Controllers\Rota\RotaController@satff_log_view_is_valid');
+	Route::get('staff/timesheet','App\Http\Controllers\Rota\RotaController@staff_timesheet');
+	Route::get('staff/timesheet/add','App\Http\Controllers\Rota\RotaController@staff_timesheet_add');
+	Route::post('staff/timesheet_filter','App\Http\Controllers\Rota\RotaController@timesheet_filter');
 
 	Route::post('/add-shift-data', 'App\Http\Controllers\Rota\RotaController@add_shift_data');
 	Route::post('/get-all-users', 'App\Http\Controllers\Rota\RotaController@get_all_users');
@@ -227,6 +298,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::post('/delete_rota_employee', 'App\Http\Controllers\Rota\RotaController@delete_rota_employee');
 	Route::get('/edit_rota/{id}', 'App\Http\Controllers\Rota\RotaController@edit_rota');
 	Route::post('/publish_unpublish_rota', 'App\Http\Controllers\Rota\RotaController@publish_unpublish_rota');
+	Route::match(['get', 'post'],'/rota-absence',[RotaController::class,'rota_absence']);
 
 	Route::post('/add-leave', 'App\Http\Controllers\Rota\RotaController@add_leave');
 	Route::post('/date_validation_for_user', 'App\Http\Controllers\Rota\RotaController@date_validation_for_user');
@@ -423,7 +495,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		});
 	});
 
-	// Frontend Controller for setting in General section 
+	// Frontend Controller for setting in General section
 	Route::controller(GeneralSectionController::class)->group(function () {
 		Route::get('/attachments_types', 'attachments_types');
 		Route::post('/save_attachment_type', 'save_attachment_type');
@@ -718,7 +790,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 			// Countries List
 			Route::get('/getCountriesList', 'getCountriesList')->name('ajax.getCountriesList');
 
-			// Lead CRM 
+			// Lead CRM
 			Route::post('/saveCRMLeadData', 'saveCRMLeadData')->name('lead.ajax.saveCRMLeadData');
 			Route::post('/getCRMCallsData', 'getCRMCallsData')->name('lead.ajax.getCRMCallsData');
 			Route::post('/saveCRMLeadEmails', 'saveCRMLeadEmails')->name('lead.ajax.saveCRMLeadEmails');
@@ -751,7 +823,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 			Route::get('tasks', 'task_list')->name('lead.task_list');
 		});
 
-		//Leads 
+		//Leads
 		Route::get('sales', 'leads');
 
 		// Lead Task
@@ -759,7 +831,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		Route::get('/leads/lead_task/delete/{task}/{lead}', 'lead_task_delete');
 		Route::post('/saveLeadNotes', 'save_lead_notes')->name('lead.ajax.saveLeadNotes');
 
-		// Lead Attachment 
+		// Lead Attachment
 		Route::post('/saveLeadAttachment', 'saveLeadAttachment')->name('lead.ajax.saveLeadAttachment');
 		Route::get('/leads/lead_attachment/delete/{attachment}/{lead}', 'lead_attachments_delete');
 
@@ -898,7 +970,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	});
 
 
-	// ------------- Personal Management - My profile ---------------------// 
+	// ------------- Personal Management - My profile ---------------------//
 	Route::get('/my-profile/{user_id}', 'App\Http\Controllers\frontEnd\PersonalManagement\ProfileController@index');
 	Route::post('/my-profile/edit', 'App\Http\Controllers\frontEnd\PersonalManagement\ProfileController@edit_profile_setting');
 
@@ -910,7 +982,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	//----12 jun 2018----
 	Route::post('shopping_budget/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\MoneyController@add_shopping_bugdet');
 
-	//add petty cash for home 
+	//add petty cash for home
 	Route::post('/profile/petty_cash/add-cash', 'App\Http\Controllers\frontEnd\PersonalManagement\PettyCashController@add_petty_cash');
 	Route::get('/profile/petty-cash/view/{petty_cash_id}', 'App\Http\Controllers\frontEnd\PersonalManagement\PettyCashController@view');
 	//Route::post('/profile/petty-cash/edit', 'App\Http\Controllers\frontEnd\PersonalManagement\PettyCashController@view');
@@ -958,10 +1030,11 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::post('/service/dynamic-form/save', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DynamicFormController@save_form');
 	Route::post('/service/dynamic-form/edit', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DynamicFormController@edit_form');
 	Route::post('/service/dynamic-form/view/pattern', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DynamicFormController@view_form_pattern');
+	Route::post('/service/dynamic-form/view/pattern_log', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DynamicFormController@view_form_pattern_log');
 	Route::post('/service/patterndataformio', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DynamicFormController@patterndataformio');
 	Route::post('/service/patterndataformiovaule', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DynamicFormController@patterndataformiovalue');
 	Route::get('/service/dynamic-form/view/data/{dynamic_form_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DynamicFormController@view_form_data');
-	
+
 	Route::get('/service/dynamic-form/delete/{dynamic_form_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DynamicFormController@delete_form');
 	Route::post('/service/dynamic-form/edit-details', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DynamicFormController@edit_details');
 	Route::post('/service/dynamic-form/daily-log', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DynamicFormController@su_daily_log_add');
@@ -969,7 +1042,6 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	// Route::match(['get','post'], '/system/plans/delete/{plan_id}', 'App\Http\Controllers\frontEnd\SystemManagement\PlanBuilderController@delete');
 
 	// -------- Service Management ------------------------//
-
 	Route::match(['get', 'post'], '/service-user-management', 'App\Http\Controllers\frontEnd\ServiceUserManagementController@service_users');
 	Route::match(['get', 'post'], '/service/user-profile/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\ProfileController@index');
 
@@ -977,6 +1049,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 
 	// status change of su_profile pic
 	Route::match(['get', 'post'], '/service/user-profile/afc-status/update/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\ProfileController@update_afc_status');
+
 
 	//notifications
 	Route::match(['get', 'post'], '/service/notifications/', 'App\Http\Controllers\frontEnd\ServiceUserManagement\ProfileController@show_notifications');
@@ -1002,6 +1075,8 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::match(['get', 'post'], '/service/weekly-logs', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DailyLogsController@weekly_log');
 	Route::match(['get', 'post'], '/service/monthly-logs', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DailyLogsController@monthly_log');
 	Route::get('/service/daily-log-form/view/data/{dynamic_form_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\DailyLogsController@view_log_form_data');
+	// Route::post('/service/logbook/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\LogBookController@add');
+	Route::get('/get-dynamic-form-daily-log/{id}', [DailyLogsController::class, 'getDynamicFormDailyLog'])->name('get.dynamic.form.daily.log');
 
 
 	//Backend Logs Download
@@ -1018,14 +1093,15 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::get('/service/risks/{su_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RiskController@index');
 	Route::get('/service/risk/view/{risk_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RiskController@view');
 	Route::get('/service/risk/risksfilter', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RiskController@risksfilter');
+
 	//risk RMP
 	Route::post('/service/risk/rmp/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RiskController@add_rmp_risk');
 	Route::get('/service/risk/rmp/view/{su_risk_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RiskController@view_rmp_risk');
+
 	//edit only a single records info
 	Route::post('/service/risk/rmp/edit/{su_rmp_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RiskController@edit_rmp_risk');
-
 	Route::get('/service/risk/inc-rec/view/{su_risk_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RiskController@view_inc_rec_risk');
-	//edit multiple records at a time - details, review etc. 
+	//edit multiple records at a time - details, review etc.
 
 	//risk Incident Report
 	Route::post('/service/risk/inc-rep/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RiskController@add_inc_rep');
@@ -1058,7 +1134,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::post('/service/user/contact-person/edit', 'App\Http\Controllers\frontEnd\ServiceUserManagement\ProfileController@edit_contact_person');
 	Route::get('/service/user/contact-person/delete/{contact_us_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\ProfileController@delete_contact_person');
 
-	//earning scheme	
+	//earning scheme
 	Route::match(['get', 'post'], '/service/earning-scheme/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\EarningSchemeController@index');
 	Route::match(['get', 'post'], '/service/earning-scheme/view_incentive/{earning_category_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\EarningSchemeController@view_incentive');
 	Route::match(['get', 'post'], '/service/earning-scheme/incentive/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\EarningSchemeController@add_to_calendar');
@@ -1092,6 +1168,8 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::post('/service/mfc/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\MFCController@add');
 	Route::match(['get', 'post'], '/service/mfc/edit/{su_mfc_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\MFCController@edit');
 	Route::match(['get', 'post'], '/service/mfc/delete/{su_mfc_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\MFCController@delete');
+	Route::match(['get', 'post'], '/service/missing-care-form-records/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\MFCController@form');
+
 
 	//BMP_RMP in  Daily Record ServiceUserManagement
 	Route::match(['get', 'post'], '/service/bmp-rmps/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BmpRmpController@index');
@@ -1105,7 +1183,6 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	/*Route::match(['get','post'], '/service/daily-records-bmp-rmp/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BmpRmpController@service_users_list');*/
 
 	//Body Map
-
 	Route::match(['get', 'post'], '/service/body-map/{risk_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@index');
 	Route::match(['get', 'post'], '/service/body-map/injury/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@addInjury');
 	Route::match(['get', 'post'], '/service/body-map/injury/remove/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@removeInjury');
@@ -1134,6 +1211,16 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::match(['get', 'post'], '/service/calendar/event/edit', 'App\Http\Controllers\frontEnd\CalendarEventController@edit');
 	Route::match(['get', 'post'], '/service/calendar/event/remove/{calendar_id}', 'App\Http\Controllers\frontEnd\CalendarEventController@delete');
 
+	// Task Management from Child
+	Route::match(['get', 'post'], '/service/task-management/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\TaskManagementController@index');
+	Route::match(['get', 'post'], '/service/save-task-management/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\TaskManagementController@store');
+	Route::match(['get', 'post'], '/service/task-management/update/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\TaskManagementController@update');
+	Route::match(['get', 'post'], '/service/task-management/edit/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\TaskManagementController@edit');
+
+	// Service User Task Management - Delete Task
+	Route::delete('/service/task-management/delete/{id}', [\App\Http\Controllers\frontEnd\ServiceUserManagement\TaskManagementController::class, 'destroy'])->name('service.task-management.destroy');
+
+
 	//Weekly and Monthly Report
 	Route::match(['get', 'post'], '/select/report', 'App\Http\Controllers\frontEnd\ServiceUserManagement\ReportController@index');
 	Route::match(['get', 'post'], '/monthly/report/detail/{log_book_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\ReportController@monthly_report_detail');
@@ -1156,8 +1243,9 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 
 	Route::match(['get', 'post'], '/service/placement-plan/target/view/{act_tar_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\PlacementPlanController@view_target');
 	Route::post('/service/placement-plan/edit', 'App\Http\Controllers\frontEnd\ServiceUserManagement\PlacementPlanController@edit');
-
 	Route::post('/service/placement-plan/add-qqa-review', 'App\Http\Controllers\frontEnd\ServiceUserManagement\PlacementPlanController@add_qqa_review');
+	Route::post('/service/placement-plan/save-comment', 'App\Http\Controllers\frontEnd\ServiceUserManagement\PlacementPlanComments\PlacementPlanCommentsController@add_comments');
+	Route::get('/service/placement-plan/get-comments/{id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\PlacementPlanComments\PlacementPlanCommentsController@get_comments');
 
 	//RMP
 	Route::match(['get', 'post'], '/service/rmp/view/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RmpController@index');
@@ -1166,6 +1254,8 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::match(['get', 'post'], '/service/rmp/edit_rmp/{su_rmp_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RmpController@edit_rmp');
 	Route::get('/service/rmp/delete/{su_rmp_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RmpController@delete');
 	Route::match(['get', 'post'], '/service/rmp/edit', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RmpController@edit');
+	Route::match(['get', 'post'], '/service/rmp/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\RmpController@form');
+
 
 	//BMP
 	Route::match(['get', 'post'], '/service/bmp/view/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BmpController@index');
@@ -1173,7 +1263,10 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::match(['get', 'post'], '/service/bmp/edit', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BmpController@edit');
 	Route::get('/service/bmp/delete/{su_bmp_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BmpController@delete');
 	Route::get('/service/bmp/view_bmp/{su_bmp_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BmpController@view_bmp');
-	Route::post('/service/rmp/edit_bmp/{su_bmp_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BmpController@edit_bmp');
+	Route::post('/service/bmp/edit_bmp/{su_bmp_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BmpController@edit_bmp');
+
+	Route::match(['get', 'post'], '/service/bmp/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BmpController@form');
+
 
 	//IncidentReport
 	Route::match(['get', 'post'], '/service/incident-report/views/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\IncidentController@index');
@@ -1181,15 +1274,22 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::post('/service/incident-report/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\IncidentController@add_incident');
 	Route::post('/service/incident-report/edit_incident/{su_incident_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\IncidentController@edit_incident');
 	Route::get('/service/incident-report/delete/{su_incident_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\IncidentController@delete');
+	Route::match(['get', 'post'], '/service/incident-report/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\IncidentController@form');
+
+	// Mood
+	Route::match(['get', 'post'], '/service/mood/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\MoodController@mood_view');
+
+
+
 
 	//ServiceUser LogBook
 	Route::match(['get', 'post'], '/service/logsbook/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\LogBookController@index');
-	Route::post('/system/logbook/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\LogBookController@add');
+	Route::post('/service/logbook/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\LogBookController@add');
 	Route::get('/forms', 'App\Http\Controllers\frontEnd\ServiceUserManagement\LogBookController@forms');
 	Route::get('/service/logbook/view/{log_book_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\LogBookController@view');
 
 	/**
-	 * BaseUrl: 
+	 * BaseUrl:
 	 */
 	$LogBookCommentsController = 'App\Http\Controllers\frontEnd\ServiceUserManagement\LogBookComments\LogBookCommentsController@';
 	Route::get('/service/logbook/comments', $LogBookCommentsController . 'index');
@@ -1211,6 +1311,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	// su Moods listing
 	Route::get('/service/moods/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\MoodController@index');
 	Route::post('/service/mood/suggestion/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\MoodController@add');
+
 
 	// my money requests of user
 	Route::get('service/money-requests/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\MoneyController@index');
@@ -1319,7 +1420,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::match(['get', 'post'], '/system/del/living-skill/', 'App\Http\Controllers\frontEnd\SystemManagement\LivingSkillController@living_skill_delete');
 	//Living Skills in SystemManagement end
 
-	//Education Training in SystemManagement 
+	//Education Training in SystemManagement
 	Route::match(['get', 'post'], '/system/education-records/', 'App\Http\Controllers\frontEnd\SystemManagement\EducationRecordController@index');
 	Route::match(['get', 'post'], '/system/education-record/add', 'App\Http\Controllers\frontEnd\SystemManagement\EducationRecordController@add');
 	Route::match(['get', 'post'], '/system/education-record/edit', 'App\Http\Controllers\frontEnd\SystemManagement\EducationRecordController@edit');
@@ -1351,6 +1452,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::match(['get', 'post'], '/staff/member/task-allocation/delete/{task_id}', 'App\Http\Controllers\frontEnd\StaffManagement\TaskAllocationController@delete');
 	Route::match(['get', 'post'], '/staff/member/task-allocation/edit', 'App\Http\Controllers\frontEnd\StaffManagement\TaskAllocationController@edit');
 	Route::match(['get', 'post'], '/staff/member/task-allocation/status-update/{task_id}', 'App\Http\Controllers\frontEnd\StaffManagement\TaskAllocationController@update_status');
+	Route::match(['get', 'post'], '/staff/member/task-allocation/complete-status-update/{task_id}', 'App\Http\Controllers\frontEnd\StaffManagement\TaskAllocationController@complete_update_status');
 
 	//Manage SickLeave
 	Route::match(['get', 'post'], '/staff/member/sick-leave/view/{staff_member_id}', 'App\Http\Controllers\frontEnd\StaffManagement\SickLeaveController@index');
@@ -1428,12 +1530,12 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 
 	//------------- View Reports ---------------//
 	Route::match(['get', 'post'], '/view-reports', 'App\Http\Controllers\frontEnd\ViewReportController@index');
-	// 	Route::get('/users/{user_type_id}', 'App\Http\Controllers\frontEnd\ViewReportController@get_user');
-	Route::get('/users', 'App\Http\Controllers\frontEnd\ViewReportController@get_user');
-	Route::match(['get', 'post'], '/user/record', 'App\Http\Controllers\frontEnd\ViewReportController@record');
+	Route::get('/users/{user_type_id}', 'App\Http\Controllers\frontEnd\ViewReportController@get_user');
+
+
 });
 
-// System guide 
+// System guide
 Route::get('/system-guide/faq/view/{guide_tag}', 'App\Http\Controllers\frontEnd\SystemGuideController@index');
 Route::get('/system-guide/category/logged', 'App\Http\Controllers\frontEnd\SystemGuideController@category_logged');
 Route::get('/system-guide/search/{ques}', 'App\Http\Controllers\frontEnd\SystemGuideController@searched_ques');
@@ -1482,7 +1584,7 @@ Route::get('user/payments', 'App\Http\Controllers\CronController@recurring_home_
 //Route::get('cron-jobs','CronController@index');
 
 
-//________________BACKEND_ROUTES_START___________________________________________________//
+//___________________________________________BACKEND_ROUTES_START___________________________________________________//
 
 Route::match(['get', 'post'], 'admin/login', 'App\Http\Controllers\backEnd\AdminController@login');
 Route::match(['get', 'post'], 'admin/logout', 'App\Http\Controllers\backEnd\AdminController@logout');
@@ -1504,7 +1606,7 @@ Route::post('/admin/getHomeList', [HomeController::class, 'getHomeList'])->name(
 // Route::post('/admin/getHomeList', 'App\Http\Controllers\backEnd\superAdmin\HomeController@getHomeList');
 //paypal
 Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function () {
-	//download form  As PDF 
+	//download form  As PDF
 	Route::match(['get', 'post'], '/DownloadFormpdf/{id}', 'App\Http\Controllers\backEnd\superAdmin\UserController@DownloadFormpdf');
 
 	Route::get('/', 'App\Http\Controllers\backEnd\AdminController@dashboard');
@@ -1532,7 +1634,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	Route::post('/companyManager/change-status', [ManagerController::class, 'manager_change_status']);
 
 
-	//backEnd SystemAdmin in SuperAdmin 
+	//backEnd SystemAdmin in SuperAdmin
 	Route::match(['get', 'post'], '/system-admins', 'App\Http\Controllers\backEnd\superAdmin\AdminController@system_admins');
 	Route::match(['get', 'post'], '/system-admin/add', 'App\Http\Controllers\backEnd\superAdmin\AdminController@add');
 	Route::match(['get', 'post'], '/system-admin/edit/{sa_id}', 'App\Http\Controllers\backEnd\superAdmin\AdminController@edit');
@@ -1554,6 +1656,13 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	Route::match(['get', 'post'], '/system-admin/home/undo-delete/{home_id}', 'App\Http\Controllers\backEnd\superAdmin\HomeController@undo_delete');
 	Route::match(['get', 'post'], '/system-admin/home/company-package-type', 'App\Http\Controllers\backEnd\superAdmin\HomeController@company_package_type');
 	Route::match(['get', 'post'], '/system-admin/home/card-detail', 'App\Http\Controllers\backEnd\superAdmin\HomeController@card_detail_save');
+	Route::match(['get', 'post'], '/system-admin/home/qr-code', 'App\Http\Controllers\backEnd\superAdmin\HomeController@qr_code');
+	
+	// Home Area routes
+	Route::get('/system-admin/home/home_area/{home_id}', 'App\Http\Controllers\backEnd\superAdmin\HomeController@home_area_list');
+	Route::match(['get', 'post'], '/system-admin/home/home_area/add/{home_id}', 'App\Http\Controllers\backEnd\superAdmin\HomeController@home_area_add');
+	Route::match(['get', 'post'], '/system-admin/home/home_area/edit/{area_id}', 'App\Http\Controllers\backEnd\superAdmin\HomeController@home_area_edit');
+	Route::get('/system-admin/home/home_area/delete/{area_id}', 'App\Http\Controllers\backEnd\superAdmin\HomeController@home_area_delete');
 
 
 	Route::match(['get', 'post'], '/users', 'App\Http\Controllers\backEnd\UserController@users');
@@ -1562,6 +1671,12 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	Route::match(['get', 'post'], '/users/delete/{id}', 'App\Http\Controllers\backEnd\UserController@delete');
 	Route::get('/users/certificates/delete/{id}', 'App\Http\Controllers\backEnd\UserController@delete_certificates');
 	Route::match(['get', 'post'], '/users/send-set-pass-link/{user_id}', 'App\Http\Controllers\backEnd\UserController@send_user_set_pass_link_mail');
+	Route::match(['get', 'post'], '/user/logs/{user_id}', 'App\Http\Controllers\backEnd\UserController@user_log');
+	Route::post('/user/is_valid/', 'App\Http\Controllers\backEnd\UserController@is_valid');
+	Route::get('/user/logs/delete/{id}', 'App\Http\Controllers\backEnd\UserController@logs_delete');
+	Route::match(['get', 'post'], '/user/timesheet/{user_id}', 'App\Http\Controllers\backEnd\UserController@user_timesheet');
+	Route::match(['get', 'post'],'/user/timesheet/edit/{user_id}', 'App\Http\Controllers\backEnd\UserController@user_timesheet_edit');
+	Route::get('/user/timesheet/delete/{user_id}', 'App\Http\Controllers\backEnd\UserController@user_timesheet_delete');
 
 	// Ram 04/07/2024 here paths for Job Manageent
 	Route::match(['get', 'post'], 'jobs_list', 'App\Http\Controllers\backEnd\JobsController@jobs_list');
@@ -1685,12 +1800,42 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	Route::match(['get', 'post'], '/user/annual-leave/edit/{u_annual_leave_id}', 'App\Http\Controllers\backEnd\user\AnnualLeaveController@edit');
 	Route::get('/user/annual-leave/delete/{u_sick_leave_id}', 'App\Http\Controllers\backEnd\user\AnnualLeaveController@delete');
 
+	// Backend User Pay Rates Type
+	Route::prefix('user')->group(function () {
+		Route::get('pay-rates-type', [PayRatesTypeController::class, 'index'])->name('payrates.types.index');
+		Route::get('pay-rate-type/add', [PayRatesTypeController::class, 'create'])->name('payrates.types.create');
+		Route::post('pay-rate-type/save', [PayRatesTypeController::class, 'store'])->name('payrates.types.store');
+		Route::get('pay-rate-type/edit/{id}', [PayRatesTypeController::class, 'edit'])->name('payrates.types.edit');
+		Route::post('pay-rate-type/update/{id}', [PayRatesTypeController::class, 'update'])->name('payrates.types.update');
+		Route::get('pay-rate-type/delete/{id}', [PayRatesTypeController::class, 'destroy'])->name('payrates.types.destroy');
+	});
+	
+	
+	// Backend User Pay Rates
+	Route::match(['get', 'post'], '/user/pay-rates', 'App\Http\Controllers\backEnd\user\PayRatesController@index')->name('payrates.index');
+	Route::match(['get', 'post'], '/user/pay-rates/add', 'App\Http\Controllers\backEnd\user\PayRatesController@create');
+	Route::match(['get', 'post'], '/user/pay-rates/save', 'App\Http\Controllers\backEnd\user\PayRatesController@store');
+	
+	// User Latness Leave
+	Route::match(['get', 'post'], '/user/late-leaves/{staff_member}', [LatnessLeaveController::class, 'index'])
+    ->name('user.latness-leaves');
+	// User Other Leave
+
 	//backEnd ServiceUserController
 	Route::match(['get', 'post'], '/service-users', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@index');
+	Route::match(['get', 'post'], '/child-sections', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@child_sections');
+	Route::post('/childsection_status_change', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@childsection_status_change');
+	Route::get('/child-section/delete/{id}', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@child_section_delete');
+	Route::post('/child-section-save', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@child_section_save');
 	Route::match(['get', 'post'], '/service-users/add', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@add');
 	Route::match(['get', 'post'], '/service-users/edit/{su_id}', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@edit');
 	Route::match(['get', 'post'], '/service-users/delete/{su_id}', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@delete');
 	Route::get('/service-users/send-set-pass-link/{su_id}', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@send_set_pass_link_mail');
+
+	Route::match(['get', 'post'], '/child-sections', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@child_sections');
+    Route::post('/childsection_status_change', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@childsection_status_change');
+    Route::get('/child-section/delete/{id}', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@child_section_delete');
+    Route::post('/child-section-save', 'App\Http\Controllers\backEnd\serviceUser\ServiceUserController@child_section_save');
 
 	//backEnd Childs Care History
 	Route::match(['get', 'post'], '/service-users/care-history/{su_id}', 'App\Http\Controllers\backEnd\serviceUser\CareHistoryController@index');
@@ -1716,6 +1861,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	Route::match(['get', 'post'], '/service-user/mood/add/{su_id}', 'App\Http\Controllers\backEnd\serviceUser\MoodController@add');
 	Route::match(['get', 'post'], '/service-user/mood/edit/{su_mood_id}', 'App\Http\Controllers\backEnd\serviceUser\MoodController@edit');
 	Route::match(['get', 'post'], '/service-user/mood/delete/{su_mood_id}', 'App\Http\Controllers\backEnd\serviceUser\MoodController@delete');
+
 
 	//backEnd ServiceUser External Service
 	Route::match(['get', 'post'], '/service-user/external-service/{su_id}', 'App\Http\Controllers\backEnd\serviceUser\ExternalServiceController@index');
@@ -1795,7 +1941,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	Route::match(['get', 'post'], '/risk/edit/{id}', 'App\Http\Controllers\backEnd\RiskController@edit');
 	Route::match(['get', 'post'], '/risk/delete/{id}', 'App\Http\Controllers\backEnd\RiskController@delete');
 
-	//backEnd EarningScheme 
+	//backEnd EarningScheme
 	Route::match(['get', 'post'], '/earning-scheme', 'App\Http\Controllers\backEnd\EarningSchemeController@earning_scheme');
 	Route::match(['get', 'post'], '/earning-scheme/add', 'App\Http\Controllers\backEnd\EarningSchemeController@add');
 	Route::match(['get', 'post'], '/earning-scheme/edit/{id}', 'App\Http\Controllers\backEnd\EarningSchemeController@edit');
@@ -1825,7 +1971,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	Route::match(['get', 'post'], '/homelist/company-package-type', 'App\Http\Controllers\backEnd\homeManage\HomeController@company_package_type');
 	Route::match(['get', 'post'], '/homelist/payment/success/{admin_id}', 'App\Http\Controllers\backEnd\homeManage\HomeController@success');
 
-	//backend homelist-admins		
+	//backend homelist-admins
 	Route::match(['get', 'post'], '/homelist/home-admin/{home_id}', 'App\Http\Controllers\backEnd\homeManage\AdminController@index');
 	Route::match(['get', 'post'], '/homelist/home-admin/add/{home_id}', 'App\Http\Controllers\backEnd\homeManage\AdminController@add');
 	Route::match(['get', 'post'], '/homelist/home-admin/edit/{home_admin_id}', 'App\Http\Controllers\backEnd\homeManage\AdminController@edit');
@@ -1843,7 +1989,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	// Route::match(['get','post'], '/support-ticket/edit/{user_id}', 'App\Http\Controllers\backEnd\SupportTicketController@edit');
 	Route::match(['get', 'post'], '/support-ticket/delete/{user_id}', 'App\Http\Controllers\backEnd\SupportTicketController@delete');
 
-	//backEnd Placement Plan	
+	//backEnd Placement Plan
 	Route::match(['get', 'post'], '/placement-plan', 'App\Http\Controllers\backEnd\PlacementPlanController@index');
 	Route::match(['get', 'post'], '/placement-plan/add', 'App\Http\Controllers\backEnd\PlacementPlanController@add');
 	Route::match(['get', 'post'], '/placement-plan/edit/{target_id}', 'App\Http\Controllers\backEnd\PlacementPlanController@edit');
@@ -1857,10 +2003,10 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	Route::match(['get', 'post'], '/form-builder/delete/{form_id}', 'App\Http\Controllers\backEnd\systemManage\FormBuilderController@delete');
 
 	/*//form-builder
-	Route::match(['get','post'], '/form-builder', 'App\Http\Controllers\backEnd\FormBuilderController@index');	
-	Route::match(['get','post'], '/form-builder/add', 'App\Http\Controllers\backEnd\FormBuilderController@add');	
-	Route::match(['get','post'], '/form-builder/view/{form_id}', 'App\Http\Controllers\backEnd\FormBuilderController@view');	
-	Route::match(['get','post'], '/form-builder/edit/{form_id}', 'App\Http\Controllers\backEnd\FormBuilderController@edit');	
+	Route::match(['get','post'], '/form-builder', 'App\Http\Controllers\backEnd\FormBuilderController@index');
+	Route::match(['get','post'], '/form-builder/add', 'App\Http\Controllers\backEnd\FormBuilderController@add');
+	Route::match(['get','post'], '/form-builder/view/{form_id}', 'App\Http\Controllers\backEnd\FormBuilderController@view');
+	Route::match(['get','post'], '/form-builder/edit/{form_id}', 'App\Http\Controllers\backEnd\FormBuilderController@edit');
 	Route::match(['get','post'], '/form-builder/delete/{form_id}', 'App\Http\Controllers\backEnd\FormBuilderController@delete');*/
 
 	// labels
@@ -1873,7 +2019,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	Route::get('/categories/view/{category_tag}', 'App\Http\Controllers\backEnd\HomeCategoriesController@view');
 	Route::post('/categories/edit', 'App\Http\Controllers\backEnd\HomeCategoriesController@edit');
 	Route::match(['get', 'post'], '/categories/add', 'App\Http\Controllers\backEnd\HomeCategoriesController@add');
-	// Route::get('/categories/add', 'App\Http\Controllers\backEnd\HomeCategoriesController@add');	
+	// Route::get('/categories/add', 'App\Http\Controllers\backEnd\HomeCategoriesController@add');
 
 	// Backend unique username for user,Child,agent & admin
 	Route::match(['get', 'post'], '/users/check_username_unique', 'App\Http\Controllers\backEnd\UserController@check_username_exist');
@@ -1886,7 +2032,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 
 	Route::match(['get', 'post'], '/agents/check_username_unique', 'App\Http\Controllers\backEnd\AgentController@check_username_exist');
 
-	// migrations 
+	// migrations
 	Route::match(['get', 'post'], '/service-users/migrations/{service_user_id}', 'App\Http\Controllers\backEnd\serviceUser\MigrationController@index');
 	Route::get('/service-users/migration/send-request/{service_user_id}', 'App\Http\Controllers\backEnd\serviceUser\MigrationController@show_form');
 	Route::post('/service-users/migration/send-request', 'App\Http\Controllers\backEnd\serviceUser\MigrationController@save_request');
@@ -1901,13 +2047,13 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	Route::match(['get', 'post'], '/modification-request/edit/{request_id}', 'App\Http\Controllers\backEnd\ModificationRequestController@edit');
 	Route::match(['get', 'post'], '/modification-request/delete/{request_id}', 'App\Http\Controllers\backEnd\ModificationRequestController@delete');
 
-	//backEnd LivingSkills 
+	//backEnd LivingSkills
 	Route::match(['get', 'post'], '/living-skill', 'App\Http\Controllers\backEnd\LivingSkillController@index');
 	Route::match(['get', 'post'], '/living-skill/add', 'App\Http\Controllers\backEnd\LivingSkillController@add');
 	Route::match(['get', 'post'], '/living-skill/edit/{skill_id}', 'App\Http\Controllers\backEnd\LivingSkillController@edit');
 	Route::match(['get', 'post'],  '/living-skill/delete/{skill_id}', 'App\Http\Controllers\backEnd\LivingSkillController@delete');
 
-	//backEnd MFC 
+	//backEnd MFC
 	Route::match(['get', 'post'], '/mfc-records', 'App\Http\Controllers\backEnd\MFCController@index');
 	Route::match(['get', 'post'], '/mfc/add', 'App\Http\Controllers\backEnd\MFCController@add');
 	Route::match(['get', 'post'], '/mfc/edit/{mfc_id}', 'App\Http\Controllers\backEnd\MFCController@edit');
@@ -1961,7 +2107,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	Route::match(['get', 'post'], '/system-guide-category', 'App\Http\Controllers\backEnd\systemGuide\SystemGuideCategoryController@index');
 	Route::match(['get', 'post'], '/system-guide/view/{sg_ctgry_id}', 'App\Http\Controllers\backEnd\systemGuide\SystemGuideController@index');
 
-	//backEnd System Guide 
+	//backEnd System Guide
 	Route::match(['get', 'post'], '/system-guide/add/{sg_ctgry_id}', 'App\Http\Controllers\backEnd\systemGuide\SystemGuideController@add');
 	Route::match(['get', 'post'], '/system-guide/edit/{sys_guide_id}', 'App\Http\Controllers\backEnd\systemGuide\SystemGuideController@edit');
 	Route::match(['get', 'post'], '/system-guide/delete/{sys_guide_id}', 'App\Http\Controllers\backEnd\systemGuide\SystemGuideController@delete');
@@ -2012,7 +2158,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 	//Log Book
 	Route::match(['get', 'post'], '/general-admin/log/book', 'App\Http\Controllers\backEnd\generalAdmin\LogBookController@index');
 	Route::match(['get', 'post'], '/general-admin/log/book-view/{log_book_id}', 'App\Http\Controllers\backEnd\generalAdmin\LogBookController@view');
-	//Weekly Allowance 
+	//Weekly Allowance
 	Route::match(['get', 'post'], '/general-admin/allowance/weekly', 'App\Http\Controllers\backEnd\generalAdmin\WeeklyAllowanceController@index');
 	//Staff Training
 	Route::match(['get', 'post'], '/general-admin/staff/training', 'App\Http\Controllers\backEnd\generalAdmin\StaffTrainingController@index');
@@ -2056,7 +2202,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 			Route::get('/lead_task_delete/{id}', 'lead_task_list_delete');
 			Route::get('/authorized/{id}', 'lead_authorized_by_admin');
 
-			// Lead Task 
+			// Lead Task
 			Route::post('/saveLeadTasks', 'save_lead_tasks')->name('leads.ajax.saveLeadTasks');
 			Route::get('/lead_task/delete/{task}/{lead}', 'lead_task_delete');
 
@@ -2087,7 +2233,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 			Route::get('/lead_reject_type/delete/{id}', 'lead_reject_type_delete');
 			Route::post('/saveLeadRejectReason', 'saveLeadRejectReason')->name('leads.ajax.saveLeadRejectReason');
 
-			// Lead Attachment 
+			// Lead Attachment
 			Route::post('/saveLeadAttachment', 'saveLeadAttachment')->name('leads.ajax.saveLeadAttachment');
 			Route::get('/lead_attachments/delete/{attachment}/{lead}', 'lead_attachments_delete');
 
@@ -2150,7 +2296,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 		});
 	});
 	// end
-	// Backend Staff worker 
+	// Backend Staff worker
 	Route::controller(StaffWorkerController::class)->group(function () {
 		Route::prefix('rota')->group(function () {
 			Route::get('/staff-worker', 'index')->name('backend.staff_worker');
@@ -2259,7 +2405,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 			Route::post('asset-register-delete', 'asset_register_delete');
 		});
 	});
-	// HomeCostingController code 
+	// HomeCostingController code
 	Route::controller(HomeCostingController::class)->group(function () {
 		Route::prefix('general-admin')->group(function () {
 			Route::get('/home-costing', 'index');
@@ -2280,6 +2426,82 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 		});
 	});
 	// end here
+	// Backend Roster Start here
+
+	// Daily Log Category and Sub category start here
+	Route::controller(DailyLogCategoryController::class)->group(function () {
+		Route::prefix('daily-log-category')->group(function () {
+			Route::match(['get','post'],'/', 'index');
+			Route::post('/add', 'save');
+			Route::post('/edit', 'save');
+			Route::get('/delete/{id}', 'delete');
+			Route::post('/status-change', 'status_change');
+		});
+		Route::prefix('daily-log-sub-category')->group(function () {
+			Route::match(['get','post'],'/', 'sub_category');
+			Route::post('/add', 'sub_category_save');
+			Route::post('/edit', 'sub_category_save');
+			Route::post('/status-change', 'sub_category_status_change');
+			Route::get('/delete/{id}', 'sub_category_delete');
+		});
+	});
+	// end here
+	// Backend Incident Type
+	Route::controller(StaffIncidentTypeController::class)->group(function () {
+		Route::prefix('incident-type')->group(function () {
+			Route::match(['get','post'],'/', 'index');
+			Route::post('/add', 'save');
+			Route::post('/edit', 'save');
+			Route::get('/delete/{id}', 'delete');
+			Route::post('/status-change', 'status_change');
+		});
+	});
+	// end here
+	// Backend Client Management
+	Route::controller(clientManagementController::class)->group(function () {
+		Route::prefix('client-task-type')->group(function () {
+			Route::match(['get','post'],'/', 'index');
+			Route::post('/add', 'save');
+			Route::post('/edit', 'save');
+			Route::get('/delete/{id}', 'delete');
+			Route::post('/status-change', 'status_change');
+		});
+		
+		Route::prefix('task/category')->group(function () {
+			Route::match(['get','post'],'/', 'task_category');
+			Route::post('/add', 'save_task_category');
+			Route::post('/edit', 'save_task_category');
+			Route::get('/delete/{id}', 'delete_task_category');
+			Route::post('/status-change', 'status_change_task_category');
+		});
+		Route::prefix('alert-type')->group(function () {
+			Route::match(['get','post'],'/', 'alert_type');
+			Route::post('/add', 'save_alert_type');
+			Route::post('/edit', 'save_alert_type');
+			Route::get('/delete/{id}', 'delete_alert_type');
+			Route::post('/status-change', 'status_change_alert_type');
+		});
+	});
+	// end here
+	
+	Route::controller(SafeguardingTypeController::class)->group(function () {
+		Route::prefix('safeguarding-type')->group(function () {
+			Route::match(['get', 'post'], '/', 'index');
+			Route::post('/add', 'save');
+			Route::post('/edit', 'save');
+			Route::get('/delete/{id}', 'delete');
+			Route::post('/status-change', 'status_change');
+		});
+	});
+	Route::controller(StaffTaskTypeController::class)->group(function () {
+        Route::prefix('stafftask-type')->group(function () {
+            Route::match(['get', 'post'], '/', 'index');
+            Route::post('/add', 'save');
+            Route::post('/edit', 'save');
+            Route::get('/delete/{id}', 'delete');
+            Route::post('/status-change', 'status_change');
+        });
+    });
 });
 
 //super admin path
@@ -2328,3 +2550,16 @@ Route::group(['prefix' => 'super-admin', 'middleware' => 'CheckAdminAuth'], func
 	Route::match(['get', 'post'], '/ethnicity/edit/{ethnicity_id}', 'App\Http\Controllers\backEnd\superAdmin\EthnicityController@edit');
 	Route::match(['get', 'post'], '/ethnicity/delete/{ethnicity_id}', 'App\Http\Controllers\backEnd\superAdmin\EthnicityController@delete');
 });
+Route::post('web/service/patterndataformio', [StaffTaskController::class, 'patterndataformio']);
+Route::post('/staff-task/form_template/save', [StaffTaskController::class, 'staffTaskFormSave'])->name('web.roster.stafftask.form.save');
+Route::post('/staff-task/form_template/fetch', [StaffTaskController::class, 'staffTaskFormFetch'])->name('web.roster.stafftask.form.fetch');
+Route::get('/roster/staff-task/form_template/view/{staff_task_id}', [StaffTaskController::class, 'webview_form']);
+// Supervision Webview Form
+Route::get('/roster/supervision/form_template/view/{staff_supervision_form_id}', [SupervisionController::class, 'supervision_webview_form']);
+Route::post('/roster/supervision/form_template/save', [SupervisionController::class, 'supervisionFormSave'])->name('web.roster.supervision.form.save');
+Route::post('/roster/supervision/form_template/fetch', [SupervisionController::class, 'supervisionFormFetch'])->name('web.roster.supervision.form.fetch');
+
+// Dynamic Form for Schedule Shift
+Route::get('/roster/schedule-shift/form_template/view/{schedule_shift_id}', [ScheduleShiftController::class, 'schedule_shift_webview_form']);
+Route::post('/roster/schedule-shift/form_template/save', [ScheduleShiftController::class, 'scheduleShiftFormSave'])->name('web.roster.schedule_shift.form.save');
+Route::post('/roster/schedule-shift/form_template/fetch', [ScheduleShiftController::class, 'scheduleShiftFormFetch'])->name('web.roster.schedule_shift.form.fetch');

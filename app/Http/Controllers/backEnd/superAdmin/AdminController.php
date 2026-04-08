@@ -66,7 +66,8 @@ class AdminController extends Controller
             $admin = Session::get('scitsAdminSession');
             // $home_id = $admin->home_id; 
             $address = $request->address;
-            $apiKey = 'AIzaSyAMCKKwljh4nvmKVhFHngldmyw7At9rndg'; // Google maps now requires an API key.
+            // $apiKey = 'AIzaSyAMCKKwljh4nvmKVhFHngldmyw7At9rndg'; // Google maps now requires an API key.
+            $apiKey = 'AIzaSyBxoFiKEhpV_lzf-i17vjFb9hZZwHSkZGI';
             // Get JSON results from this request
             $geo = file_get_contents('https://maps.googleapis.com/maps/api/geocode/json?address='.urlencode($address).'&sensor=false&key='.$apiKey);
            
@@ -86,8 +87,10 @@ class AdminController extends Controller
             $system_admin->company      = $request->company;
             $system_admin->address      = $request->address; 
             $system_admin->post_code    = $request->post_code; 
-            $system_admin->latitude     = $latitude; 
+              $system_admin->latitude     = $latitude; 
+            // $system_admin->latitude     = "53.4084°"; 
             $system_admin->longitude    = $longitude; 
+            // $system_admin->longitude    =   "2.9916°"; 
             $system_admin->access_type  = 'O';
             $system_admin->password     = '';
             //$system_admin->password     = md5($request->password);
@@ -140,8 +143,9 @@ class AdminController extends Controller
         if($request->isMethod('post'))
         {
             $address = $request->address;
-            $apiKey = 'AIzaSyCPmAAbKW3OvAqDoEXdetwiP6X0TF7CJL4'; // Google maps now requires an API key. 
+            // $apiKey = 'AIzaSyCPmAAbKW3OvAqDoEXdetwiP6X0TF7CJL4'; // Google maps now requires an API key. 
             // $apiKey = 'AIzaSyAMCKKwljh4nvmKVhFHngldmyw7At9rndg'; // Google maps now requires an API key. 
+             $apiKey = 'AIzaSyBxoFiKEhpV_lzf-i17vjFb9hZZwHSkZGI';
             // Get JSON results from this request
             $geo = file_get_contents('https://maps.googleapis.com/maps/api/geocode/json?address='.urlencode($address).'&sensor=false&key='.$apiKey);
             $geo = json_decode($geo, true); // Convert the JSON to an array
@@ -160,7 +164,9 @@ class AdminController extends Controller
             $system_admin->address      = $request->address; 
             $system_admin->post_code    = $request->post_code; 
             $system_admin->latitude     = $latitude; 
+            // $system_admin->latitude     = "53.4084"; 
             $system_admin->longitude    = $longitude; 
+            // $system_admin->longitude    =   "2.9916"; 
             //$system_admin->password     = $request->password;
             // if(!empty($request->password)){
             //     $system_admin->password = md5($request->password);
@@ -374,19 +380,19 @@ class AdminController extends Controller
                                                     ->orderBy('company_payment_information.id','desc')
                                                     ->first();
                                                     // echo "<pre>"; print_r($package_detail); die;
-        if(!empty($package_detail)){
+        if (empty($package_detail)) {
+            return redirect()->back()->with('error', 'No package selected');
+        }
 
-            $home_range = explode('-', $package_detail->home_range);
-            $last_range = $home_range[1];
-            if($package_detail->paid_amount != '0'){
+        $home_range   = explode('-', $package_detail->home_range ?? '');
+        $last_range   = $home_range[1] ?? ''; // safely get 2nd part or fallback to ''
 
-                $amount = explode('%2e', $package_detail->paid_amount);
-                $paid_amount = $amount[0].'.'.$amount[1];
-            }
-        }else{
-            return redirect()->back()->with('error','No package selected');
-            $last_range = '';
-            $paid_amount = '';
+        if (!empty($package_detail->paid_amount) && $package_detail->paid_amount !== '0') {
+            // decode paid_amount safely
+            $amount_parts = explode('%2e', $package_detail->paid_amount);
+            $paid_amount  = $amount_parts[0] . '.' . ($amount_parts[1] ?? '0');
+        } else {
+            $paid_amount = $package_detail->paid_amount ?? '0';
         }
 
         if($request->isMethod('post')){

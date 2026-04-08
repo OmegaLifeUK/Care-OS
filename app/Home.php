@@ -76,9 +76,13 @@ class Home extends Model
         return Home::where('admin_id', $Id)->where('is_deleted', 0)->get();
     }
 
-
     public static function getCompanyIdFromHome(){
         $home_id = Auth::user()->home_id;
         return self::where('id', $home_id)->value('admin_id');
+    }
+    
+    public static function getHomeById($home_id)
+    {
+        return self::where('id', $home_id)->pluck('title')->first();
     }
 }

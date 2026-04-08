@@ -79,16 +79,26 @@ class CalendarController extends SystemManagementController
 						$service_users[$su_key]['daily_records'] = $daily_records;
 
 						//Living Skills
-						$living_skills = ServiceUserLivingSkill::select('su_living_skill.id as su_living_skill_id', 'su_living_skill.living_skill_id', 'ls.description')
-							->join('living_skill as ls', 'ls.id', 'su_living_skill.living_skill_id')
-							->join('service_user as su', 'su.id', 'su_living_skill.service_user_id')
-							->where('su_living_skill.service_user_id', $service_user_id)
-							->where('su_living_skill.is_deleted', '0')
-							->where('su_living_skill.added_to_calendar', '1')
-							->where('su.home_id', $home_id)
-							->orderBy('su_living_skill.id', 'desc')
-							->get()
-							->toArray();
+				// 		$living_skills = ServiceUserLivingSkill::select('su_living_skill.id as su_living_skill_id', 'su_living_skill.living_skill_id', 'ls.description')
+				// 			->join('living_skill as ls', 'ls.id', 'su_living_skill.living_skill_id')
+				// 			->join('service_user as su', 'su.id', 'su_living_skill.service_user_id')
+				// 			->where('su_living_skill.service_user_id', $service_user_id)
+				// 			->where('su_living_skill.is_deleted', '0')
+				// 			->where('su_living_skill.added_to_calendar', '1')
+				// 			->where('su.home_id', $home_id)
+				// 			->orderBy('su_living_skill.id', 'desc')
+				// 			->get()
+				// 			->toArray();
+				            $living_skills = ServiceUserLivingSkill::select('su_living_skill.id as su_living_skill_id','su_living_skill.living_skill_id','ls.description')
+								->join('earning_scheme_label_records as ls','ls.id','su_living_skill.living_skill_id')
+								->join('service_user as su', 'su.id','su_living_skill.service_user_id')
+								->where('su_living_skill.service_user_id', $service_user_id)
+								->where('su_living_skill.is_deleted','0')
+								->where('su_living_skill.added_to_calendar', '1')
+								->where('su.home_id', $home_id)
+								->orderBy('su_living_skill.id','desc')
+								->get()
+								->toArray();
 
 						foreach ($living_skills as $key => $living_skill) {
 							//check if this living skill is booked in calendar
@@ -266,16 +276,26 @@ class CalendarController extends SystemManagementController
 							$service_users[$su_key]['daily_records'] = $daily_records;
 
 							//Living Skills
-							$living_skills = ServiceUserLivingSkill::select('su_living_skill.id as su_living_skill_id', 'su_living_skill.living_skill_id', 'ls.description')
-								->join('living_skill as ls', 'ls.id', 'su_living_skill.living_skill_id')
-								->join('service_user as su', 'su.id', 'su_living_skill.service_user_id')
-								->where('su_living_skill.service_user_id', $service_user_id)
-								->where('su_living_skill.is_deleted', '0')
-								->where('su_living_skill.added_to_calendar', '1')
-								->where('su.home_id', $home_id)
-								->orderBy('su_living_skill.id', 'desc')
-								->get()
-								->toArray();
+				// 			$living_skills = ServiceUserLivingSkill::select('su_living_skill.id as su_living_skill_id', 'su_living_skill.living_skill_id', 'ls.description')
+				// 				->join('living_skill as ls', 'ls.id', 'su_living_skill.living_skill_id')
+				// 				->join('service_user as su', 'su.id', 'su_living_skill.service_user_id')
+				// 				->where('su_living_skill.service_user_id', $service_user_id)
+				// 				->where('su_living_skill.is_deleted', '0')
+				// 				->where('su_living_skill.added_to_calendar', '1')
+				// 				->where('su.home_id', $home_id)
+				// 				->orderBy('su_living_skill.id', 'desc')
+				// 				->get()
+				// 				->toArray();
+			                    $living_skills = ServiceUserLivingSkill::select('su_living_skill.id as su_living_skill_id','su_living_skill.living_skill_id','ls.description')
+									->join('earning_scheme_label_records as ls','ls.id','su_living_skill.living_skill_id')
+									->join('service_user as su', 'su.id','su_living_skill.service_user_id')
+									->where('su_living_skill.service_user_id', $service_user_id)
+									->where('su_living_skill.is_deleted','0')
+									->where('su_living_skill.added_to_calendar', '1')
+									->where('su.home_id', $home_id)
+									->orderBy('su_living_skill.id','desc')
+									->get()
+									->toArray();
 
 							foreach ($living_skills as $key => $living_skill) {
 								//check if this living skill is booked in calendar
@@ -641,14 +661,24 @@ class CalendarController extends SystemManagementController
 				$service_users[$su_key]['daily_records'] = $daily_records;
 
 				//Living Skills
-				$living_skills = ServiceUserLivingSkill::select('su_living_skill.id as su_living_skill_id', 'su_living_skill.living_skill_id', 'ls.description')
-					->join('living_skill as ls', 'ls.id', 'su_living_skill.living_skill_id')
-					->join('service_user as su', 'su.id', 'su_living_skill.service_user_id')
+				// $living_skills = ServiceUserLivingSkill::select('su_living_skill.id as su_living_skill_id', 'su_living_skill.living_skill_id', 'ls.description')
+				// 	->join('living_skill as ls', 'ls.id', 'su_living_skill.living_skill_id')
+				// 	->join('service_user as su', 'su.id', 'su_living_skill.service_user_id')
+				// 	->where('su_living_skill.service_user_id', $service_user_id)
+				// 	->where('su_living_skill.is_deleted', '0')
+				// 	->where('su_living_skill.added_to_calendar', '1')
+				// 	->where('su.home_id', $home_id)
+				// 	->orderBy('su_living_skill.id', 'desc')
+				// 	->get()
+				// 	->toArray();
+				$living_skills = ServiceUserLivingSkill::select('su_living_skill.id as su_living_skill_id','su_living_skill.living_skill_id','ls.description')
+					->join('earning_scheme_label_records as ls','ls.id','su_living_skill.living_skill_id')
+					->join('service_user as su', 'su.id','su_living_skill.service_user_id')
 					->where('su_living_skill.service_user_id', $service_user_id)
-					->where('su_living_skill.is_deleted', '0')
+					->where('su_living_skill.is_deleted','0')
 					->where('su_living_skill.added_to_calendar', '1')
 					->where('su.home_id', $home_id)
-					->orderBy('su_living_skill.id', 'desc')
+					->orderBy('su_living_skill.id','desc')
 					->get()
 					->toArray();
 

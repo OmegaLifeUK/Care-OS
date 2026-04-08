@@ -54,10 +54,10 @@ class SocialAppController extends Controller
 
     	    $social_app          = new SocialApp;
             $social_app->name  = $request->name;
-            $social_app->icon  = $request->icon;
+            $social_app->icon  = $request->icon ?? '';
                 
     		if($social_app->save()) {
-    			return redirect('super-admin/social-apps')->with('success', 'Socail App added successfully.');
+    			return redirect('super-admin/social-apps')->with('success', 'Social App added successfully.');
     		} else {
     			 return redirect()->back()->with('error', 'Some error occurred. Please try after sometime.');
     		}
@@ -71,11 +71,11 @@ class SocialAppController extends Controller
        if($request->isMethod('post')){
             $social_app               = SocialApp::find($social_app_id);
             $social_app->name         = $request->name;
-            $social_app->icon         = $request->icon;
+            $social_app->icon         = $request->icon ?? '';
             if($social_app->save()){
-               return redirect('super-admin/social-apps')->with('success','Socail App Updated successfully.'); 
+               return redirect('super-admin/social-apps')->with('success','Social App Updated successfully.'); 
             } else {
-               return redirect()->back()->with('error','Socail App could not be Updated.'); 
+               return redirect()->back()->with('error','Social App could not be Updated.'); 
             }  
         }
 

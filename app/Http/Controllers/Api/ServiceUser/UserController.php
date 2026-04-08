@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Mail;
 use Auth, DB, Hash;
 use DateTime, Carbon\Carbon;
 use App\User, App\ServiceUser, App\SocialApp, App\ServiceUserContacts, App\Risk, App\Home;
+use App\Models\SuBehavior;
 
 class UserController extends Controller
 {
@@ -16,6 +17,7 @@ class UserController extends Controller
        if(!empty($data['user_name']) && !empty($data['password']))
        {    
            $exist_user = DB::table('service_user')->where('user_name',$data['user_name'])->first();
+            //    echo "<pre>";print_r($exist_user);die;
            if(!empty($exist_user))
            {
                 $user_password = $exist_user->password;
@@ -51,25 +53,21 @@ class UserController extends Controller
                                     "date_of_birth" => date('d M Y',strtotime($user_detail->date_of_birth)),
                                     "age"           => $user_age,
                                     "wish"          => $wish,
-                                    "image"         => $user_detail->image,
+                                    "image"         => $user_detail->image ?? '',
                                     "su_image_ur"   => serviceUserProfileImagePath,
                                     "user_type"     => "Child"
                                 );
-                    return json_encode(array(
-                        'result' => array(
-                        'response' => true,
+                    return response(array(
+                        'success' => true,
+                        'message' => "User login successfully.",
                         'data' => $details,
-                        'message' => "User Details."
-                        )
                     ));
                 }
                 else
                 {
-                    return json_encode(array(
-                        'result' => array(
-                        'response' => false,
+                    return response(array(
+                        'success' => false,
                         'message' => "Invalid username and password."
-                        )
                     ));    
                 }
            }
@@ -118,7 +116,7 @@ class UserController extends Controller
                             'result' => array(
                             'response' => true,
                             'data' => $details,
-                            'message' => "User Details."
+                            'message' => "User login successfully."
                             )
                         ));
                 
@@ -143,101 +141,303 @@ class UserController extends Controller
        }
        else
        {
-            return json_encode(array(
-                'result' => array(
-                    'status' => 0,
+            return response(array(
+                    'success' => false,
                     'message' => "Fill all fields."
-                )
             ));
        }
    }
    
-                    /*-------Personal Info-------*/
-    
-    public function personal_details($service_user_id)
-    {
-        $exist = DB::table('service_user')->where('id',$service_user_id)->first();
+    /*-------Personal Info-------*/
+    // public function personal_details($service_user_id)
+    // {
+    //     $exist = DB::table('service_user')->where('id',$service_user_id)->first();
         
-        if(!empty($exist))
-        {
-            $user_details = json_decode(json_encode($exist),true);
+    //     if(!empty($exist))
+    //     {
+    //         $user_details = json_decode(json_encode($exist),true);
             
-            $date_of_birth = $user_details['date_of_birth'];
-            $user_age = Carbon::parse($date_of_birth)->diff(Carbon::now())->format('%y years');
-            $user_details['date_of_birth'] = date('d M Y',strtotime($date_of_birth));
+    //         $date_of_birth = $user_details['date_of_birth'];
+    //         $user_age = Carbon::parse($date_of_birth)->diff(Carbon::now())->format('%y years');
+    //         // $user_details['date_of_birth'] = date('d M Y',strtotime($date_of_birth));
+    //         $user_details['date_of_birth'] = date('d/m/Y',strtotime($date_of_birth));
 
-            $current_location = $user_details['current_location'];
-            //removing new line
-            $pattern = '/[^a-zA-Z0-9]/u';
-            $current_location = preg_replace($pattern, ' ', (string) $current_location);
-            $coordinates = ServiceUser::getLongLat($current_location);
+    //         $current_location = $user_details['current_location'];
+    //         //removing new line
+    //         $pattern = '/[^a-zA-Z0-9]/u';
+    //         $current_location = preg_replace($pattern, ' ', (string) $current_location);
+    //         $coordinates = ServiceUser::getLongLat($current_location);
             
-            $latitude = (isset($coordinates['results']['0']['geometry']['location']['lat'])) ? $coordinates['results']['0']['geometry']['location']['lat'] : ''; 
-            $longitude = (isset($coordinates['results']['0']['geometry']['location']['lng'])) ? $coordinates['results']['0']['geometry']['location']['lng'] : ''; 
+    //         $latitude = (isset($coordinates['results']['0']['geometry']['location']['lat'])) ? $coordinates['results']['0']['geometry']['location']['lat'] : ''; 
+    //         $longitude = (isset($coordinates['results']['0']['geometry']['location']['lng'])) ? $coordinates['results']['0']['geometry']['location']['lng'] : ''; 
             
-            $user_details['location']['latitude'] = $latitude;
-            $user_details['location']['longitude'] = $longitude;
-            $user_details['image_url'] = serviceUserProfileImagePath;
-            $user_details['age'] = $user_age;
-            $risk_status = Risk::overallRiskStatus($service_user_id);
+    //         $user_details['location']['latitude'] = $latitude;
+    //         $user_details['location']['longitude'] = $longitude;
+    //         $user_details['image_url'] = serviceUserProfileImagePath;
+    //         $user_details['age'] = $user_age;
+    //         $risk_status = Risk::overallRiskStatus($service_user_id);
                                 
-            if($risk_status == 1){
-                //$color = 'orange-clr';
-                $risk_status = 'Historic';
-            } else if($risk_status == 2){
-                //$color = 'red-clr';
-                $risk_status = 'High';
-            } else{
-                //$color = 'darkgreen-clr';
-                $risk_status = 'No';
-            }
-            $user_details['risk_status'] = $risk_status;
+    //         if($risk_status == 1){
+    //             //$color = 'orange-clr';
+    //             $risk_status = 'Historic';
+    //         } else if($risk_status == 2){
+    //             //$color = 'red-clr';
+    //             $risk_status = 'High';
+    //         } else{
+    //             //$color = 'darkgreen-clr';
+    //             $risk_status = 'No';
+    //         }
+    //         $user_details['risk_status'] = $risk_status;
 
-            $care_history = DB::table('su_care_history')
-                                ->select('id','title',DB::Raw("DATE_FORMAT(date, '%d %b %Y') as date"))
-                                ->where('service_user_id',$service_user_id)
-                                ->orderBy('date','desc')
-                                ->get()
-                                ->toArray();
-            $user_details['care_history'] = $care_history;
+    //         $care_history = DB::table('su_care_history')
+    //                             ->select('id','title',DB::Raw("DATE_FORMAT(date, '%d %b %Y') as date"))
+    //                             ->where('service_user_id',$service_user_id)
+    //                             ->orderBy('date','desc')
+    //                             ->get()
+    //                             ->toArray();
+    //         $user_details['care_history'] = $care_history;
            
-            //social app
-            $social_apps = SocialApp::select('social_app.id','social_app.name','ssa.value')
-                            ->where('social_app.is_deleted',0)
-                            ->leftJoin('su_social_app as ssa', function($join) use ($service_user_id) {
-                                $join->on('ssa.social_app_id','=','social_app.id');
-                                $join->on('ssa.service_user_id','=',DB::raw($service_user_id));
-                            })
-                            ->get()
-                            ->toArray();
-            $user_details['social_apps'] = $social_apps;
+    //         //social app
+    //         $social_apps = SocialApp::select('social_app.id','social_app.name','ssa.value')
+    //                         ->where('social_app.is_deleted',0)
+    //                         ->leftJoin('su_social_app as ssa', function($join) use ($service_user_id) {
+    //                             $join->on('ssa.social_app_id','=','social_app.id');
+    //                             $join->on('ssa.service_user_id','=',DB::raw($service_user_id));
+    //                         })
+    //                         ->get()
+    //                         ->toArray();
+    //         $user_details['social_apps'] = $social_apps;
 
-            $su_contacts = ServiceUserContacts::select('id','job_title_id as relation','name','email','phone_no','image','address')
-                            ->where('service_user_id', $service_user_id)
-                            ->where('is_deleted','0')
-                            ->get();
-            $user_details['contacts'] = $su_contacts;
-            $user_details['contacts_image_url'] = contactsPath;
+    //         $su_contacts = ServiceUserContacts::select('id','job_title_id as relation','name','email','phone_no','image','address')
+    //                         ->where('service_user_id', $service_user_id)
+    //                         ->where('is_deleted','0')
+    //                         ->get();
+    //         $user_details['contacts'] = $su_contacts;
+    //         $user_details['contacts_image_url'] = contactsPath;
+    //         // $ratingStats = DB::table('service_user')
+    //         // ->where('id', $service_user_id)
+    //         // ->select(DB::raw('AVG(behavior_rate) as avg_rating'), DB::raw('COUNT(*) as rating_count'))
+    //         // ->first();
 
-            $user_details = $this->replace_null($user_details);
+    //         // $avg_rating = $ratingStats && $ratingStats->avg_rating ? round($ratingStats->avg_rating, 1) : 0;
+    //         // $rating_count = $ratingStats ? intval($ratingStats->rating_count) : 0;
+    //         $lastMonth = now()->subDays(30);
+    //         $rating = SuBehavior::where('service_user_id', $service_user_id)
+    //         ->whereDate('created_at', '>=', $lastMonth)
+    //         ->where('is_deleted', 0)
+    //         ->avg('rate');
 
-            return json_encode(array(
-                'result' => array(
-                    'response' => true,
-                    'message' => "User Details.",
-                    'data' => $user_details
-                )
-            ));
+    //         $avg_rating = number_format($rating, 1);
+    //         // $avg_rating=5;
+    //         $user_details['avg_rating']=$avg_rating;
+    //         $su_mood_fecth=DB::table('su_mood as su_m')->select('su_m.id as su_mood_tableid','su_m.service_user_id','su_m.mood_id','su_m.is_deleted as su_mood_is_deleted','su_m.created_at as su_mood_created_at','m.id as mood_table_id','m.name','m.image','m.status','m.is_deleted as mood_delete')
+    //         ->join('mood as m', 'su_m.mood_id','=','m.id')
+    //         ->where('su_m.service_user_id',$service_user_id)
+    //         ->where('su_m.is_deleted',0)
+    //         ->where('m.is_deleted',0)
+    //         ->where('m.status',1)
+    //         ->whereDate('su_m.created_at', Carbon::today())
+    //         ->orderby('su_m.id','desc')->first();
+    //         // echo "<pre>";print_r($su_mood_fecth);die;
+    //         $su_mood_arr=json_decode('{}');
+    //         if($su_mood_fecth){
+    //             $su_mood_arr=[
+    //                 'id'=>$su_mood_fecth->su_mood_tableid ?? '',
+    //                 'mood_image'=>url('public/images/mood').'/'.$su_mood_fecth->image ?? '',
+    //                 'mood_name'=>ucfirst($su_mood_fecth->name ?? ''),
+    //             ];
+    //         }
+    //         // echo "<pre>";print_r($su_mood_arr);die;
+    //         $user_details['mood']=$su_mood_arr;
+    //         // $user_details['rating_count']=$rating_count;
+    //         $user_details = $this->replace_null($user_details);
+
+    //         return response(array(
+    //             'success' => true,
+    //             'message' => "User Detail.",
+    //             'data' => $user_details
+    //         ));
+    //     }
+    //     else
+    //     {
+    //         return response(array(
+    //             'success' => false,
+    //             'message' => "User not found."
+    //         ));
+    //     }
+    // }
+    
+      public function personal_details($service_user_id)
+    {
+        $exist = DB::table('service_user')->where('id', $service_user_id)->first();
+
+        if (!$exist) {
+            return response([
+                'success' => false,
+                'message' => 'User not found.'
+            ]);
         }
-        else
-        {
-            return json_encode(array(
-                'result' => array(
-                    'response' => false,
-                    'message' => "User not found."
-                )
-            ));
+        
+        $user = (array) $exist;
+
+        /* ================= BASIC DETAILS ================= */
+        $dob_db = $user['date_of_birth'] ?? '';
+
+        // age calculation (parse DB format)
+        $age = 0;
+        if (!empty($dob_db)) {
+            $age = Carbon::createFromFormat('Y-m-d', $dob_db)->diffInYears(now());
         }
+
+        /* ================= LOCATION ================= */
+        $location_text = preg_replace('/[^a-zA-Z0-9]/u', ' ', $user['current_location'] ?? '');
+        $coordinates = ServiceUser::getLongLat($location_text);
+
+        $latitude  = $coordinates['results'][0]['geometry']['location']['lat'] ?? 0.0;
+        $longitude = $coordinates['results'][0]['geometry']['location']['lng'] ?? 0.0;
+
+        $location = [
+            'latitude' => $latitude ? (float)$latitude : '',
+            'longitude' => $longitude ? (float)$longitude : '',
+        ];
+
+        $data['id'] = $user['id'];
+        $data['home_id'] = $user['home_id'] ?? '';
+        $data['earning_scheme_label_id'] = $user['earning_scheme_label_id'] ?? '';
+        $data['name'] = $user['name'] ?? '';
+        $data['user_name'] = $user['user_name'] ?? '';
+        $data['phone_no'] = $user['phone_no'] ?? '';
+        $data['date_of_birth'] = !empty($dob_db) ? Carbon::createFromFormat('Y-m-d', $dob_db)->format('d/m/Y'): '';
+        $data['age'] = $age . ' years';
+        $data['department'] = $user['department'] ?? null;
+        $data['child_type'] = $user['child_type'] ?? '';
+        $data['room_type'] = $user['room_type'] ?? null;
+        $data['weekly_rate'] = $user['weekly_rate'] ?? null;
+        $data['subs'] = $user['subs'] ?? null;
+        $data['extra'] = $user['extra'] ?? null;
+        $data['local_authority'] = $user['local_authority'] ?? '';
+        $data['start_date'] = $user['start_date'] ?? null;
+        $data['end_date'] = $user['end_date'] ?? null;
+        $data['section'] = $user['section'] ?? '';
+        $data['admission_number'] = $user['admission_number'] ?? '';
+        $data['short_description'] = $user['short_description'] ?? '';
+        $data['height_unit'] = $user['height_unit'] ?? null;
+        $data['height_ft'] = $user['height_ft'] ?? null;
+        $data['height_in'] = $user['height_in'] ?? null;
+        $data['weight_unit'] = $user['weight_unit'] ?? null;
+        $data['weight'] = $user['weight'] ?? null;
+        $data['hair_and_eyes'] = $user['hair_and_eyes'] ?? '';
+        $data['markings'] = $user['markings'] ?? '';
+        $data['image'] = $user['image'] ?? '';
+        $data['email'] = $user['email'] ?? '';
+        $data['ethnicity_id'] = $user['ethnicity_id'] ?? null;
+        $data['personal_info'] = $user['personal_info'] ?? '';
+        $data['education_history'] = $user['education_history'] ?? '';
+        $data['bereavement_issues'] = $user['bereavement_issues'] ?? '';
+        $data['drug_n_alcohol_issues'] = $user['drug_n_alcohol_issues'] ?? '';
+        $data['mental_health_issues'] = $user['mental_health_issues'] ?? '';
+        $data['current_location'] = $user['current_location'] ?? '';
+        $data['previous_location'] = $user['previous_location'] ?? '';
+        $data['mobile'] = $user['mobile'] ?? '';
+        $data['behavior_rate'] = $user['behavior_rate'] ?? null;
+        $data['last_loc_area_type'] = $user['last_loc_area_type'] ?? null;
+        $data['location_get_interval'] = $user['location_get_interval'] ?? null;
+        $data['build'] = $user['build'] ?? '';
+        $data['previous_name'] = $user['previous_name'] ?? '';
+        $data['allergies'] = $user['allergies'] ?? '';
+        $data['status'] = $user['status'] ?? null;
+        $data['security_code'] = $user['security_code'] ?? '';
+        $data['is_deleted'] = $user['is_deleted'] ?? null;
+        $data['created_at'] = $user['created_at'] ?? null;
+        $data['updated_at'] = $user['updated_at'] ?? null;
+        $data['location'] =  $location ?? null;
+        /* ================= RISK ================= */
+        $risk = Risk::overallRiskStatus($service_user_id);
+        $data['risk_status'] = match ($risk) {
+            1 => 'Historic',
+            2 => 'High',
+            default => 'No'
+        };
+
+        /* ================= CARE HISTORY ================= */
+        $data['care_history'] = DB::table('su_care_history')
+            ->select('id', 'title', DB::raw("DATE_FORMAT(date, '%d %b %Y') as date"))
+            ->where('service_user_id', $service_user_id)
+            ->orderBy('date', 'desc')
+            ->get()
+            ->toArray();
+        /* ================= SOCIAL APPS ================= */
+        $data['social_apps'] = SocialApp::select(
+            'social_app.id',
+            'social_app.name',
+            'social_app.icon',
+            DB::raw('IFNULL(ssa.value, "") as value')
+        )
+            ->where('social_app.is_deleted', 0)
+            ->leftJoin('su_social_app as ssa', function ($join) use ($service_user_id) {
+                $join->on('ssa.social_app_id', '=', 'social_app.id')
+                    ->where('ssa.service_user_id', '=', $service_user_id);
+            })
+            ->get()
+            ->toArray();
+        /* ================= CONTACTS ================= */
+        $data['contacts'] = ServiceUserContacts::select(
+            'id',
+            'job_title_id as relation',
+            'name',
+            'email',
+            'phone_no',
+            'image',
+            'address'
+        )
+            ->where('service_user_id', $service_user_id)
+            ->where('is_deleted', 0)
+            ->get()
+            ->toArray();
+
+        /* ================= IMAGE URL ================= */
+        $data['contacts_image_url'] = contactsPath ?? null;
+        $data['image_url'] = serviceUserProfileImagePath ?? null;
+
+        /* ================= RATING ================= */
+        $rating = SuBehavior::where('service_user_id', $service_user_id)
+            ->whereDate('created_at', '>=', now()->subDays(30))
+            ->where('is_deleted', 0)
+            ->avg('rate');
+
+        $data['avg_rating'] = $rating ? (string)round($rating, 1) : '0.0';
+
+         /* ================= MOOD ================= */
+        $data['mood'] = [
+            'id' => null,
+            'mood_image' => '',
+            'mood_name' => ''
+        ];
+
+        $su_mood = DB::table('su_mood as su_m')
+            ->join('mood as m', 'su_m.mood_id', '=', 'm.id')
+            ->where('su_m.service_user_id', $service_user_id)
+            ->where('su_m.is_deleted', 0)
+            ->where('m.is_deleted', 0)
+            ->where('m.status', 1)
+            ->whereDate('su_m.created_at', Carbon::today())
+            ->orderByDesc('su_m.id')
+            ->first();
+
+        if ($su_mood) {
+            $data['mood'] = [
+                'id' => (int) $su_mood->id,
+                'mood_image' => url('public/images/mood') . '/' . $su_mood->image,
+                'mood_name' => ucfirst($su_mood->name)
+            ];
+        }
+        
+        /* ================= FINAL RESPONSE ================= */
+       return response()->json([
+            'success' => true,
+            'message' => 'User Details.',
+            'data' => $data
+        ]);
     }
     
     public function change_password(Request $r){

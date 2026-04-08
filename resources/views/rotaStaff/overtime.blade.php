@@ -1,175 +1,234 @@
-@include('rotaStaff.components.header')
-@include('rotaStaff.pyrll_stylsheet')
+@extends('frontEnd.layouts.master')
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@section('title','Staff Timesheet')
+<link rel="stylesheet" type="text/css" href="{{ url('public/frontEnd/jobs/css/custom.css')}}" />
+@section('content')
+
 <style>
-input[type='checkbox'] {
-  display: none;
-}
-.lbl-toggle {
-  display: block;
-  font-weight: 550;
-  text-align: center;
-  color: #A77B0E;
-  background: #FAE042;
-  cursor: pointer;
-  border-radius: 7px;
-}
-.lbl-toggle:hover {
-  color: #7C5A0B;
-}
-.lbl-toggle::before {
-  content: ' ';
-  display: inline-block;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 5px solid currentColor;
-  vertical-align: middle;
-  margin-right: .7rem;
-  transform: translateY(-2px);
-  transition: transform .2s ease-out;
-}
-.collapsible-content .content-inner {
-  background: rgba(250, 224, 66, .2);
-  padding: .5rem 1rem;
-}
-.collapsible-content {
-  max-height: 0px;
-  overflow: hidden;
-}
-.toggle:checked + .lbl-toggle + .collapsible-content {
-  max-height: 100vh;
-}
-.toggle:checked + .lbl-toggle::before {
-  transform: rotate(90deg) translateX(-3px);
-}
-.flt_lft_wdth_100_var{
-  
-}
-.tab_ttle{
-  margin: 15px 0px 20px;
-}
-.pmnt_n_emplyee_prnt{
-  width: 100%;
-  margin-bottom: 20px;
-}
-.hw_mny_slct{
-  width: 50%;
-}
+    table.tablechange tbody td {
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .image_delete {
+        cursor: pointer;
+    }
+
+    .textbox {
+        box-sizing: border-box;
+        perspective: 500px;
+        position: relative;
+        text-align: left;
+    }
+
+    .textbox input {
+        padding: 10px 14px;
+        width: 100%;
+    }
+
+    .textbox input::placeholder {
+        color: #ccc;
+    }
+
+    .textbox .autoCompleteJob {
+        left: 0;
+        position: absolute;
+        top: calc(100% + 5px);
+        width: 100%;
+    }
+
+    .textbox .autoCompleteJob .item {
+        animation: showItem .3s ease forwards;
+        background-color: #fff;
+        box-shadow: 0 8px 8px -10px rgba(0, 0, 0, .4);
+        box-sizing: border-box;
+        color: #7C8487;
+        cursor: pointer;
+        display: block;
+        font-size: .8rem;
+        opacity: 0;
+        outline: none;
+        padding: 10px;
+        text-decoration: none;
+        transform-origin: top;
+        /* transform: rotateX(-90deg); */
+        transform: translateX(10px);
+    }
+
+    .textbox .autoCompleteJob .item:hover,
+    .textbox .autoCompleteJob .item:focus {
+        background-color: #fafafa;
+        color: #D1822B;
+    }
+
+    @keyframes showItem {
+        0% {
+            opacity: 0;
+            /* transform: rotateX(-90deg); */
+            transform: translateX(10px);
+        }
+
+        100% {
+            opacity: 1;
+            /* transform: rotateX(0); */
+            transform: translateX(0);
+        }
+    }
+
+    .select2-container--default .select2-selection--single {
+        height: 38px;
+        padding: 5px;
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+        font-size: 14px;
+    }
+
+    .select2-container .select2-selection--single .select2-selection__arrow {
+        height: 100%;
+    }
+
+    .select2-container .select2-selection--single .select2-selection__rendered {
+        padding: 4px;
+    }
+
+    .select2-container .select2-selection--multiple {
+        min-height: 32px !important;
+    }
+
+    .parent-container {
+        position: absolute;
+        background: #fff;
+        width: 190px;
+    }
+
+    #productList li:hover {
+        cursor: pointer;
+    }
+
+    .dropdown-item {
+        padding: 6px 15px;
+        font-size: 13px;
+        color: #212529;
+        text-align: inherit;
+        text-decoration: none;
+        display: block;
+        width: 100%;
+        background-color: transparent;
+        border: 0;
+        border-radius: 0;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+        color: #212529;
+    }
 </style>
 
-<ul class="nav nav-tabs rotas" id="myTab" role="tablist">
-  <li class="nav-item" role="presentation">
-    <a href = "{{ url('/payroll') }}"><button class="nav-link active" id="activerotas-tab" data-bs-toggle="tab"
-    data-bs-target="#activerotas" type="button" role="tab" aria-controls="activerotas"
-    aria-selected="true">Payroll Console</button></a>
-  </li>
-  <li class="nav-item" role="presentation">
-    <a href = "{{ url('/information_checker') }}"><button class="nav-link" id="oldrotas-tab" data-bs-toggle="tab" data-bs-target="#oldrotas"
-    type="button" role="tab" aria-controls="oldrotas" aria-selected="false">Information Checker</button></a>
-  </li>
-  <li class="nav-item" role="presentation">
-    <a href = "{{ url('/overtime') }}"><button class="nav-link" id="createrota-tab" data-bs-toggle="tab" data-bs-target="#createrota"
-    type="button" role="tab" aria-controls="createrota" aria-selected="false">Overtime </button></a>
-  </li>
-  <li class="nav-item" role="presentation">
-    <a href = "{{ url('/payroll_glossary') }}"><button class="nav-link" id="oldrotas-tab" data-bs-toggle="tab" data-bs-target="#oldrotas"
-    type="button" role="tab" aria-controls="oldrotas" aria-selected="false">Payroll glossary</button></a>
-  </li>
-</ul>
+<!--main content start-->
+<section class="wrapper">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12 p-0">
+                <div class="panel">
+                    <header class="panel-heading px-5">
+                        <h4>Staff Timesheet</h4>
+                    </header>
+                    <div class="panel-body">
+                        <div class="col-lg-12">
+                            <div class="jobsection justify-content-between align-items-center">
+                                <div class="d-flex justify-content-end gap-4 align-items-center">
+                                    <a href="javascript:void(0)" class="btn btn-warning modal_open" data-action="add"><i class="fa fa-plus"></i> Add</a>
+                                    <label for="fromDate" class="mb-0">Date:</label>
+                                    
+                                    <input type="date" name="" id="date_timesheet">
+                                    <button type="button" class="btn btn-warning" onclick="location.reload()">Reset</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-12">
+                            @if(session('message'))
+                            <div class="alert alert-success text-center success_message mt-3 m-auto" style="height:50px; width:50%">
+                                <p>{{ session('message') }}</p>
+                            </div>
+                            @endif
+                            @if(session('staff_error'))
+                            <div class="form-group col-md-12 col-sm-12 col-xs-12 popup_alrt_msg">
+                                <div class="popup_notification-box">
+                                    <div class="alert alert-danger alert-dismissible m-0" role="alert">
+                                        <button type="button" class="close close-msg-btn"><span aria-hidden="true">&times;</span></button>
+                                        <strong>Success!</strong> <span class="popup_error_txt">{{ session('staff_error') }}</span>.
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+                            <div class="form-group col-md-12 col-sm-12 col-xs-12 popup_alrt_msgblade" style="display:none">
+                                <div class="popup_notification-box">
+                                    <div class="alert alert-success alert-dismissible m-0" role="alert">
+                                        <button type="button" class="close close-msg-btn"><span aria-hidden="true">&times;</span></button>
+                                        <strong>Success!</strong> <span class="popup_success_txt"></span>.
+                                    </div>
+                                </div>
+                            </div>
 
-<div class = "tab_ttle">
-  <h3> Payable Overtime </h3>
-  Set payment dates for overtime claims
-</div>
-<div class="wrap-collabsible">
-  <input id="collapsible" class="toggle" type="checkbox">
-  <label for="collapsible" class="lbl-toggle">More Info</label>
-  <div class="collapsible-content">
-    <div class="content-inner">
-      <p>
-        QUnit is by calling one of the object that are embedded in JavaScript, and faster JavaScript program could also used with
-        its elegant, well documented, and functional programming using JS, HTML pages Modernizr is a popular browsers without
-        plug-ins. Test-Driven Development.
-      </p>
+                            <div class="maimtable productDetailTable mb-4  table-responsive">
+                                <!-- <div class="delete_table_row">
+                                    <a href="javascript:void(0)" id="deleteSelectedRows" class="btn btn-danger">Delete</a>
+                                </div> -->
+                                <table class="table border-top border-bottom tablechange" id="satffTimesheetTable">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>{{date('F Y')}}</th>
+                                            <th>Total Shitf Hours</th>
+                                            <th>Category Type</th>
+                                            <th>Extra Hours</th>
+                                            <th>Comments</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="user_data">
+                                        
+                                       <tr>
+                                            <td>1</td>
+                                            <td>{{date('Y-m-d')}}</td>
+                                            <td>1 Hour</td>
+                                            <td>On Call</td>
+                                            <td>1h 15min</td>
+                                            <td>Test</td>
+                                            <td>
+                                                <div class="pageTitleBtn p-0">
+                                                    <div class="dropdown">
+                                                        <a href="#" class="btn btn-primary btn-sm" data-toggle="dropdown" aria-expanded="false">
+                                                            Action <i class="fa fa-caret-down"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu dropdown-menu-right fade-up m-0">
+                                                            <a href="javascript:void(0)" class="dropdown-item col-form-label modal_open">Edit</a>
+                                                            <!-- <a href="javascript:void(0)" class="dropdown-item col-form-label">View Details</a> -->
+                                                            <a href="javascript:void(0)" class="dropdown-item col-form-label">Delete</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                       </tr>
+                                    </tbody>
+                                </table>
+                            </div> <!-- End off main Table -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-
-<div class = "pmnt_n_emplyee_prnt">
-  <div class = "flt_lft_wdth_100_var" style = "--wdth_prcntge: 25%">
-    Payment type: <br>
-    <select>
-      <option>Payment date not set </option>
-      <option>Payment date set </option>
-      <option>All </option>
-    </select>
-  </div>
-  <div class = "emplyees">
-    Employees <br>
-    <input type = "search">
-  </div>
-</div>
-<div class = "pmnt_n_emplyee_prnt">
-  <div class = "flt_lft_wdth_100_var" style = "--wdth_prcntge: 75%">
-    Date approved:<br>
-    <select>
-      <option>All of time </option>
-      <option>This month </option>
-      <option>Last month </option>
-      <option>Custom dates </option>
-    </select>
-  </div>
-  <div class = "emplyees">
-    Date worked:<br>
-    <select>
-      <option>All of time </option>
-      <option>This month </option>
-      <option>Last month </option>
-      <option>Custom dates </option>
-    </select>
-  </div>
-</div>
-
-<div class = "hw_mny_slct">
-  0 selected
-</div>
-<div class = "dte">
-  <input type = "date">
-</div>
-
-
-No records
-	
-Name
-
-Duration
-
-Pay Rate
-
-Approved by
-
-Payment date
-
-
-<table>
-  <tr>
-    <th>Name</th>
-    <th>Duration</th>
-    <th>Pay Rate</th>
-    <th>End date</th>
-    <th>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</th>
-  </tr>
-  <tr>
-      <td><div class="evry_othr_rprt">Annual leave summary</div></td>
-      <td><div class="evry_othr_rprt">25 Sep 2023, 14:35</div></td>
-      <td><div class="evry_othr_rprt">18 Oct 2023</div></td>
-      <td><div class="evry_othr_rprt">18 Oct 2023</div></td>
-      <td><div class="evry_othr_rprt"><a href = "resources\views\rotaStaff\download_image.png" download="proposed_file_name"><div class="dwnld_btn">Download</div></a></div></td>
-    </div>
-  </tr>
-  <tr>
-    <td>Absence</td>
-    <td>25 Sep 2023, 14:35</td>
-    <td>01 Sep 2023</td>
-    <td>30 Sep 2023</td>
-    <td><a href = "resources\views\rotaStaff\download_image.png" download="proposed_file_name"><div class="dwnld_btn">Download</div></a></td>
-  </tr>
+</section>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.8/js/select2.min.js" defer></script>
+<script>
+    $(document).ready(function(){
+        setTimeout(function() {
+            $(".alert").fadeOut();
+        }, 3000);
+    });
+    new DataTable('#satffTimesheetTable');
+</script>
+@endsection

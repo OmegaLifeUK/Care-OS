@@ -1,5 +1,5 @@
 <!--notification start-->
-<?php 
+<?php
 $home_id = Auth::user()->home_id;
 
 if(isset($manager_profile)){
@@ -11,7 +11,7 @@ if(isset($manager_profile)){
 $notifications = App\Notification::getsuNotification('','','',$notif_limit, $home_id);  ?>
 <section class="panel">
     <header class="panel-heading">
-        Notification 
+        Notification
     </header>
     <div class="panel-body">
         {!! $notifications !!}
@@ -168,7 +168,7 @@ $notifications = App\Notification::getsuNotification('','','',$notif_limit, $hom
                     <div class="notify-panels" >
                         <div class="notifiScroller">
                             <!-- dynamic notifications will be shown here -->
-                        </div>                        
+                        </div>
                     </div>
                 </div>
             </div>
@@ -182,14 +182,14 @@ $notifications = App\Notification::getsuNotification('','','',$notif_limit, $hom
 <!-- View more notification Modal end -->
 
 <script>
-    var today  = new Date; 
+    var today  = new Date;
 
     $('.startdate_picker1').datetimepicker({
         format: 'dd-mm-yyyy',
         endDate: today,
         minView : 2
     });
-    
+
     $('.enddate_picker1').datetimepicker({
         format: 'dd-mm-yyyy',
         endDate: today,
@@ -215,7 +215,7 @@ $notifications = App\Notification::getsuNotification('','','',$notif_limit, $hom
 
 <script>
     $('.view-more-noti-su-mng a').on('click',function(){
-        
+
         var service_user_id = "";
         $('.loader').show();
         $('body').addClass('body-overflow');
@@ -229,7 +229,7 @@ $notifications = App\Notification::getsuNotification('','','',$notif_limit, $hom
                 $(".notifiScroller").html(resp);
                 $('#notif_filter_form_mng')[0].reset();
                 $('#SuMngViewMoreNotificationModal').modal('show');
-                
+
                 $('.loader').hide();
                 $('body').removeClass('body-overflow');
 
@@ -238,19 +238,19 @@ $notifications = App\Notification::getsuNotification('','','',$notif_limit, $hom
     });
 
     $(document).on('click','.filter_notif_btn',function(){
-        
+
         var error = 0;
         var start_date = $('input[name=\'start_date\']').val();
         var end_date   = $('input[name=\'end_date\']').val();
         if(start_date == '') {
             $('input[name=\'start_date\']').addClass('red_border');
-            error = 1; 
+            error = 1;
         } else {
             $('input[name=\'start_date\']').removeClass('red_border');
         }
         if(end_date == '') {
             $('input[name=\'end_date\']').addClass('red_border');
-            error = 1; 
+            error = 1;
         } else {
             $('input[name=\'end_date\']').removeClass('red_border');
         }
@@ -260,10 +260,10 @@ $notifications = App\Notification::getsuNotification('','','',$notif_limit, $hom
 
 
         var formdata = $('#notif_filter_form_mng').serialize();
-        
+
         $('.loader').show();
         $('body').addClass('body-overflow');
-        
+
         $.ajax({
             url : "{{ url('/service/notifications/') }}",
             type: "post",
@@ -272,9 +272,9 @@ $notifications = App\Notification::getsuNotification('','','',$notif_limit, $hom
 
                 $(".notifiScroller").html(resp);
                 $('#SuMngViewMoreNotificationModal').modal('show');
-                
+
                 $('.loader').hide();
-                $('body').removeClass('body-overflow');                
+                $('body').removeClass('body-overflow');
             }
         });
         return false;

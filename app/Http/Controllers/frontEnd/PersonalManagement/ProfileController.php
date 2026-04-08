@@ -94,7 +94,7 @@ class ProfileController extends Controller
 
                     $managements[$key1]['module_list'][$key2]['sub_modules'] = $right_types;
 
-                    // echo "<pre>"; print_r($managements); 
+                    // echo "<pre>"; print_r($managements);
 
                 }
             }

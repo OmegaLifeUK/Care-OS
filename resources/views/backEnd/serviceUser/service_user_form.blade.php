@@ -78,7 +78,12 @@ if (isset($user_info)) {
                                 <div class="form-group">
                                     <label class="col-lg-3 control-label">Section</label>
                                     <div class="col-lg-9">
-                                        <input type="text" name="section" class="form-control" placeholder="Section" value="{{ (isset($user_info->section)) ? $user_info->section : '' }}" maxlength="255" {{ (isset($del_status)) ? $disabled: '' }}>
+                                        <!--<input type="text" name="section" class="form-control" placeholder="Section" value="{{ (isset($user_info->section)) ? $user_info->section : '' }}" maxlength="255" {{ (isset($del_status)) ? $disabled: '' }}>-->
+                                        <select name="section" id="" class="form-control" {{ isset($del_status) ? $disabled : '' }}>
+                                            @foreach($childSection as $sectionVal)
+                                                <option value="{{$sectionVal->id}}" <?php if(isset($user_info->section) && $sectionVal->id == $user_info->section){echo 'selected';}?>>{{$sectionVal->section}}</option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -89,60 +94,72 @@ if (isset($user_info)) {
                                         <!-- <input class="form-control default-date-picker" type="text" value="{{ (isset($user_info->date_of_birth)) ? date('d-m-Y',strtotime($user_info->date_of_birth)) : '' }}" placeholder="DD-MM-YYYY" name="date_of_birth" value="" maxlength="10" /> -->
                                     </div>
                                 </div>
+                                <div class="form-group">
+                                        <label class="col-lg-3 control-label">Department</label>
+                                        <div class="col-lg-9">
+                                            <select class="form-control" name="department" id="">
+                                                @foreach ($company_departments as $department)
+                                                    <option value="{{ $department->id }}"
+                                                        {{ isset($user_info->department) && $user_info->department == $department->id ? 'selected' : '' }}>
+                                                        {{ $department->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
                                 <!-- Child type -->
-                                <div class="form-group">
-                                    <label class="col-lg-3 control-label">Child Type</label>
-                                    <div class="col-lg-9">
-                                        <select class="form-control" name="child_type" id="home_type">
-                                            <option value="">Select Type</option>
-                                            <option value="residential" {{ isset($user_info->child_type) && $user_info->child_type == "residential" ? "selected" : ''}}>Residential</option>
-                                            <option value="accommodation" {{ isset($user_info->child_type) && $user_info->child_type == "accommodation" ? "selected" : ''}}>Supported Accomodation</option>
-                                            <option value="leavers" {{ isset($user_info->child_type) && $user_info->child_type == "leavers" ? "selected" : ''}}>Leavers</option>
-                                        </select>
-                                    </div>
-                                </div>
+                                <!--<div class="form-group">-->
+                                <!--    <label class="col-lg-3 control-label">Child Type</label>-->
+                                <!--    <div class="col-lg-9">-->
+                                <!--        <select class="form-control" name="child_type" id="home_type">-->
+                                <!--            <option value="">Select Type</option>-->
+                                <!--            <option value="residential" {{ isset($user_info->child_type) && $user_info->child_type == "residential" ? "selected" : ''}}>Residential</option>-->
+                                <!--            <option value="accommodation" {{ isset($user_info->child_type) && $user_info->child_type == "accommodation" ? "selected" : ''}}>Supported Accomodation</option>-->
+                                <!--            <option value="leavers" {{ isset($user_info->child_type) && $user_info->child_type == "leavers" ? "selected" : ''}}>Leavers</option>-->
+                                <!--        </select>-->
+                                <!--    </div>-->
+                                <!--</div>-->
                                 <!-- Residential rooms -->
-                                <div class="form-group" id="residential_rooms" style="display: none;">
-                                    <label class="col-lg-3 control-label">Residential Rooms Type</label>
-                                    <div class="col-lg-9">
-                                        <select class="form-control" name="room_type">
-                                            <option value="">Select Type </option>
-                                            <option value="1" {{ isset($user_info->room_type) && $user_info->room_type == "1" ? "selected" : '' }}>1 Bed Placement </option>
-                                            <option value="2" {{ isset($user_info->room_type) && $user_info->room_type == "2" ? "selected" : '' }}>2 Bed Placement </option>
-                                            <option value="3" {{ isset($user_info->room_type) && $user_info->room_type == "3" ? "selected" : '' }}>3 Bed Placement </option>
-                                            <option value="4" {{ isset($user_info->room_type) && $user_info->room_type == "4" ? "selected" : '' }}>4 Bed Placement </option>
-                                        </select>
-                                    </div>
-                                </div>
+                                <!--<div class="form-group" id="residential_rooms" style="display: none;">-->
+                                <!--    <label class="col-lg-3 control-label">Residential Rooms Type</label>-->
+                                <!--    <div class="col-lg-9">-->
+                                <!--        <select class="form-control" name="room_type">-->
+                                <!--            <option value="">Select Type </option>-->
+                                <!--            <option value="1" {{ isset($user_info->room_type) && $user_info->room_type == "1" ? "selected" : '' }}>1 Bed Placement </option>-->
+                                <!--            <option value="2" {{ isset($user_info->room_type) && $user_info->room_type == "2" ? "selected" : '' }}>2 Bed Placement </option>-->
+                                <!--            <option value="3" {{ isset($user_info->room_type) && $user_info->room_type == "3" ? "selected" : '' }}>3 Bed Placement </option>-->
+                                <!--            <option value="4" {{ isset($user_info->room_type) && $user_info->room_type == "4" ? "selected" : '' }}>4 Bed Placement </option>-->
+                                <!--        </select>-->
+                                <!--    </div>-->
+                                <!--</div>-->
                                 <!-- Supported Accommodation rooms -->
-                                <div class="form-group" id="accommodation_rooms" style="display: none;">
-                                    <label class="col-lg-3 control-label">Supported Accomodation Rooms Type</label>
-                                    <div class="col-lg-9">
-                                        <select class="form-control" name="room_type">
-                                            <option value="">Select Type</option>
-                                            <option value="1" {{ isset($user_info->room_type) && $user_info->room_type == "1" ? "selected" : '' }}>Group Living</option>
-                                            <option value="2" {{ isset($user_info->room_type) && $user_info->room_type == "2" ? "selected" : '' }}>Seperate Flats </option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="col-lg-3 control-label">Weekly Rate</label>
-                                    <div class="col-lg-9">
-                                        <input type="text" name="weekly_rate" class="form-control" placeholder="Weekly Rate" value="{{ isset($user_info->weekly_rate) ? $user_info->weekly_rate : '' }}" maxlength="255">
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="col-lg-3 control-label">Subs </label>
-                                    <div class="col-lg-9">
-                                        <input type="text" name="subs" class="form-control" placeholder="Subs" value="{{ isset($user_info->subs) ? $user_info->subs : '' }}" maxlength="255">
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="col-lg-3 control-label">Extra </label>
-                                    <div class="col-lg-9">
-                                        <input type="text" name="extra" class="form-control" placeholder="Extra" value="{{ isset($user_info->extra) ? $user_info->extra : '' }}" maxlength="255">
-                                    </div>
-                                </div>
+                                <!--<div class="form-group" id="accommodation_rooms" style="display: none;">-->
+                                <!--    <label class="col-lg-3 control-label">Supported Accomodation Rooms Type</label>-->
+                                <!--    <div class="col-lg-9">-->
+                                <!--        <select class="form-control" name="room_type">-->
+                                <!--            <option value="">Select Type</option>-->
+                                <!--            <option value="1" {{ isset($user_info->room_type) && $user_info->room_type == "1" ? "selected" : '' }}>Group Living</option>-->
+                                <!--            <option value="2" {{ isset($user_info->room_type) && $user_info->room_type == "2" ? "selected" : '' }}>Seperate Flats </option>-->
+                                <!--        </select>-->
+                                <!--    </div>-->
+                                <!--</div>-->
+                                <!--<div class="form-group">-->
+                                <!--    <label class="col-lg-3 control-label">Weekly Rate</label>-->
+                                <!--    <div class="col-lg-9">-->
+                                <!--        <input type="text" name="weekly_rate" class="form-control" placeholder="Weekly Rate" value="{{ isset($user_info->weekly_rate) ? $user_info->weekly_rate : '' }}" maxlength="255">-->
+                                <!--    </div>-->
+                                <!--</div>-->
+                                <!--<div class="form-group">-->
+                                <!--    <label class="col-lg-3 control-label">Subs </label>-->
+                                <!--    <div class="col-lg-9">-->
+                                <!--        <input type="text" name="subs" class="form-control" placeholder="Subs" value="{{ isset($user_info->subs) ? $user_info->subs : '' }}" maxlength="255">-->
+                                <!--    </div>-->
+                                <!--</div>-->
+                                <!--<div class="form-group">-->
+                                <!--    <label class="col-lg-3 control-label">Extra </label>-->
+                                <!--    <div class="col-lg-9">-->
+                                <!--        <input type="text" name="extra" class="form-control" placeholder="Extra" value="{{ isset($user_info->extra) ? $user_info->extra : '' }}" maxlength="255">-->
+                                <!--    </div>-->
+                                <!--</div>-->
                                 <div class="form-group">
                                     <label class="col-lg-3 control-label">Start Date</label>
                                     <div class="col-lg-9">
@@ -161,18 +178,86 @@ if (isset($user_info)) {
                                         <input type="text" name="local_authority" class="form-control" placeholder="Local Authority" value="{{ isset($user_info->local_authority) ? $user_info->local_authority : '' }}" maxlength="255">
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label class="col-lg-3 control-label">Height</label>
-                                    <div class="col-lg-9">
-                                        <input type="text" name="height" class="form-control" placeholder="Height" value="{{ (isset($user_info->height)) ? $user_info->height : '' }}" maxlength="255" {{ (isset($del_status)) ? $disabled: '' }}>
+                                <!--<div class="form-group">-->
+                                <!--    <label class="col-lg-3 control-label">Height</label>-->
+                                <!--    <div class="col-lg-9">-->
+                                <!--        <input type="text" name="height" class="form-control" placeholder="Height" value="{{ (isset($user_info->height)) ? $user_info->height : '' }}" maxlength="255" {{ (isset($del_status)) ? $disabled: '' }}>-->
+                                <!--    </div>-->
+                                <!--</div>-->
+                                <!--<div class="form-group">-->
+                                <!--    <label class="col-lg-3 control-label">Weight</label>-->
+                                <!--    <div class="col-lg-9">-->
+                                <!--        <input type="text" name="weight" class="form-control" placeholder="Weight" value="{{ (isset($user_info->weight)) ? $user_info->weight : '' }}" maxlength="255" {{ (isset($del_status)) ? $disabled: '' }}>-->
+                                <!--    </div>-->
+                                <!--</div>-->
+                                   <div class="form-group">
+                                        <label class="col-lg-3 control-label">Height</label>
+                                        <div class="col-lg-2">
+                                            <select class="form-control" id="height_unit" name="height_unit">
+                                                <option value="ft_in"
+                                                    {{ old('height_unit', $user_info->height_unit ?? '') == 'ft_in' ? 'selected' : '' }}>
+                                                    Feet/in
+                                                </option>
+                                                <option value="cm"
+                                                    {{ old('height_unit', $user_info->height_unit ?? '') == 'cm' ? 'selected' : '' }}>
+                                                    CM
+                                                </option>
+                                            </select>
+                                        </div>
+                                        @php
+                                            $selectedHeight = old('height_ft', $user_info->height_ft ?? '');
+                                            $heightUnit = old('height_unit', $user_info->height_unit ?? 'cm');
+                                        @endphp
+                                        <div class="col-lg-3">
+                                            <select name="height_ft" id="height_dropdown" class="form-control">
+                                                <option value="">Select</option>
+                                            </select>
+                                        </div>
+                                        <div id="inch_div">
+                                            <div class="col-lg-2">
+                                                <select name="height_in" id="height_in_dropdown" class="form-control">
+                                                    <option value="">Select</option>
+                                                    @for ($i = 0; $i < 12; $i++)
+                                                        <option value="{{ $i }}"
+                                                            {{ old('height_in', $user_info->height_in ?? '') == $i ? 'selected' : '' }}>
+                                                            {{ $i }}
+                                                        </option>
+                                                    @endfor
+                                                </select>
+
+                                            </div>
+                                        </div>
+                                        {{-- <input type="text" name="height" class="form-control" placeholder="Height" value="{{ (isset($user_info->height)) ? $user_info->height : '' }}" maxlength="255" {{ (isset($del_status)) ? $disabled: '' }}> --}}
                                     </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="col-lg-3 control-label">Weight</label>
-                                    <div class="col-lg-9">
-                                        <input type="text" name="weight" class="form-control" placeholder="Weight" value="{{ (isset($user_info->weight)) ? $user_info->weight : '' }}" maxlength="255" {{ (isset($del_status)) ? $disabled: '' }}>
+                                    <div class="form-group">
+                                        <label class="col-lg-3 control-label">Weight</label>
+                                        <div class="col-lg-3">
+                                            {{-- <input type="text" name="weight" class="form-control"
+                                                placeholder="Weight"
+                                                value="{{ isset($user_info->weight) ? $user_info->weight : '' }}"
+                                                maxlength="255" {{ isset($del_status) ? $disabled : '' }}> --}}
+                                            <select name="weight_unit" id="weight_unit" class="form-control">
+                                                <option value="kg"
+                                                    {{ old('weight_unit', $user_info->weight_unit ?? '') == 'kg' ? 'selected' : '' }}>
+                                                    Kilograms (kg)
+                                                </option>
+                                                <option value="lbs"
+                                                    {{ old('weight_unit', $user_info->weight_unit ?? '') == 'lbs' ? 'selected' : '' }}>
+                                                    Pounds (lbs)
+                                                </option>
+                                            </select>
+                                        </div>
+                                        @php
+                                            $selectedWeight = old('weight', $user_info->weight ?? '');
+                                            $weightUnitValue = old('weight_unit', $user_info->weight_unit ?? 'kg');
+                                        @endphp
+                                        <div class="col-lg-6">
+                                            <select name="weight" id="weight_dropdown" class="form-control">
+                                                <option value="">-- Select Weight --</option>
+                                                <!-- Options will be filled dynamically by JS -->
+                                            </select>
+                                        </div>
                                     </div>
-                                </div>
                                 <div class="form-group">
                                     <label class="col-lg-3 control-label">Hair & Eyes</label>
                                     <div class="col-lg-9">
@@ -488,5 +573,82 @@ format: 'yyyy-mm-dd'
             });
 
  -->
+<script>
+        const unitSelect = document.getElementById('height_unit');
+        const dropdown = document.getElementById('height_dropdown');
+        const selectedValue = '{{ $selectedHeight }}'; // Blade passes saved value
+        const inchDiv = document.getElementById('inch_div');
 
+        function populateDropdown(unit) {
+            dropdown.innerHTML = '<option value="">-- Select Height --</option>'; // reset
+
+            if (unit === 'cm') {
+                for (let i = 100; i <= 250; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.text = i + ' cm';
+                    if (i == selectedValue) option.selected = true; // pre-select
+                    dropdown.appendChild(option);
+                }
+                inchDiv.style.display = "none";
+            } else if (unit === 'ft_in') {
+                for (let ft = 3; ft <= 8; ft++) {
+                    const option = document.createElement('option');
+                    option.value = ft;
+                    option.text = ft + ' ft';
+                    if (ft == selectedValue) option.selected = true; // pre-select
+                    dropdown.appendChild(option);
+                }
+                inchDiv.style.display = "block";
+            }
+        }
+
+        // Initial population
+        populateDropdown(unitSelect.value);
+
+        // Update when unit changes
+        unitSelect.addEventListener('change', () => {
+            populateDropdown(unitSelect.value);
+        });
+
+
+
+        // const weightInput = document.getElementById('weight_input');
+        const weightUnit = document.getElementById('weight_unit');
+        const weightDropdown = document.getElementById('weight_dropdown');
+
+        // Pass saved value from Blade to JS
+        const selectedWeight = '{{ $selectedWeight }}';
+
+        function populateDropdownWeight(unit) {
+            weightDropdown.innerHTML = '<option value="">-- Select Weight --</option>';
+            let start, end, step;
+
+            if (unit === 'kg') {
+                start = 30;
+                end = 200;
+                step = 1;
+            } else {
+                start = 66;
+                end = 440;
+                step = 1;
+            }
+
+            for (let i = start; i <= end; i += step) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.text = `${i} ${unit}`;
+                if (i == selectedWeight) option.selected = true; // Pre-select saved value
+                weightDropdown.appendChild(option);
+            }
+        }
+
+        // Initialize dropdown with saved unit and weight
+        populateDropdownWeight(weightUnit.value);
+
+        // Update dropdown when unit changes
+        weightUnit.addEventListener('change', () => {
+            populateDropdownWeight(weightUnit.value);
+        });
+    </script>
 @endsection

@@ -64,8 +64,8 @@
                                 <table class="table table-striped table-hover table-bordered" id="editable-sample">
                                     <thead>
                                     <tr>
-                                        <th>Title</th>
                                         <th>Date</th>
+                                        <th>Reason</th>
                                         <th width="20%">Actions</th>
                                     </tr>
                                     </thead>
@@ -84,13 +84,13 @@
                                         {
                                             foreach($u_sick_leave as $key => $value) {
 
-                                            $leave_date = date('d M Y', strtotime($value->leave_date));
+                                            $leave_date = date('d M Y', strtotime($value->start_date));
 
                                         ?>
 
                                         <tr>
-                                            <td>{{ ucfirst($value->title) }}</td>
                                             <td>{{ $leave_date }}</td>
+                                            <td>{{ ucfirst($value->notes) }}</td>
                                             
                                             <td class="action-icn"> <!-- data-toggle="modal" href="#su_care_history_edit" -->
                                                 

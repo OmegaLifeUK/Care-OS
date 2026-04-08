@@ -23,7 +23,8 @@
 
                 ?>
 
-                <p class="text-left"><span id="hh">{{ $new_hour }}</span>:<span id="mm">{{ date('i') }}</span> <span id="aa">{{ date('A') }}</span></p>
+                <p class="text-left"><span id="hh">{{ $new_hour }}</span>:<span
+                        id="mm">{{ date('i') }}</span> <span id="aa">{{ date('A') }}</span></p>
 
             </div>
 
@@ -93,7 +94,8 @@
 
                     foreach ($plan_noti as $key => $value) { ?>
 
-                        <li> <span class="bg-red"></span> <a href="{{ url('/system/calendar') }}"> {{ ucfirst($value['su_name']) }} - {{ ucfirst($value['description']) }}</a> </li>
+                    <li> <span class="bg-red"></span> <a href="{{ url('/system/calendar') }}">
+                            {{ ucfirst($value['su_name']) }} - {{ ucfirst($value['description']) }}</a> </li>
 
                     <?php } ?>
 
@@ -116,7 +118,9 @@
 
                     foreach ($noti as $key => $value) { ?>
 
-                        <li> <span class="{{ $value['color_class'] }}"></span> <a href="{{ url('/system/calendar') }}">{{ ucfirst($value['su_name']) }} - {{ ucfirst($value['description']) }}</a> </li>
+                    <li> <span class="{{ $value['color_class'] }}"></span> <a
+                            href="{{ url('/system/calendar') }}">{{ ucfirst($value['su_name']) }} -
+                            {{ ucfirst($value['description']) }}</a> </li>
 
                     <?php    } ?> <!-- bg-seagreen -->
 
@@ -137,7 +141,7 @@
         // var month = moment().tz("Europe/London").format("MM");
         // var date = moment().tz("Europe/London").format("DD");
 
-        console.log("London: " + moment().tz("Europe/London").format());
+        // console.log("London: " + moment().tz("Europe/London").format());
 
         function update_time() {
 
@@ -149,18 +153,17 @@
             // var date = moment().tz("Europe/London").format("DD");
 
             var today = new Date();
-            console.log(today);
+            // console.log(today);
 
-            var hours = today.getUTCHours() + 1 ;
-            console.log(hours);
+            var hours = today.getUTCHours() + 1;
+            // console.log(hours);
 
             var mins = today.getUTCMinutes();
             var mid = 'am';
 
             if (hours == 0) { //At 00 hours we need to show 12 am
                 hours = 12;
-            } else if (hours >= 12)
-            {
+            } else if (hours >= 12) {
                 if (hours == 12) {
                     hours = hours;
                 } else {
@@ -178,11 +181,11 @@
                 mid = 'pm';
             }
 
-            // if(hours < 10){
-            //     hours = '0'+hours;
-            // }
-            if(mins < 10){
-                mins = '0'+mins;
+            if (hours < 10) {
+                hours = '0' + hours;
+            }
+            if (mins < 10) {
+                mins = '0' + mins;
             }
             $("#hh").text(hours);
             $("#mm").text(mins);

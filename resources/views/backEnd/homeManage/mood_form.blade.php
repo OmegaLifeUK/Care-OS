@@ -83,10 +83,10 @@
                                     <div class="col-lg-10 sele">
                                         <select name="status" class="form-control">
                                                 <option value="">Select Status</option>
-                                                <option value="0" <?php if(isset($mood_info->status)) { if($mood_info->status == '0'){ echo 'selected'; } }   ?>>Active
+                                                <option value="1" <?php if(isset($mood_info->status)) { if($mood_info->status == '1'){ echo 'selected'; } }   ?>>Active
                                                 
                                                 </option>
-                                                <option value="1" <?php if(isset($mood_info->status)) { if($mood_info->status == '1'){ echo 'selected'; } }   ?>>Inactive
+                                                <option value="0" <?php if(isset($mood_info->status)) { if($mood_info->status == '0'){ echo 'selected'; } }   ?>>Inactive
 
                                                 </option>           
                                         </select>

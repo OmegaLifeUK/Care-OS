@@ -65,15 +65,35 @@ class ManagerController extends Controller
             // echo "<pre>"; print_r($data); die;
             $company_ids = implode(',', $data['company_id']);
 
-            if(isset($request->allHome)){
-                if(!empty($company_ids)){
-                    $home_ids = Home::select('id')->whereIn('admin_id',$data['company_id'])->get()->toArray();
-                    $home_ids = array_map(function($v){ return $v['id'];  }, $home_ids);
-                    $home_ids = implode(',', $home_ids);
-                }
+            // if(isset($request->allHome)){
+            //     if(!empty($company_ids)){
+            //         $home_ids = Home::select('id')->whereIn('admin_id',$data['company_id'])->get()->toArray();
+            //         $home_ids = array_map(function($v){ return $v['id'];  }, $home_ids);
+            //         $home_ids = implode(',', $home_ids);
+            //     }
+            // } else {
+            //       if(isset($request->homes)){
+            //         $home_ids = implode(',', $request->homes);
+            //     }else {
+            //         $home_ids = $home_id;
+            //     }
+            // }
+
+            if ($request->has('allHome') && !empty($company_ids)) {
+                // User selected "All homes"
+                $home_ids = Home::whereIn('admin_id', $data['company_id'])
+                    ->pluck('id')
+                    ->toArray();
+            } elseif ($request->has('homes') && !empty($request->homes)) {
+                // User selected specific homes
+                $home_ids = $request->homes;
             } else {
-                $home_ids = implode(',', $request->homes);
+                // Default home
+                $home_ids = [$home_id];
             }
+
+            // Convert to comma-separated string if needed
+            $home_ids = implode(',', $home_ids);
             
 
             if(!empty($data['date_of_joining'])) {
@@ -139,12 +159,13 @@ class ManagerController extends Controller
             }
 
             //if checkbox is checked
-            if(isset($data['assign_right_check'])) {
+            // Ram 28/07/2025 this code is hide to give all access permission for Manager 
+            // if(isset($data['assign_right_check'])) {
                 //save access rights
                 $access_rights = AccessRight::select('id')
                                             ->where('disabled','0')
-                                            ->where('submodule_name','View')
-                                            ->orWhere('submodule_name',' ')
+                                            // ->where('submodule_name','View')
+                                            // ->orWhere('submodule_name',' ')
                                             ->get()->toArray();
                 //echo "<pre>"; print_r($access_rights);
                 if(!empty($access_rights)){
@@ -152,7 +173,7 @@ class ManagerController extends Controller
                     $access_rights_ids = implode(',', $access_rights_ids);
                     $user->access_rights = $access_rights_ids;
                 }
-            }
+            // }
 
 
             if($user->save()){
@@ -193,15 +214,34 @@ class ManagerController extends Controller
             $company_ids = implode(',', $data['company_id']);
             // echo "<pre>"; print_r($data['company_id']);
 
-            if(isset($request->allHome)){
-                if(!empty($company_ids)){
-                    $home_ids = Home::select('id')->whereIn('admin_id',$data['company_id'])->get()->toArray();
-                    $home_ids = array_map(function($v){ return $v['id'];  }, $home_ids);
-                    $home_ids = implode(',', $home_ids);
-                }
+            // if(isset($request->allHome)){
+            //     if(!empty($company_ids)){
+            //         $home_ids = Home::select('id')->whereIn('admin_id',$data['company_id'])->get()->toArray();
+            //         $home_ids = array_map(function($v){ return $v['id'];  }, $home_ids);
+            //         $home_ids = implode(',', $home_ids);
+            //     }
+            // } else {
+            //     $home_ids = implode(',', $request->homes);
+            // }
+            
+            if ($request->has('allHome') && !empty($company_ids)) {
+                // User selected "All homes"
+                $home_ids = Home::whereIn('admin_id', $data['company_id'])
+                    ->pluck('id')
+                    ->toArray();
+            
+            } elseif ($request->has('homes') && !empty($request->homes)) {
+                // User selected specific homes
+                $home_ids = $request->homes;
+            
             } else {
-                $home_ids = implode(',', $request->homes);
+                // Default home
+                $home_ids = [$home_id];
             }
+
+            // Convert to comma-separated string if needed
+            $home_ids = implode(',', $home_ids);
+
 
             $user = User::find($user_id);
             
@@ -279,13 +319,14 @@ class ManagerController extends Controller
                 }
                 
                 //if checkbox is checked
-                if(isset($data['assign_right_check'])) {
+                // Ram 28/07/2025 this code is hide to give all access permission for Manager 
+                // if(isset($data['assign_right_check'])) {
                     //save access rights of user 
                     
                     $access_rights = AccessRight::select('id')
                                                 ->where('disabled','0')
-                                                ->where('submodule_name','View')
-                                                ->orWhere('submodule_name',' ')
+                                                // ->where('submodule_name','View')
+                                                // ->orWhere('submodule_name',' ')
                                                 ->get()->toArray();
                     // echo "<pre>"; print_r($access_rights); die;
                     if(!empty($access_rights)){
@@ -294,7 +335,7 @@ class ManagerController extends Controller
                         $access_rights_ids = implode(',', $access_rights_ids);
                         $user->access_rights = $access_rights_ids;
                     }
-                }
+                // }
 
                 if($user->save()) {
 
