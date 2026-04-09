@@ -34,7 +34,7 @@ class StaffIncidentTypeController extends Controller
         }
         if(isset($request->search)) {
             $search      = trim($request->search);
-            $incidentType = $incidentType->where('category','like','%'.$search.'%');
+            $incidentType = $incidentType->where('type','like','%'.$search.'%');
         }
 
         $incidentType = $incidentType->paginate($limit);

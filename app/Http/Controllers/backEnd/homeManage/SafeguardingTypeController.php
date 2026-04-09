@@ -37,7 +37,7 @@ class SafeguardingTypeController extends Controller
         }
         if (isset($request->search)) {
             $search      = trim($request->search);
-            $incidentType = $incidentType->where('category', 'like', '%' . $search . '%');
+            $incidentType = $incidentType->where('type', 'like', '%' . $search . '%');
         }
 
         $incidentType = $incidentType->paginate($limit);
@@ -49,7 +49,7 @@ class SafeguardingTypeController extends Controller
         // echo "<pre>";print_r($request->all());die;
         if (!empty($request->id)) {
             $validator = Validator::make($request->all(), [
-                'id' => 'required|exists:incident_types,id',
+                'id' => 'required|exists:safeguarding_types,id',
                 'type' => 'required',
                 'status' => 'required|boolean',
             ]);
@@ -119,7 +119,7 @@ class SafeguardingTypeController extends Controller
     {
         // echo "<pre>";print_r($request->all());die;
         $validator = Validator::make($request->all(), [
-            'id' => 'required|exists:incident_types,id',
+            'id' => 'required|exists:safeguarding_types,id',
             'status' => 'required|boolean',
         ]);
         if ($validator->fails()) {

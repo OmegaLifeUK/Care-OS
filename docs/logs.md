@@ -433,7 +433,111 @@ DB_PASSWORD=
 
 ---
 
+### Log 19 — Fixed "Failed to load shifts" Toast
+**Action:** Fixed the blocking `alert('Failed to load shifts')` on the Shift Schedule page.
+
+**Root cause (two parts):**
+1. **PHP 8.5 deprecation warnings** — `ScheduledShift::with(['staff'])` triggers "Using null as an array offset" warnings when `staff_id` is null. These could corrupt JSON responses.
+2. **`alert()` in JS failure callbacks** — FullCalendar's `failure` callback used `alert()`, a blocking browser dialog, instead of `console.error()`.
+
+**Fixes applied:**
+1. `CarerController.php` — removed `staff` and `client` from eager-loading in `allShifts()`, `dayShifts()`, `weekShifts()`. Replaced with manual `$staffMap`/`$clientMap` lookups using `pluck('name', 'id')`. Added try/catch.
+2. `schedule-shift.js` — replaced `alert('Failed to load shifts')` and `alert('Failed to load resources')` with `console.error()` calls that log error details.
+
+**Files modified:**
+- `app/Http/Controllers/frontEnd/Roster/Staff/CarerController.php`
+- `public/frontEnd/staff/js/schedule-shift.js`
+
+**Full investigation documented in:** `docs/toast-issue-shifts.md`
+
+**Teaching notes:**
+- PHP closures need `use ($var)` to access outer variables — unlike JS, they don't capture automatically.
+- `alert()` should never be used for error handling in production — it blocks the entire page. Use `console.error()` or a non-blocking toast/notification UI.
+- When debugging, check BOTH server logs AND browser console. Empty server logs + visible error = client-side issue.
+
+---
+
+### Log 20 — Fixed CSS Symlink
+**Action:** Recreated `public/public` symlink. It had become a regular file (53 bytes) instead of a symlink — likely from a git checkout.
+
+**Command:** `rm public/public && ln -s .../public .../public/public`
+
+**Teaching notes:**
+- Git stores symlinks as plain text files containing the target path. On checkout, they may not be recreated as actual symlinks.
+
+---
+
+### Log 21 — Wrote Phase 1 Prompt
+**Action:** Created `phases/phase1.md` — detailed build prompt for Phase 1 with full audit of all 9 features.
+
+**Contents:** For each of the 9 features (MAR Sheets, DoLS, Handover Notes, Body Maps, Safeguarding, Notifications, Staff Training, SOS Alerts, Incidents): what exists in codebase (tables, models, controllers, routes, views), what's missing (checklists), CareRoster Base44 export references. Plus testing/QA plan, audit tasks, recommended build order, and workflow process.
+
+---
+
+### Log 22 — Saved Session 3
+**Action:** Saved full conversation history to `sessions/session3.md`.
+
+---
+
 ## Status: Phase 0 Complete — Ready for Phase 1
 
 **What's next:**
-- [ ] Phase 1 — Patch & Polish (MAR Sheets, DoLS, Handover Notes, Body Maps, Safeguarding, Notifications, Staff Training, SOS Alerts, Incidents)
+- [x] Phase 1, Feature 1 — Incident Management (DONE)
+- [ ] Phase 1 — Remaining features (Staff Training, Body Maps, Handover Notes, DoLS, MAR Sheets, SOS Alerts, Notifications, Safeguarding)
+
+---
+
+### Log 23 — Phase 1, Feature 1: Incident Management — Patch & Polish
+**Action:** Fixed bugs, made detail view dynamic, added severity badges and status workflow.
+
+**Bugs fixed:**
+1. **Ref generation bug** (`StaffReportIncidentService.php:26`) — `$ref.$countData+1` had operator precedence issue. PHP evaluates `$ref.$countData` as string concat, then `+1` coerces the result to int. Replaced entire if/elseif chain with `str_pad($nextNum, 4, '0', STR_PAD_LEFT)`.
+2. **Search on wrong column** (`StaffIncidentTypeController.php:37`, `SafeguardingTypeController.php:40`) — searched `category` column which doesn't exist. Changed to `type`.
+3. **Validator checking wrong table** (`SafeguardingTypeController.php:52,122`) — `exists:incident_types,id` should be `exists:safeguarding_types,id`. This meant edits/status changes to safeguarding types were validated against the incident types table.
+4. **Empty junction model** (`StaffReportIncidentsSafeguarding.php`) — had no table name, fillable, or relationships. Added all three. Also fixed `$timestamp` (singular) → `$timestamps` (plural) — Laravel expects the plural form.
+
+**Detail view made dynamic:**
+- `incident_report_details.blade.php` was 100% hardcoded HTML (fake data). Rewrote to use `$incident` model data.
+- Controller method now queries with `home_id` filter (multi-tenancy) and eager-loads relationships.
+- Removed the hardcoded URL `http://localhost/socialcareitsolution/roster/incident-report-details` on the edit button.
+- Removed the AI report sections (deferred to Phase 3 per plan).
+
+**Severity badges (list view):**
+- Already existed in JS (lines 523-531) with correct CSS classes: Low=green (`careBadg`), Medium=amber (`yellowBadges`), High=orange (`highBadges`), Critical=red (`redbadges`). Verified CSS classes exist in `style.css`.
+
+**Status badges improved:**
+- Reported: was grey `muteBadges` → now amber `yellowBadges` (more visible)
+- Under Investigation: was grey → now blue `darkBlueBadg`
+- Resolved: was grey with typo "Resoled" → now green `darkGreenBadges` with "Resolved"
+- Closed: stays grey (terminal state)
+- Status 4 (Closed) no longer increments `openCount` — was counting closed incidents as open.
+
+**Status workflow added:**
+- New route: `POST /roster/incident-status-update/{id}`
+- New controller method: `incident_status_update()` with validation (`status in:1,2,3,4`) and `home_id` check
+- Detail view shows progress indicator (step circles with checkmarks) and a context-appropriate action button:
+  - Reported → "Start Investigation"
+  - Under Investigation → "Mark Resolved"
+  - Resolved → "Close Incident"
+  - Closed → no button (terminal state)
+
+**Files modified:**
+- `app/Services/Staff/StaffReportIncidentService.php` — ref generation fix
+- `app/Http/Controllers/backEnd/homeManage/StaffIncidentTypeController.php` — search column fix
+- `app/Http/Controllers/backEnd/homeManage/SafeguardingTypeController.php` — search column + validator table fixes
+- `app/Models/Staff/StaffReportIncidentsSafeguarding.php` — filled out empty model
+- `app/Http/Controllers/frontEnd/Roster/IncidentManagementController.php` — dynamic detail view + status update endpoint
+- `resources/views/frontEnd/roster/incident_management/incident_report_details.blade.php` — full rewrite (dynamic)
+- `resources/views/frontEnd/roster/incident_management/incident.blade.php` — status badge colors + typo fix
+- `routes/web.php` — added status update route
+
+**Security review:** PASS — all user data uses `{{ }}` (escaped), CSRF on forms, home_id filtering at DB level, validation on all inputs.
+
+**Teaching notes:**
+- **`str_pad()`** is the clean way to zero-pad numbers in PHP. `str_pad(42, 4, '0', STR_PAD_LEFT)` → `"0042"`. Avoids the fragile if/elseif approach.
+- **`$timestamps` vs `$timestamp`** — Laravel's Eloquent expects `public $timestamps = false;` (plural). The singular `$timestamp` is ignored silently, meaning Laravel still tries to set `created_at`/`updated_at` on a table that might not have those columns.
+- **Operator precedence in PHP** — `.` (concat) and `+` (addition) have the same precedence and are left-associative. So `"abc" . $x + 1` evaluates as `("abc" . $x) + 1`, which coerces the concatenated string to int. Always use parentheses: `"abc" . ($x + 1)`.
+- **Multi-tenancy at query level** — Always filter by `home_id` in the database query itself (`->where('home_id', $home_id)->find($id)`) rather than fetching first and checking after. This prevents even temporary access to cross-tenant data and is more efficient.
+- **Laravel `exists:table,column` validation** — Checks that the value exists in a specific table. If you point it at the wrong table (e.g., `exists:incident_types,id` when validating a safeguarding type), the validation passes for IDs that happen to exist in the wrong table — a subtle bug.
+
+---

@@ -223,6 +223,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		Route::get('/incident-report-details/{id}', [IncidentManagementController::class, 'incident_report_details']);
 		Route::post('/incident-report-save', [IncidentManagementController::class, 'incident_report_save']);
 		Route::post('/incident-report-loadData', [IncidentManagementController::class, 'incidentReportLoadData']);
+		Route::post('/incident-status-update/{id}', [IncidentManagementController::class, 'incident_status_update']);
 
 		Route::get('/payroll-finance', [PayrollFinanceController::class, 'index'])->name('roster.payroll.finance');
 		Route::get('/payroll-processing', [PayrollFinanceController::class, 'payrollprocessing']);

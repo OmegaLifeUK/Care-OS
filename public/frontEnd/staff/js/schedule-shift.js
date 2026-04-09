@@ -412,8 +412,9 @@ document.addEventListener('DOMContentLoaded', function () {
         resources: {
             url: `${BASE_URL}/roster/carer/shift-resources`,  // 👈 your Laravel route
             method: 'GET',
-            failure() {
-                alert('Failed to load resources');
+            failure(error) {
+                console.error("❌ Failed to load resources!", error);
+                console.error("Resource error type:", typeof error, "Message:", error?.message, "Status:", error?.status);
             }
         },
         /* ===== SHIFTS (EVENTS) ===== */
@@ -423,9 +424,9 @@ document.addEventListener('DOMContentLoaded', function () {
             success: function (data) {
                 console.log("🔥 Successfully fetched shifts data: ", data);
             },
-            failure: function () {
-                console.error("❌ Failed to load shifts!");
-                alert('Failed to load shifts');
+            failure: function (error) {
+                console.error("❌ Failed to load shifts!", error);
+                console.error("Error type:", typeof error, "Message:", error?.message, "Status:", error?.status, "Response:", error?.response);
             }
         },
           /* ================= DRAG & DROP ================= */

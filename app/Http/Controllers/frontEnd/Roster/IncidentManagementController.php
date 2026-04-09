@@ -37,7 +37,39 @@ class IncidentManagementController extends Controller
     }
     public function incident_report_details($id)
     {
-        return view('frontEnd.roster.incident_management.incident_report_details');
+        $home_ids = Auth::user()->home_id;
+        $ex_home_ids = explode(',', $home_ids);
+        $home_id = $ex_home_ids[0];
+        $incident = \App\Models\Staff\StaffReportIncidents::with(['incidentType:id,type', 'clients:id,name,phone_no', 'safeguarddetails'])
+            ->where('home_id', $home_id)
+            ->find($id);
+        if (!$incident) {
+            Session::flash('error', 'Incident not found');
+            return redirect('roster/incident-management');
+        }
+        return view('frontEnd.roster.incident_management.incident_report_details', compact('incident'));
+    }
+    public function incident_status_update(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|integer|in:1,2,3,4',
+        ]);
+        if ($validator->fails()) {
+            Session::flash('error', $validator->errors()->first());
+            return redirect()->back();
+        }
+        $home_ids = Auth::user()->home_id;
+        $ex_home_ids = explode(',', $home_ids);
+        $home_id = $ex_home_ids[0];
+        $incident = \App\Models\Staff\StaffReportIncidents::where('id', $id)->where('home_id', $home_id)->first();
+        if (!$incident) {
+            Session::flash('error', 'Incident not found');
+            return redirect('roster/incident-management');
+        }
+        $incident->status = $request->status;
+        $incident->save();
+        Session::flash('success', 'Incident status updated successfully');
+        return redirect()->back();
     }
     public function incident_report_save(Request $request){
         // echo "<pre>";print_r($request->all());die;

@@ -251,61 +251,75 @@ class CarerController extends Controller
 
     public function allShifts()
     {
-        // Add where('home_id', Auth::user()->home_id) optionally for security as seen elsewhere
-        $homeId = Auth::user()->home_id;
-        $shifts = \App\Models\ScheduledShift::with(['staff', 'documents', 'assessments', 'recurrence'])->where('home_id', $homeId)->get();
+        try {
+            $homeId = Auth::user()->home_id;
+            $shifts = \App\Models\ScheduledShift::with(['documents', 'assessments', 'recurrence'])
+                ->where('home_id', $homeId)->get();
 
-        $events = $shifts->map(function ($shift) {
-            $startDate = $shift->start_date;
-            $endDate = $shift->end_date ?? $shift->start_date;
+            // Load staff separately to avoid BelongsTo deprecation warning when staff_id is null (PHP 8.5)
+            $staffIds = $shifts->pluck('staff_id')->filter()->unique()->values()->toArray();
+            $staffMap = !empty($staffIds) ? \App\user::whereIn('id', $staffIds)->pluck('name', 'id') : collect();
 
-            $startTime = \Carbon\Carbon::parse($shift->start_time);
-            $endTime = \Carbon\Carbon::parse($shift->end_time);
+            $events = $shifts->map(function ($shift) use ($staffMap) {
+                $startDate = $shift->start_date;
+                $endDate = $shift->end_date ?? $shift->start_date;
 
-            return [
-                'id' => (string) $shift->id,
-                'title' => $shift->client_name ?? ucfirst($shift->shift_type) ?? 'Shift',
-                'start' => $startDate . 'T' . $shift->start_time,
-                'end' => $endDate . 'T' . $shift->end_time,
-                'resourceId' => $shift->staff_id ? (string) $shift->staff_id : 'open',
-                'backgroundColor' => $shift->staff_id ? '#d1fae5' : '#fde68a',
-                // Extended props for editing:
-                'shift_id' => $shift->id,
-                'staff_id' => $shift->staff_id,
-                'staff_name' => $shift->staff ? $shift->staff->name : null,
-                'client_id' => $shift->service_user_id,
-                'shift_type_raw' => $shift->shift_type,
-                'start_time_raw' => $startTime->format('H:i'),
-                'end_time_raw' => $endTime->format('H:i'),
-                'start_date' => $shift->start_date,
-                'care_type' => $shift->care_type_id,
-                'assignment' => $shift->assignment,
-                'property_id' => $shift->property_id,
-                'location_name' => $shift->location_name,
-                'location_address' => $shift->location_address,
-                'home_area_id' => $shift->home_area_id,
-                'notes' => $shift->notes,
-                'tasks' => $shift->tasks,
-                'documents' => $shift->documents,
-                'assessments' => $shift->assessments,
-                'is_recurring' => $shift->is_recurring,
-                'recurrence' => $shift->recurrence,
-            ];
-        })->toArray();
+                $startTime = \Carbon\Carbon::parse($shift->start_time);
+                $endTime = \Carbon\Carbon::parse($shift->end_time);
 
-        return response()->json($events);
+                return [
+                    'id' => (string) $shift->id,
+                    'title' => $shift->client_name ?? ucfirst($shift->shift_type) ?? 'Shift',
+                    'start' => $startDate . 'T' . $shift->start_time,
+                    'end' => $endDate . 'T' . $shift->end_time,
+                    'resourceId' => $shift->staff_id ? (string) $shift->staff_id : 'open',
+                    'backgroundColor' => $shift->staff_id ? '#d1fae5' : '#fde68a',
+                    'shift_id' => $shift->id,
+                    'staff_id' => $shift->staff_id,
+                    'staff_name' => $shift->staff_id ? ($staffMap[$shift->staff_id] ?? null) : null,
+                    'client_id' => $shift->service_user_id,
+                    'shift_type_raw' => $shift->shift_type,
+                    'start_time_raw' => $startTime->format('H:i'),
+                    'end_time_raw' => $endTime->format('H:i'),
+                    'start_date' => $shift->start_date,
+                    'care_type' => $shift->care_type_id,
+                    'assignment' => $shift->assignment,
+                    'property_id' => $shift->property_id,
+                    'location_name' => $shift->location_name,
+                    'location_address' => $shift->location_address,
+                    'home_area_id' => $shift->home_area_id,
+                    'notes' => $shift->notes,
+                    'tasks' => $shift->tasks,
+                    'documents' => $shift->documents,
+                    'assessments' => $shift->assessments,
+                    'is_recurring' => $shift->is_recurring,
+                    'recurrence' => $shift->recurrence,
+                ];
+            })->toArray();
+
+            return response()->json($events);
+        } catch (\Throwable $e) {
+            \Log::error('allShifts error: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function dayShifts(Request $request)
     {
         $date = $request->query('date', date('Y-m-d'));
         $homeId = Auth::user()->home_id;
-        $shifts = \App\Models\ScheduledShift::with(['staff', 'client', 'recurrence', 'documents', 'assessments'])
+        $shifts = \App\Models\ScheduledShift::with(['recurrence', 'documents', 'assessments'])
             ->where('start_date', $date)
             ->where('home_id', $homeId)
             ->get();
 
-        $formatted = $shifts->map(function ($shift) {
+        // Load staff and clients separately to avoid BelongsTo deprecation when foreign key is null (PHP 8.5)
+        $staffIds = $shifts->pluck('staff_id')->filter()->unique()->values()->toArray();
+        $staffMap = !empty($staffIds) ? \App\user::whereIn('id', $staffIds)->pluck('name', 'id') : collect();
+        $clientIds = $shifts->pluck('service_user_id')->filter()->unique()->values()->toArray();
+        $clientMap = !empty($clientIds) ? \App\ServiceUser::whereIn('id', $clientIds)->pluck('name', 'id') : collect();
+
+        $formatted = $shifts->map(function ($shift) use ($staffMap, $clientMap) {
             $startTime = \Carbon\Carbon::parse($shift->start_time);
             $endTime = \Carbon\Carbon::parse($shift->end_time);
             $durationFormat = $startTime->diffInHours($endTime);
@@ -319,9 +333,9 @@ class CarerController extends Controller
                 'end_time' => $endTime->format('H:i'),
                 'end_time_raw' => $endTime->format('H:i'),
                 'duration' => $durationFormat . 'h',
-                'staff_name' => $shift->staff ? $shift->staff->name : 'Unassigned',
+                'staff_name' => $shift->staff_id ? ($staffMap[$shift->staff_id] ?? 'Unassigned') : 'Unassigned',
                 'staff_id' => $shift->staff_id,
-                'client_name' => $shift->client ? $shift->client->name : 'Unknown Location',
+                'client_name' => $shift->service_user_id ? ($clientMap[$shift->service_user_id] ?? 'Unknown Location') : 'Unknown Location',
                 'client_id' => $shift->service_user_id,
                 'property_id' => $shift->property_id,
                 'location_name' => $shift->location_name,
@@ -354,10 +368,16 @@ class CarerController extends Controller
         $endOfWeek = $date->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
 
         $homeId = Auth::user()->home_id;
-        $shifts = \App\Models\ScheduledShift::with(['staff', 'client', 'recurrence', 'documents', 'assessments'])
+        $shifts = \App\Models\ScheduledShift::with(['recurrence', 'documents', 'assessments'])
             ->whereBetween('start_date', [$startOfWeek->format('Y-m-d'), $endOfWeek->format('Y-m-d')])
             ->where('home_id', $homeId)
             ->get();
+
+        // Load staff and clients separately to avoid BelongsTo deprecation when foreign key is null (PHP 8.5)
+        $staffIds = $shifts->pluck('staff_id')->filter()->unique()->values()->toArray();
+        $staffMap = !empty($staffIds) ? \App\user::whereIn('id', $staffIds)->pluck('name', 'id') : collect();
+        $clientIds = $shifts->pluck('service_user_id')->filter()->unique()->values()->toArray();
+        $clientMap = !empty($clientIds) ? \App\ServiceUser::whereIn('id', $clientIds)->pluck('name', 'id') : collect();
 
         $weekData = [];
         $currentDate = $startOfWeek->copy();
@@ -365,7 +385,7 @@ class CarerController extends Controller
         while ($currentDate <= $endOfWeek) {
             $dateKey = $currentDate->format('Y-m-d');
 
-            $dayShifts = $shifts->where('start_date', $dateKey)->map(function ($shift) {
+            $dayShifts = $shifts->where('start_date', $dateKey)->map(function ($shift) use ($staffMap, $clientMap) {
                 $startTime = \Carbon\Carbon::parse($shift->start_time);
                 $endTime = \Carbon\Carbon::parse($shift->end_time);
                 $durationFormat = $startTime->diffInHours($endTime);
@@ -379,9 +399,9 @@ class CarerController extends Controller
                     'end_time' => $endTime->format('H:i'),
                     'end_time_raw' => $endTime->format('H:i'),
                     'duration' => $durationFormat . 'h',
-                    'staff_name' => $shift->staff ? $shift->staff->name : 'Unassigned',
+                    'staff_name' => $shift->staff_id ? ($staffMap[$shift->staff_id] ?? 'Unassigned') : 'Unassigned',
                     'staff_id' => $shift->staff_id,
-                    'client_name' => $shift->client ? $shift->client->name : 'Unknown Location',
+                    'client_name' => $shift->service_user_id ? ($clientMap[$shift->service_user_id] ?? 'Unknown Location') : 'Unknown Location',
                     'client_id' => $shift->service_user_id,
                     'property_id' => $shift->property_id,
                     'location_name' => $shift->location_name,

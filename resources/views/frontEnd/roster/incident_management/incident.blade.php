@@ -532,15 +532,14 @@
                                 let statushtml = '';
                                 if(item.status == 1){
                                     openCount++;
-                                    statushtml = `<span class="careBadg muteBadges">reported</span>`;
+                                    statushtml = `<span class="careBadg yellowBadges">Reported</span>`;
                                 }else if(item.status == 2){
                                     openCount++;
-                                    statushtml = `<span class="careBadg muteBadges">Under Investigation</span>`;
+                                    statushtml = `<span class="careBadg darkBlueBadg">Under Investigation</span>`;
                                 }else if(item.status == 3){
                                     resolveCount++;
-                                    statushtml = `<span class="careBadg muteBadges">Resoled</span>`;
+                                    statushtml = `<span class="careBadg darkGreenBadges">Resolved</span>`;
                                 }else if(item.status == 4){
-                                    openCount++;
                                     statushtml = `<span class="careBadg muteBadges">Closed</span>`;
                                 }
                                 let cocHtml = '';

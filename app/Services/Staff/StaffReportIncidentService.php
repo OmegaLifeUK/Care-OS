@@ -16,15 +16,8 @@ class StaffReportIncidentService
         try{
             $data['date_time'] = Carbon::parse($data['date_time'])->format('Y-m-d H:i:s');
             $countData = StaffReportIncidents::count();
-            if($countData<10){
-                $ref = '000';
-            }else if($countData>=10 && $countData<100){
-                $ref = '00';
-            }else if($countData>100 && $countData<1000){
-                $ref = '0';
-            }
-            $data['ref'] =  "INC-".time().'-'.$ref.$countData+1;
-            // return $data['ref'];
+            $nextNum = $countData + 1;
+            $data['ref'] = "INC-" . time() . '-' . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
             $incident = StaffReportIncidents::updateOrCreate(['id' => $data['id'] ?? null],$data);
             if ($data['is_safeguarding'] == 1) {
                 $sfArr = $data['safeguarding_detail'] ?? [];
