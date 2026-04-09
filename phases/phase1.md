@@ -7,6 +7,27 @@
 
 ---
 
+## Pipeline Status
+
+| # | Feature | Est | Pipeline Stage | Status |
+|---|---------|-----|----------------|--------|
+| 1 | Incident Management | 3h | PLAN → BUILD → TEST → REVIEW → AUDIT → **PUSH** | **DONE** ✓ |
+| 2 | Staff Training | 4h | — | Pending |
+| 3 | Body Maps | 3h | — | Pending |
+| 4 | Handover Notes | 4h | — | Pending |
+| 5 | DoLS | 4h | — | Pending |
+| 6 | MAR Sheets | 8h | — | Pending |
+| 7 | SOS Alerts | 2h | — | Pending |
+| 8 | Notifications | 5h | — | Pending |
+| 9 | Safeguarding | 6h | — | Pending |
+
+**Completed:** 1/9 features | **Commit:** `7a6a1ef8`
+
+### Decisions & Scope Changes
+- Incident Management: Skipped SCAFFOLD (files exist). AI report section removed from detail view (deferred to Phase 3). Safeguarding referral linking deferred to Feature 9 (Safeguarding).
+
+---
+
 ## Current State Summary
 
 Care OS has ~35% UI coverage and ~70% DB coverage for CareRoster features. Phase 1 targets 9 features that have backend pieces (tables, models, controllers) but lack usable frontends. The CareRoster Base44 React app is our **spec/reference only** — everything gets built in Laravel Blade.
@@ -245,12 +266,12 @@ Care OS has ~35% UI coverage and ~70% DB coverage for CareRoster features. Phase
 - **Views:** 7 blade files covering list, detail, form, AI prevention
 
 ### What's Missing (Build These)
-- [ ] **Verify all views render** — test incident list, create form, detail view
-- [ ] **Fix any broken flows** — create new incident → save → appears in list → view details
-- [ ] **Add severity badges** — colour-coded (Low=green, Medium=amber, High=orange, Critical=red)
-- [ ] **Add status workflow** — Reported → Under Investigation → Resolved → Closed with status change buttons
-- [ ] **Link to safeguarding** — when `is_safeguarding=true`, prompt to create a SafeguardingReferral
-- [ ] Server-side validation on all form inputs
+- [x] **Verify all views render** — list view loads via AJAX, detail view now dynamic (was hardcoded)
+- [x] **Fix any broken flows** — fixed ref generation bug, search column bug, validator table bug, empty junction model
+- [x] **Add severity badges** — Low=green, Medium=amber, High=orange, Critical=red (already in JS, verified CSS exists)
+- [x] **Add status workflow** — Reported → Under Investigation → Resolved → Closed with step indicator + action buttons
+- [ ] **Link to safeguarding** — deferred to Feature 9 (Safeguarding Referral model doesn't exist yet)
+- [x] Server-side validation on all form inputs (already existed, added to new status_update endpoint)
 
 ### CareRoster Reference
 - **Export:** `CareRoster/export/Incident.json` (24 records, 7 critical), `IncidentReport.json` (6 records)
