@@ -4,7 +4,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests;
 use Illuminate\Pagination\Paginator;
-use App\Training, App\StaffTraining, App\User;
+use App\Models\Training;
+use App\Models\StaffTraining;
+use App\User;
 use Auth,View,Redirect,DB;
 use Illuminate\Support\Facades\Mail;
 

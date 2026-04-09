@@ -1,8 +1,7 @@
-<?php 
+<?php
 namespace App;
-use Illuminate\Database\Eloquent\Model;
 
-class Training extends Model
+// Alias to the new model location. All new code should use App\Models\Training.
+class Training extends \App\Models\Training
 {
-	protected $table = "training";
 }

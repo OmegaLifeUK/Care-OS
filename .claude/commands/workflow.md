@@ -5,11 +5,11 @@ When invoked, ask the user what feature or task they want to build, then execute
 ## The Care OS Development Pipeline
 
 ```
-┌─────────┐    ┌──────────┐    ┌─────────┐    ┌────────┐    ┌──────────┐    ┌────────┐    ┌──────┐
-│  PLAN   │───▶│ SCAFFOLD │───▶│  BUILD  │───▶│  TEST  │───▶│  REVIEW  │───▶│ AUDIT  │───▶│ PUSH │
-└─────────┘    └──────────┘    └─────────┘    └────────┘    └──────────┘    └────────┘    └──────┘
-     │              │               │              │              │              │            │
-  Plan doc     Boilerplate     Working code    Tests pass    Issues fixed    Clean scan   On GitHub
+┌─────────┐    ┌──────────┐    ┌─────────┐    ┌────────┐    ┌─────────┐    ┌──────────┐    ┌────────┐    ┌──────┐
+│  PLAN   │───▶│ SCAFFOLD │───▶│  BUILD  │───▶│  TEST  │───▶│  DEBUG  │───▶│  REVIEW  │───▶│ AUDIT  │───▶│ PUSH │
+└─────────┘    └──────────┘    └─────────┘    └────────┘    └─────────┘    └──────────┘    └────────┘    └──────┘
+     │              │               │              │              │              │              │            │
+  Plan doc     Boilerplate     Working code    Tests pass    Runtime clean   Issues fixed    Clean scan   On GitHub
 ```
 
 ## Stage 1: PLAN
@@ -68,8 +68,23 @@ When invoked, ask the user what feature or task they want to build, then execute
 3. Fix any failures
 4. **Report test results to the user**
 
-## Stage 5: REVIEW
-**Goal**: Catch issues before they ship.
+## Stage 5: DEBUG
+**Goal**: Catch runtime errors, N+1 queries, and dead code before review.
+
+1. Clear `storage/logs/laravel.log` (truncate to empty)
+2. Hit the feature's routes using `curl` or `php artisan` to trigger any errors:
+   - Load list views, detail views, create/edit forms
+   - Submit form POSTs where possible
+3. Check `storage/logs/laravel.log` for new errors/warnings — fix any found
+4. Scan new code for N+1 queries: list views that query related models without `with()` eager loading
+5. Check for dead code in new/modified files:
+   - Empty methods (method body is just `//` or `{}`)
+   - Commented-out blocks longer than 5 lines
+   - Unused `use` imports at the top of PHP files
+6. **Gate: no new errors in `storage/logs/laravel.log` after hitting all routes**
+
+## Stage 6: REVIEW
+**Goal**: Catch issues before they ship. (Code review — separate from DEBUG runtime checks.)
 
 1. Review all changed files (`git diff` from before the workflow started)
 2. Check for:
@@ -82,7 +97,7 @@ When invoked, ask the user what feature or task they want to build, then execute
 3. Fix any BLOCKER or HIGH issues immediately
 4. **Report review findings to the user**
 
-## Stage 6: AUDIT
+## Stage 7: AUDIT
 **Goal**: Ensure no regressions in the broader codebase.
 
 1. Grep for hardcoded URLs (`socialcareitsolutions`, `itdevelopmentservices`)
@@ -91,7 +106,7 @@ When invoked, ask the user what feature or task they want to build, then execute
 4. Verify route loading: `php artisan route:list 2>&1 | grep -i error`
 5. **Report audit results — PASS or FAIL with details**
 
-## Stage 7: PUSH
+## Stage 8: PUSH
 **Goal**: Ship it.
 
 1. `git add` the changed files (specific files, not `-A`)
@@ -111,6 +126,7 @@ Each stage has a gate — you cannot proceed to the next stage if the gate fails
 | SCAFFOLD | Files created without errors | Fix file generation issues |
 | BUILD | Feature loads without PHP errors | Debug and fix |
 | TEST | All tests pass | Fix failing tests |
+| DEBUG | No new errors in laravel.log | Fix runtime errors, N+1s, dead code |
 | REVIEW | No BLOCKER issues | Fix blockers before continuing |
 | AUDIT | No FAIL results | Fix audit failures |
 | PUSH | Push succeeds | Resolve git conflicts |
@@ -137,6 +153,7 @@ WORKFLOW: [Feature Name]
 [x] SCAFFOLD — 4 files created
 [x] BUILD    — 6 steps completed
 [x] TEST     — 5/5 tests passing
+[x] DEBUG    — 0 errors in laravel.log, 0 N+1s, 0 dead code
 [x] REVIEW   — 0 blockers, 1 minor fixed
 [x] AUDIT    — all checks PASS
 [x] PUSH     — commit abc1234 pushed to main

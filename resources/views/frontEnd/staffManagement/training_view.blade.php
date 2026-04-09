@@ -35,7 +35,16 @@
                         <!-- left part -->
                         <div class="col-md-6 col-sm-12 col-xs-12">
                             <div class="col-md-12 col-sm-12 col-xs-12 p-0">
-                                <h3 class="m-t-0 m-b-20 clr-blue fnt-20">Training Name : {{ $training_name }} </h3>
+                                <h3 class="m-t-0 m-b-20 clr-blue fnt-20">Training Name : {{ $training_name }}
+                                    @if(isset($training) && $training->is_mandatory)
+                                        <span class="badge" style="background:#e74c3c;color:#fff;font-size:11px;padding:3px 8px;">Mandatory</span>
+                                    @endif
+                                </h3>
+                                @if(isset($training) && $training->expiry_months)
+                                    <p style="color:#888;margin-top:-10px;margin-bottom:15px;">
+                                        <i class="fa fa-clock-o"></i> Expires {{ $training->expiry_months }} month(s) after completion
+                                    </p>
+                                @endif
                             </div>
                             <input type="hidden" name="training_id" value="{{ $training_id }}">
                             <!-- <div class="form-group col-md-12 col-sm-12 col-xs-12 p-0 cus-label">
@@ -141,8 +150,8 @@
 
                             </div>
                             <span class="notcomplete-append">
-                                @if($completed_training->isEmpty())
-                                    <p class="p-l-20">No Staff has not completed this training.</p>
+                                @if($not_completed_training->isEmpty())
+                                    <p class="p-l-20">No staff in this category.</p>
                                 @else
                                     @foreach($not_completed_training as $not_completed)
 
@@ -208,7 +217,7 @@
 
             },
             error: function(){
-                alert("COMMON_ERROR");
+                console.error("Failed to load training data");
 
                 $('.loader').hide();
                 $('body').removeClass('body-overflow');
@@ -243,7 +252,7 @@
 
             },
             error: function(){
-                alert("COMMON_ERROR");
+                console.error("Failed to load training data");
 
                 $('.loader').hide();
                 $('body').removeClass('body-overflow');
@@ -277,7 +286,7 @@
                 $('body').removeClass('body-overflow');
             },
             error: function(){
-                alert("COMMON_ERROR");
+                console.error("Failed to load training data");
 
                 $('.loader').hide();
                 $('body').removeClass('body-overflow');

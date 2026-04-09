@@ -1489,11 +1489,10 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::get('/staff/training/not-completed/view/{id}', 'App\Http\Controllers\frontEnd\StaffManagement\TrainingController@not_completed_training');
 	Route::get('/staff/training/active/view/{id}', 'App\Http\Controllers\frontEnd\StaffManagement\TrainingController@active_training');
 	Route::get('/staff/training/status/update/{training_id}', 'App\Http\Controllers\frontEnd\StaffManagement\TrainingController@status_update');
-	//Route::get('/staff/training/status/update/{training_id}/{status}','App\Http\Controllers\frontEnd\StaffManagement\TrainingController@status_update');
 	Route::post('/staff/training/staff/add', 'App\Http\Controllers\frontEnd\StaffManagement\TrainingController@add_user_training');
 	Route::get('/staff/training/view_fields/{traini_id}', 'App\Http\Controllers\frontEnd\StaffManagement\TrainingController@view_fields');
 	Route::post('/staff/training/edit_fields', 'App\Http\Controllers\frontEnd\StaffManagement\TrainingController@edit_fields');
-	Route::get('/staff/training/delete/{training_id}', 'App\Http\Controllers\frontEnd\StaffManagement\TrainingController@delete');
+	Route::post('/staff/training/delete/{training_id}', 'App\Http\Controllers\frontEnd\StaffManagement\TrainingController@delete');
 
 	// -------- general admin ------------------------//
 	Route::match(['get', 'post'], '/general-admin', 'App\Http\Controllers\frontEnd\GeneralAdminController@index');
@@ -2422,7 +2421,7 @@ Route::group(['prefix' => 'admin', 'middleware' => 'CheckAdminAuth'], function (
 			Route::get('plans/add', 'plan_add');
 			Route::post('plans/store', 'store');
 			Route::get('plans/edit/{id}', 'edit');
-			Route::get('plans/view/{id}', 'view');
+			Route::get('plans/view/{id}', [PlanBuilderAdminController::class, 'view']);
 			Route::get('plans/delete/{id}', 'delete');
 		});
 	});

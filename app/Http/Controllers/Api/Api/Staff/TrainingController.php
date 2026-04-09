@@ -2,7 +2,8 @@
 namespace App\Http\Controllers\Api\Staff;
 use App\Http\Controllers\frontEnd\StaffManagementController;
 use Illuminate\Http\Request;
-use App\StaffTraining, App\User;
+use App\Models\StaffTraining;
+use App\User;
 
 class TrainingController extends StaffManagementController
 {

@@ -12,7 +12,7 @@
 | # | Feature | Est | Pipeline Stage | Status |
 |---|---------|-----|----------------|--------|
 | 1 | Incident Management | 3h | PLAN → BUILD → TEST → REVIEW → AUDIT → **PUSH** | **DONE** ✓ |
-| 2 | Staff Training | 4h | — | Pending |
+| 2 | Staff Training | 4h | PLAN → SCAFFOLD → BUILD → TEST → DEBUG → REVIEW → AUDIT → **PUSH** | **DONE** ✓ |
 | 3 | Body Maps | 3h | — | Pending |
 | 4 | Handover Notes | 4h | — | Pending |
 | 5 | DoLS | 4h | — | Pending |
@@ -21,10 +21,11 @@
 | 8 | Notifications | 5h | — | Pending |
 | 9 | Safeguarding | 6h | — | Pending |
 
-**Completed:** 1/9 features | **Commit:** `7a6a1ef8`
+**Completed:** 2/9 features | **Commit:** pending
 
 ### Decisions & Scope Changes
 - Incident Management: Skipped SCAFFOLD (files exist). AI report section removed from detail view (deferred to Phase 3). Safeguarding referral linking deferred to Feature 9 (Safeguarding).
+- Staff Training: Kept `is_deleted` flag (not SoftDeletes) for backwards compat with existing 23 rows. Models moved to `app/Models/` with aliases at old location. Added DEBUG stage to workflow pipeline. Fixed pre-existing broken route at web.php:2424.
 
 ---
 
@@ -216,13 +217,13 @@ Care OS has ~35% UI coverage and ~70% DB coverage for CareRoster features. Phase
 - **Views:** `training_listing.blade.php`, `training_view.blade.php`, `staff_training.blade.php`, `staff_training_form.blade.php`, `education_training_form.blade.php`, `education_trainings.blade.php`
 
 ### What's Missing (Build These)
-- [ ] **Verify model files exist** — if not, create `app/Models/Training.php` and `app/Models/StaffTraining.php`
-- [ ] **Verify all views render correctly** — this feature has the most existing code, test each view
-- [ ] **Fix create/edit forms** — ensure training module creation works end-to-end (title, description, category, duration, is_mandatory, expiry_months)
-- [ ] **Fix staff assignment flow** — assign staff to training, track status (not_started → in_progress → completed)
-- [ ] **Add expiry tracking** — flag training that's expired or expiring soon based on completion_date + expiry_months
-- [ ] **Create service layer** if missing — move DB logic out of controllers
-- [ ] Server-side validation on all form inputs
+- [x] **Verify model files exist** — Created `app/Models/Training.php` and `app/Models/StaffTraining.php` with fillable, relationships, scopes. Old files are aliases.
+- [x] **Verify all views render correctly** — All 6 views tested, fixed wrong variable bug in not-completed section
+- [x] **Fix create/edit forms** — Added is_mandatory checkbox, expiry_months field, server-side validation on all POST endpoints
+- [x] **Fix staff assignment flow** — Added duplicate prevention, home_id scoping, email on assignment
+- [x] **Add expiry tracking** — DB columns added (due_date, completed_date, expiry_date), auto-calculated on completion
+- [x] **Create service layer** — `TrainingService.php` with 9 methods covering all business logic
+- [x] Server-side validation on all form inputs (add, edit, assign, status update)
 
 ### CareRoster Reference
 - **Export:** `CareRoster/export/TrainingModule.json` (2 records), `TrainingAssignment.json` (9 records)

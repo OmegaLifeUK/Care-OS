@@ -62,7 +62,6 @@
                             </div> 
                         </div> 
                     </div> 
-                    <?php //echo 'm'; die; ?> 
                     <div class="schedule-table"> 
                         <div class="table-responsive" id="calendar"> 
                             <table class="table table-bordered"> 
@@ -77,23 +76,26 @@
                                     </tr> 
                                     <tr class="training-tr"> 
                                      	 
-                                   		@for($i=1; $i<=6; $i++) 
-	                                        <td> 
-                                                <ul class="custom-ul"> 
-	                                    		@if(isset($training[$i])) 
-	                                    			@foreach($training[$i] as $key => $traini)   
-                                                            <li class="tranig-name-inner"> 
-                                                                <div class="tranig-name"> 
-                                                                    <a href="{{ url('/staff/training/view/'.$traini['id']) }}">{{ $traini['name'] }}</a> 
-                                                                    <span class="edit-icon edit_staff_training" traini_id="{{ $traini['id'] }}"> 
-                                                                        <i class="fa fa-edit"></i> 
-                                                                    </span> 
-                                                                </div> 
-                                                            </li> 
-	                                            	@endforeach	 
-	                                        	@endif 
-                                                <ul> 
-	                                        </td> 
+                                   		@for($i=1; $i<=6; $i++)
+	                                        <td>
+                                                <ul class="custom-ul">
+	                                    		@if(isset($training[$i]))
+	                                    			@foreach($training[$i] as $key => $traini)
+                                                            <li class="tranig-name-inner">
+                                                                <div class="tranig-name">
+                                                                    <a href="{{ url('/staff/training/view/'.$traini['id']) }}">{{ $traini['name'] }}</a>
+                                                                    @if(!empty($traini['is_mandatory']))
+                                                                        <span class="badge badge-danger" style="background:#e74c3c;color:#fff;font-size:9px;padding:2px 5px;margin-left:4px;">Required</span>
+                                                                    @endif
+                                                                    <span class="edit-icon edit_staff_training" traini_id="{{ $traini['id'] }}">
+                                                                        <i class="fa fa-edit"></i>
+                                                                    </span>
+                                                                </div>
+                                                            </li>
+	                                            	@endforeach
+	                                        	@endif
+                                                </ul>
+	                                        </td>
                                      	@endfor 
                                     </tr> 
                                 </tbody> 
@@ -109,19 +111,22 @@
                                         <td>Dec</td> 
                                     </tr> 
                                     <tr class="training-tr"> 
-                                        @for($i=7; $i<=12; $i++) 
-	                                        <td> 
-	                                    		@if(isset($training[$i])) 
-	                                    			@foreach($training[$i] as $key => $traini)   
-	                                            		<div class="tranig-name"> 
-                                                            <a href="{{ url('/staff/training/view/'.$traini['id']) }}">{{ $traini['name'] }}</a> 
-                                                            <span class="edit-icon edit_staff_training" traini_id="{{ $traini['id'] }}"> 
-                                                                <i class="fa fa-edit"></i> 
-                                                            </span> 
-                                                        </div> 
-	                                            	@endforeach	 
-	                                        	@endif 
-	                                        </td> 
+                                        @for($i=7; $i<=12; $i++)
+	                                        <td>
+	                                    		@if(isset($training[$i]))
+	                                    			@foreach($training[$i] as $key => $traini)
+	                                            		<div class="tranig-name">
+                                                            <a href="{{ url('/staff/training/view/'.$traini['id']) }}">{{ $traini['name'] }}</a>
+                                                            @if(!empty($traini['is_mandatory']))
+                                                                <span class="badge badge-danger" style="background:#e74c3c;color:#fff;font-size:9px;padding:2px 5px;margin-left:4px;">Required</span>
+                                                            @endif
+                                                            <span class="edit-icon edit_staff_training" traini_id="{{ $traini['id'] }}">
+                                                                <i class="fa fa-edit"></i>
+                                                            </span>
+                                                        </div>
+	                                            	@endforeach
+	                                        	@endif
+	                                        </td>
                                      	@endfor 
                                     </tr> 
  
@@ -189,30 +194,39 @@
                                 </div> 
                             </div> 
                         </div> 
-                        <div class="form-group col-md-12 col-sm-12 col-xs-12"> 
-                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">year: </label> 
-                            <div class="col-md-10 col-sm-9 col-xs-12"> 
-                                <div class="select-style"> 
-                                    <select name="year"> 
-                                        <option value=""> Select Year</option> 
-                                        <?php  
-                                        	$current_year = Date('Y'); 
-                                        	$end_year = $current_year+10; 
-                                        ?> 
-                                        @for($i = $current_year; $i <= $end_year; $i++) 
-                                        	<option value="{{ $i }}"> {{ $i }} </option> 
-                                        @endfor	 
-                                    </select> 
-                                </div> 
-                            </div> 
-                        </div> 
-                        <!-- <div class="shift-note"> 
-                            <p><strong>Note :</strong> The previous Shifts will be overlapped by the new shifts if present</p> 
-                        </div> --> 
-                		<div class="modal-footer"> 
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button> 
-		            	<button type="submit" class="btn btn-warning">Submit</button> 
-		            	</div> 
+                        <div class="form-group col-md-12 col-sm-12 col-xs-12">
+                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Year: </label>
+                            <div class="col-md-10 col-sm-9 col-xs-12">
+                                <div class="select-style">
+                                    <select name="year">
+                                        <option value=""> Select Year</option>
+                                        <?php
+                                        	$current_year = Date('Y');
+                                        	$end_year = $current_year+10;
+                                        ?>
+                                        @for($i = $current_year; $i <= $end_year; $i++)
+                                        	<option value="{{ $i }}"> {{ $i }} </option>
+                                        @endfor
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-12 col-sm-12 col-xs-12">
+                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Mandatory: </label>
+                            <div class="col-md-10 col-sm-9 col-xs-12">
+                                <label class="m-t-5"><input type="checkbox" name="is_mandatory" value="1"> This training is mandatory</label>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-12 col-sm-12 col-xs-12">
+                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Expiry (months): </label>
+                            <div class="col-md-10 col-sm-9 col-xs-12">
+                                <input type="number" name="expiry_months" class="form-control" min="1" max="120" placeholder="Leave blank if no expiry">
+                            </div>
+                        </div>
+                		<div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+		            	<button type="submit" class="btn btn-warning">Submit</button>
+		            	</div>
         			</form> 
         		</div> 
     		</div> 
@@ -282,33 +296,41 @@
                                 </div> 
                             </div> 
                         </div> 
-                        <div class="form-group col-md-12 col-sm-12 col-xs-12"> 
-                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">year: </label> 
-                            <div class="col-md-10 col-sm-9 col-xs-12"> 
-                                <div class="select-style"> 
-                                    <select name="year"> 
-                                        <option value=""> Select Year</option> 
-                                        <?php  
-                                            $current_year = Date('Y'); 
-                                            $end_year = $current_year+10; 
-                                        ?> 
-                                        @for($i = $current_year; $i <= $end_year; $i++) 
-                                            <option value="{{ $i }}"> {{ $i }} </option> 
-                                        @endfor  
-                                    </select> 
-                                </div> 
-                            </div> 
-                        </div> 
-                        <!-- <div class="shift-note"> 
-                            <p><strong>Note :</strong> The previous Shifts will be overlapped by the new shifts if present</p> 
-                        </div> --> 
- 
-                        <div class="modal-footer" style="float:left; width:100%; background-color: #fff;"> 
-                        <input type="hidden" name="training_id" value=""> 
-                        <input type="hidden" name="home_id" value="{{ Auth::User()->home_id }}"> 
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button> 
-                        <button type="submit" class="btn btn-warning" id="sbt-edit-dis">Submit</button> 
-                        </div> 
+                        <div class="form-group col-md-12 col-sm-12 col-xs-12">
+                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Year: </label>
+                            <div class="col-md-10 col-sm-9 col-xs-12">
+                                <div class="select-style">
+                                    <select name="year">
+                                        <option value=""> Select Year</option>
+                                        <?php
+                                            $current_year = Date('Y');
+                                            $end_year = $current_year+10;
+                                        ?>
+                                        @for($i = $current_year; $i <= $end_year; $i++)
+                                            <option value="{{ $i }}"> {{ $i }} </option>
+                                        @endfor
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-12 col-sm-12 col-xs-12">
+                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Mandatory: </label>
+                            <div class="col-md-10 col-sm-9 col-xs-12">
+                                <label class="m-t-5"><input type="checkbox" name="is_mandatory" value="1"> This training is mandatory</label>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-12 col-sm-12 col-xs-12">
+                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Expiry (months): </label>
+                            <div class="col-md-10 col-sm-9 col-xs-12">
+                                <input type="number" name="expiry_months" class="form-control" min="1" max="120" placeholder="Leave blank if no expiry">
+                            </div>
+                        </div>
+
+                        <div class="modal-footer" style="float:left; width:100%; background-color: #fff;">
+                        <input type="hidden" name="training_id" value="">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning" id="sbt-edit-dis">Submit</button>
+                        </div>
                     </form> 
                 </div> 
             </div> 
@@ -366,12 +388,15 @@
  
                         var training_id = resp['training_id']; 
          
-                        $('input[name=\'training_id\']').val(training_id); 
-                        $('input[name=\'name\']').val(resp['training_name']); 
-                        $('input[name=\'training_provider\']').val(resp['training_provider']); 
-                        $('textarea[name=\'desc\']').val(resp['training_desc']); 
-                        $('select[name=\'month\']').val(resp['training_month']); 
-                        $('select[name=\'year\']').val(resp['training_year']); 
+                        $('input[name=\'training_id\']').val(training_id);
+                        $('input[name=\'name\']').val(resp['training_name']);
+                        $('input[name=\'training_provider\']').val(resp['training_provider']);
+                        $('textarea[name=\'desc\']').val(resp['training_desc']);
+                        $('select[name=\'month\']').val(resp['training_month']);
+                        $('select[name=\'year\']').val(resp['training_year']);
+                        // New fields
+                        $('input[name=\'is_mandatory\']').prop('checked', resp['is_mandatory'] == 1);
+                        $('input[name=\'expiry_months\']').val(resp['expiry_months']);
                         $('#editShiftModal').modal('show'); 
  
                         $('#del-training-record').attr("href","{{ url('/staff/training/delete/') }}"+'/'+training_id); 
@@ -399,19 +424,24 @@
     }); 
 </script> 
  
-<script> 
-    //delete training record 
-    $(document).ready(function(){ 
-        $('.delete_training_rec').click(function(){ 
-           if(confirm('Do you want to delete this training record ?')){ 
-            //window.location="{{ url('/service/care_team/delete/') }}"+'/'+care_team_id; 
-            } 
-            else{ 
-                return false; 
-            } 
- 
-        }); 
-    }); 
+<script>
+    //delete training record via POST form
+    $(document).ready(function(){
+        $('.delete_training_rec').click(function(e){
+            e.preventDefault();
+            if(confirm('Do you want to delete this training record?')){
+                var training_id = $('input[name="training_id"]').val();
+                if(training_id) {
+                    var form = $('<form>', {
+                        'method': 'POST',
+                        'action': "{{ url('/staff/training/delete') }}/" + training_id
+                    });
+                    form.append($('<input>', { 'type': 'hidden', 'name': '_token', 'value': '{{ csrf_token() }}' }));
+                    form.appendTo('body').submit();
+                }
+            }
+        });
+    });
 </script> 
  
 <script type="text/javascript"> 

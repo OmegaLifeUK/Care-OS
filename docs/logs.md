@@ -547,3 +547,47 @@ DB_PASSWORD=
 **Contents:** Complete Phase 1 Feature 1 (Incident Management) workflow — PLAN through PUSH, all bugs fixed, tests written, security review passed.
 
 ---
+
+### Log 25 — Phase 1, Feature 2: Staff Training — Full Pipeline
+**Action:** Ran PLAN → SCAFFOLD → BUILD → TEST → DEBUG → REVIEW → AUDIT → PUSH pipeline for Staff Training.
+
+**Security fixes (BLOCKER):**
+1. Added `home_id` filtering to 6 endpoints that were missing it (`view()`, `status_update()`, `completed_training()`, `active_training()`, `not_completed_training()`, backend `view()`)
+2. Fixed XSS in 3 AJAX echo methods — now uses `e()` to escape staff names
+3. Added server-side `$request->validate()` to all 4 POST endpoints (add, edit_fields, add_user_training, delete)
+
+**Bugs fixed (HIGH):**
+4. `training_view.blade.php:144` — checked `$completed_training->isEmpty()` instead of `$not_completed_training->isEmpty()` for not-completed section
+5. `add_user_training()` — no duplicate check; same staff could be assigned twice. Added deduplication via `whereIn` check
+6. `status_update()` — used `$_GET['status']` directly; replaced with `$request->input('status')`
+7. Delete route changed from GET to POST (CSRF protection)
+8. `active_training()` line 132 — missing `/` separator in URL concatenation (`$active->id.'completed'` → `$active->id.'?status=complete'`)
+
+**Features added:**
+9. Database migration: `is_mandatory`, `category`, `expiry_months` on `training`; `due_date`, `started_date`, `completed_date`, `expiry_date`, `completion_notes` on `staff_training`
+10. Models upgraded: `app/Models/Training.php` and `app/Models/StaffTraining.php` with fillable, casts, relationships, scopes. Old files at `app/` are aliases.
+11. Service layer: `app/Services/Staff/TrainingService.php` — 9 methods covering all training business logic
+12. Expiry tracking: when staff marked complete, `completed_date` set and `expiry_date` calculated from `expiry_months`
+13. `is_mandatory` badge ("Required") shown on calendar view and detail view
+14. New form fields for is_mandatory checkbox and expiry_months input on add/edit modals
+
+**Code quality:**
+15. Removed 15-line commented-out code block from controller
+16. Removed `home_id` hidden input from edit form (was exposing home_id to client)
+17. Replaced `alert("COMMON_ERROR")` with `console.error()` in 3 AJAX error handlers
+18. Fixed pre-existing broken route at `web.php:2424` (`'view'` collides with PHP built-in in `Route::controller()` group)
+
+**Files created:** `app/Models/Training.php`, `app/Models/StaffTraining.php`, `app/Services/Staff/TrainingService.php`, `database/migrations/2026_04_09_130601_add_expiry_and_mandatory_fields_to_training_tables.php`, `tests/Feature/StaffTrainingTest.php`, `phases/staff-training-plan.md`
+
+**Files modified:** `app/Http/Controllers/frontEnd/StaffManagement/TrainingController.php` (full rewrite), `app/Http/Controllers/backEnd/generalAdmin/StaffTrainingController.php`, `app/Training.php`, `app/StaffTraining.php`, 3 API controllers (import updates), `routes/web.php`, `training_listing.blade.php`, `training_view.blade.php`
+
+**Tests:** 11/11 passing (auth, validation, multi-tenancy, route method checks)
+
+**Teaching notes:**
+- **`e()` helper** in Laravel is the equivalent of `htmlspecialchars()`. When echoing user data in raw PHP (outside Blade `{{ }}`), always use `e()` to prevent XSS.
+- **`Route::controller()` group pitfall** — PHP reserved words like `view`, `list`, `array` can't be used as short action names because they clash with built-in functions. Use `[Controller::class, 'method']` syntax instead.
+- **Model aliasing** — when moving models from `app/` to `app/Models/`, create alias classes at the old location that extend the new ones. This lets old code keep working while new code uses the correct namespace.
+- **Duplicate prevention on many-to-many** — before inserting into a junction table, query for existing records with `whereIn()` and use `array_diff()` to find truly new entries. This prevents silent duplicate rows.
+- **Expiry tracking pattern** — store `completed_date` + `expiry_months` on the training, calculate `expiry_date = completed_date + expiry_months` at completion time. This makes queries for "expiring soon" trivial: `WHERE expiry_date <= NOW() + INTERVAL 30 DAY`.
+
+---
