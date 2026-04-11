@@ -83,12 +83,13 @@ class BodyMapController extends ServiceUserManagementController
             return response()->json(['success' => false, 'message' => 'Not authorised.'], 403);
         }
 
-        $injury = $this->service->addInjury($homeId, $data);
+        $result = $this->service->addInjury($homeId, $data);
 
         return response()->json([
-            'success' => true,
-            'id'      => $injury->id,
-            'message' => 'Injury point added.',
+            'success'   => true,
+            'id'        => $result['injury']->id,
+            'duplicate' => $result['duplicate'],
+            'message'   => $result['duplicate'] ? 'Injury already recorded for this body part.' : 'Injury point added.',
         ]);
     }
 

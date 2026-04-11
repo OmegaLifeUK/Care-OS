@@ -1,12 +1,9 @@
 <link href="{{ url('public/frontEnd/css/custom.min.css')}}" rel="stylesheet" type="text/css" >
-<style> 
+<style>
     path.active{
         fill-opacity: 0.7 !important;
         stroke-opacity: 1 !important;
     }
-    /*#frt_spots, #frt_spots_1 {
-        display: none;
-    }*/
     .mapping_back_icon {
         font-size: 22px;
     }
@@ -14,6 +11,21 @@
         width: 100%;
         float: left;
     }
+    .popup-injury-form label { font-weight: 600; margin-top: 8px; }
+    .popup-injury-form select, .popup-injury-form input, .popup-injury-form textarea {
+        width: 100%; padding: 6px 10px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px;
+    }
+    .injury-badge {
+        display: inline-block; padding: 2px 8px; border-radius: 12px;
+        font-size: 11px; color: #fff; margin-left: 4px;
+    }
+    .injury-badge-bruise { background: #7B1FA2; }
+    .injury-badge-wound { background: #C62828; }
+    .injury-badge-rash { background: #EF6C00; }
+    .injury-badge-burn { background: #D84315; }
+    .injury-badge-swelling { background: #1565C0; }
+    .injury-badge-pressure_sore { background: #AD1457; }
+    .injury-badge-other { background: #455A64; }
 </style>
 
 
@@ -739,6 +751,75 @@
     </div>
 </div>
 
+{{-- Popup: Injury Detail Modal (add new) --}}
+<div class="modal fade" id="popupInjuryAddModal" tabindex="-1" role="dialog" style="z-index: 1060;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Injury Details</h4>
+            </div>
+            <div class="modal-body">
+                <form id="popupInjuryAddForm" class="popup-injury-form">
+                    @csrf
+                    <input type="hidden" name="sel_body_map_id" id="popup_add_sel_body_map_id">
+                    <input type="hidden" name="su_risk_id" id="popup_add_su_risk_id">
+                    <input type="hidden" name="service_user_id" value="{{ isset($service_user_id) ? $service_user_id : '' }}">
+
+                    <label>Injury Type</label>
+                    <select name="injury_type" id="popup_add_injury_type">
+                        <option value="">-- Select --</option>
+                        <option value="bruise">Bruise</option>
+                        <option value="wound">Wound</option>
+                        <option value="rash">Rash</option>
+                        <option value="burn">Burn</option>
+                        <option value="swelling">Swelling</option>
+                        <option value="pressure_sore">Pressure Sore</option>
+                        <option value="other">Other</option>
+                    </select>
+
+                    <label>Description</label>
+                    <textarea name="injury_description" rows="3" placeholder="Describe the injury..."></textarea>
+
+                    <label>Date Discovered</label>
+                    <input type="date" name="injury_date" id="popup_add_injury_date" value="{{ date('Y-m-d') }}">
+
+                    <label>Size</label>
+                    <input type="text" name="injury_size" placeholder="e.g. 2cm x 3cm">
+
+                    <label>Colour</label>
+                    <input type="text" name="injury_colour" placeholder="e.g. Red, Purple, Yellow">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="popupSaveInjuryBtn">Save Injury</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Popup: Injury Info Modal (view existing) --}}
+<div class="modal fade" id="popupInjuryInfoModal" tabindex="-1" role="dialog" style="z-index: 1060;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Injury Information</h4>
+            </div>
+            <div class="modal-body" id="popupInjuryInfoBody">
+                <p>Loading...</p>
+            </div>
+            <div class="modal-footer">
+                @if(Auth::user()->user_type === 'A')
+                <button type="button" class="btn btn-danger" id="popupRemoveInjuryBtn">Remove Injury</button>
+                @endif
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 
 <script src="{{ url('public/frontEnd/js/muscle3x.min.js') }}"></script>
@@ -748,137 +829,176 @@
 
 
 <script>
+(function() {
+    var csrfToken = $('meta[name="csrf-token"]').attr('content')
+                 || $('input[name="_token"]').first().val();
 
-    $(document).on('click', 'path[id*="frt"]', function(e){
+    // Set up CSRF for all AJAX calls in popup scope
+    $.ajaxSetup({
+        headers: { 'X-CSRF-TOKEN': csrfToken }
+    });
 
-        // var su_risk_id      = "{{ isset($su_risk_id) ? $su_risk_id : '' }}";
-        var su_risk_id      = $('input[name=su_rsk_id]').val();
-        // console.log(su_risk_id);
-        var service_user_id = "{{ isset($service_user_id) ? $service_user_id : '' }}";
-        // console.log(service_user_id);
- 
-        if($(this).attr('class') == 'active'){
+    // Track body-part → DB injury ID mapping
+    var popupInjuryMap = {};
 
-            var result      = confirm("Do you want to remove this ?"); 
+    // When the body map modal opens, load injury data from API
+    $(document).on('shown.bs.modal', '#bodyMapModal', function() {
+        var suRiskId = $('input[name=su_rsk_id]').val();
+        if (!suRiskId) return;
 
-            $(this).attr('class','');
-
-            if (result == true) {
-
-                $('.loader-box').show();
-                var sel_body_map_id = $(this).attr('id');
-                $.ajax({
-                        type : 'post',
-                        data : {'sel_body_map_id' : sel_body_map_id},
-                        url  : "{{ url('/service/body-map/injury/remove/')}}"+'/'+su_risk_id,
-                        success:function(resp) {
-                            if(isAuthenticated(resp) == false){
-                                return false;
-                            }
-                        }
-
-                    });
-                $('.loader').hide();
-
-            } else {
-               $(this).attr('class','active'); 
+        // Fetch current injuries from API and build the injuryMap
+        $.ajax({
+            type: 'GET',
+            url: "{{ url('/service/body-map') }}/" + suRiskId,
+            success: function(resp) {
+                if (resp.success && resp.data) {
+                    popupInjuryMap = {};
+                    for (var i = 0; i < resp.data.length; i++) {
+                        var inj = resp.data[i];
+                        popupInjuryMap[inj.sel_body_map_id] = inj.id;
+                        $('#' + inj.sel_body_map_id).attr('class', 'active');
+                    }
+                }
             }
+        });
+    });
+
+    // Click handler for both front (frt) and back (bck) body parts
+    $(document).on('click', '#bodyMapModal path[id*="frt"], #bodyMapModal path[id*="bck"]', function(e) {
+        var $path = $(this);
+        var selBodyMapId = $path.attr('id');
+        var suRiskId = $('input[name=su_rsk_id]').val();
+        var serviceUserId = "{{ isset($service_user_id) ? $service_user_id : '' }}";
+
+        if (!suRiskId) {
+            alert('No risk assessment selected.');
+            return;
+        }
+
+        if ($path.attr('class') === 'active') {
+            // Clicking an active (injured) body part — show info modal
+            var injuryId = popupInjuryMap[selBodyMapId];
+            if (!injuryId) return;
+
+            $('#popupInjuryInfoBody').html('<p>Loading...</p>');
+            $('#popupRemoveInjuryBtn').data('injury-id', injuryId).data('body-part', selBodyMapId);
+            $('#popupInjuryInfoModal').modal('show');
+
+            $.ajax({
+                type: 'GET',
+                url: "{{ url('/service/body-map/injury') }}/" + injuryId,
+                success: function(resp) {
+                    if (resp.success && resp.data) {
+                        var d = resp.data;
+                        var staffName = d.staff ? d.staff.name : 'Unknown';
+                        var typeBadge = d.injury_type
+                            ? '<span class="injury-badge injury-badge-' + d.injury_type + '">' + d.injury_type.replace('_', ' ') + '</span>'
+                            : '<em>Not specified</em>';
+                        var html = '<table class="table table-bordered">'
+                            + '<tr><td><strong>Body Region</strong></td><td>' + d.sel_body_map_id + '</td></tr>'
+                            + '<tr><td><strong>Type</strong></td><td>' + typeBadge + '</td></tr>'
+                            + '<tr><td><strong>Description</strong></td><td>' + (d.injury_description || '<em>None</em>') + '</td></tr>'
+                            + '<tr><td><strong>Date Discovered</strong></td><td>' + (d.injury_date || '<em>Not set</em>') + '</td></tr>'
+                            + '<tr><td><strong>Size</strong></td><td>' + (d.injury_size || '<em>Not recorded</em>') + '</td></tr>'
+                            + '<tr><td><strong>Colour</strong></td><td>' + (d.injury_colour || '<em>Not recorded</em>') + '</td></tr>'
+                            + '<tr><td><strong>Recorded By</strong></td><td>' + staffName + '</td></tr>'
+                            + '<tr><td><strong>Date Recorded</strong></td><td>' + d.created_at + '</td></tr>'
+                            + '</table>';
+                        $('#popupInjuryInfoBody').html(html);
+                    }
+                },
+                error: function() {
+                    $('#popupInjuryInfoBody').html('<p class="text-danger">Failed to load injury details.</p>');
+                }
+            });
         } else {
-
-            $(this).attr('class','active');
-
-            var result          = confirm("Do you want to add this ?");
-            if (result == true) {
-
-                // var IDs = [];
-                // $("#frt_base").find($(this).attr('class','active')).each(function(){ IDs.push(this.id); });
-                $('.loader-box').show();
-                var sel_body_map_id = $(this).attr('id');
-                $.ajax({
-
-                    type : 'post',
-                    data : { 'sel_body_map_id' : sel_body_map_id, 'su_risk_id' : su_risk_id, 'service_user_id' : service_user_id },
-                    url  : "{{ url('/service/body-map/injury/add/')}}",
-
-                    success:function(resp) {
-                        if(isAuthenticated(resp) == false){
-                            return false;
-                        }
-                    } 
-                });
-                $('.loader-box').hide();
-            } else {
-
-                $(this).attr('class','');
-            }
-            // var id = $(this).attr('id');
-            // alert(IDs);
+            // Clicking an empty body part — open add injury modal
+            $('#popup_add_sel_body_map_id').val(selBodyMapId);
+            $('#popup_add_su_risk_id').val(suRiskId);
+            $('#popupInjuryAddForm input[name=service_user_id]').val(serviceUserId);
+            $('#popup_add_injury_type').val('');
+            $('#popupInjuryAddForm textarea[name=injury_description]').val('');
+            $('#popup_add_injury_date').val(new Date().toISOString().split('T')[0]);
+            $('#popupInjuryAddForm input[name=injury_size]').val('');
+            $('#popupInjuryAddForm input[name=injury_colour]').val('');
+            $('#popupInjuryAddModal').modal('show');
         }
     });
 
-    $(document).on('click', 'path[id*="bck"]', function(e){
+    // Save new injury
+    $(document).on('click', '#popupSaveInjuryBtn', function() {
+        var $btn = $(this);
+        $btn.prop('disabled', true).text('Saving...');
 
-        console.log($(this));
-
-        // var su_risk_id      = "{{ isset($su_risk_id) ? $su_risk_id : '' }}";
-        var su_risk_id      = $('input[name=su_rsk_id]').val();
-        var service_user_id = "{{ isset($service_user_id) ? $service_user_id : '' }}";
-
-        if($(this).attr('class') == 'active'){
-
-            var result      = confirm("Do you want to remove this ?"); 
-            $(this).attr('class','');
-            if (result == true) {
-                $('.loader-box').show();
-                var sel_body_map_id = $(this).attr('id');
-                $.ajax({
-
-                        type : 'post',
-                        data : {'sel_body_map_id' : sel_body_map_id},
-                        url  : "{{ url('/service/body-map/injury/remove/')}}"+'/'+su_risk_id,
-
-                        success:function(resp) {
-                            if(isAuthenticated(resp) == false){
-                                return false;
-                            }
-                        } 
-                });
-                $('.loader-box').hide();
-
-            } else {
-
-                $(this).attr('class','active');
+        $.ajax({
+            type: 'POST',
+            url: "{{ url('/service/body-map/injury/add') }}",
+            data: $('#popupInjuryAddForm').serialize(),
+            success: function(resp) {
+                if (resp.success) {
+                    var selId = $('#popup_add_sel_body_map_id').val();
+                    $('#' + selId).attr('class', 'active');
+                    popupInjuryMap[selId] = resp.id;
+                    $('#popupInjuryAddModal').modal('hide');
+                    if (resp.duplicate) {
+                        alert('Note: An injury was already recorded for this body part.');
+                    }
+                } else {
+                    alert(resp.message || 'Failed to save injury.');
+                }
+            },
+            error: function(xhr) {
+                if (xhr.status === 422) {
+                    var errors = xhr.responseJSON.errors || {};
+                    var msg = Object.values(errors).flat().join('\n');
+                    alert('Validation error:\n' + msg);
+                } else if (xhr.status === 403) {
+                    alert(xhr.responseJSON.message || 'Not authorised.');
+                } else {
+                    alert('An error occurred. Please try again.');
+                }
+            },
+            complete: function() {
+                $btn.prop('disabled', false).text('Save Injury');
             }
-        } else {
-
-            $(this).attr('class','active');
-            var result          = confirm("Do you want to add this ?");
-
-            if (result == true) {
-                $('.loader-box').show();
-                // var IDs = [];
-                // $("#frt_base").find($(this).attr('class','active')).each(function(){ IDs.push(this.id); });
-                var sel_body_map_id = $(this).attr('id');
-                
-                $.ajax({
-
-                    type : 'post',
-                    data : { 'sel_body_map_id' : sel_body_map_id, 'su_risk_id' : su_risk_id, 'service_user_id' : service_user_id },
-                    url  : "{{ url('/service/body-map/injury/add/')}}",
-
-                    success:function(resp) {
-                        if(isAuthenticated(resp) == false){
-                            return false;
-                        }
-                    } 
-                });
-                $('.loader-box').hide();
-            } else {
-
-                $(this).attr('class','');
-            }
-        }
+        });
     });
+
+    // Remove injury (admin only)
+    $(document).on('click', '#popupRemoveInjuryBtn', function() {
+        var injuryId = $(this).data('injury-id');
+        var bodyPart = $(this).data('body-part');
+        if (!confirm('Are you sure you want to remove this injury?')) return;
+
+        var $btn = $(this);
+        $btn.prop('disabled', true).text('Removing...');
+
+        $.ajax({
+            type: 'POST',
+            url: "{{ url('/service/body-map/injury/remove') }}",
+            data: { injury_id: injuryId },
+            success: function(resp) {
+                if (resp.success) {
+                    $('#' + bodyPart).attr('class', '');
+                    delete popupInjuryMap[bodyPart];
+                    $('#popupInjuryInfoModal').modal('hide');
+                } else {
+                    alert(resp.message || 'Failed to remove injury.');
+                }
+            },
+            error: function(xhr) {
+                if (xhr.status === 403) {
+                    alert(xhr.responseJSON.message || 'Only administrators can remove injuries.');
+                } else {
+                    alert('An error occurred.');
+                }
+            },
+            complete: function() {
+                $btn.prop('disabled', false).text('Remove Injury');
+            }
+        });
+    });
+})();
 </script>
 
 <script type="text/javascript">

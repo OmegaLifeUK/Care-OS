@@ -718,3 +718,35 @@ DB_PASSWORD=
 - **`echo "1"; die;`** is the worst possible API pattern — raw string, no HTTP status code, no content type, kills the process. Always use `response()->json(['success' => true])`.
 
 ---
+
+### Log 33 — Body Maps: Production-Readiness Fixes
+**Time:** 2026-04-11  
+**What:** Fixed all critical issues identified in post-push production readiness review.
+
+**Fixes applied:**
+1. **Duplicate prevention** — `BodyMapService::addInjury()` now checks for existing active injury on the same body part + risk before creating. Returns `['injury' => $model, 'duplicate' => bool]`. Both web and API controllers updated to handle the new return format.
+2. **Route constraints** — Added `->where('id', '[0-9]+')` to all parameterised routes to prevent wildcard routes from matching string paths like `/injury/remove`.
+3. **Popup view JS rewrite** (`body_map_popup.blade.php`) — This is the PRIMARY access path (included in profile.blade.php modal). The old JS had:
+   - No CSRF tokens on AJAX calls (419 errors)
+   - Old routes (`/service/body-map/injury/remove/'+su_risk_id`) that 404 with new route structure
+   - `confirm()` dialogs instead of detail modals
+   - No injury detail capture (type, description, date, size, colour)
+   - No JSON response handling
+   
+   Replaced with new JS that:
+   - Sets up CSRF via `$.ajaxSetup()`
+   - Uses correct POST routes (`/service/body-map/injury/add`, `/service/body-map/injury/remove`) with proper data payloads
+   - Opens `popupInjuryAddModal` for new injuries with full detail form
+   - Opens `popupInjuryInfoModal` for viewing/removing existing injuries
+   - Fetches injury data via API when modal opens (`shown.bs.modal` event)
+   - Builds `popupInjuryMap` dynamically from API data (not Blade `@foreach`)
+   - Scopes click handlers to `#bodyMapModal` to avoid conflicts with full-page view
+   - Has loading indicators and button disable during save/remove
+   - Handles validation errors, 403s, and duplicates
+
+**Teaching notes:**
+- **Popup vs full-page view context** — The popup doesn't receive Blade variables like `$sel_injury_parts` or `$su_risk_id`. Instead, `su_risk_id` comes from a hidden input `su_rsk_id` set dynamically by `risk.blade.php` JS. Injury data must be fetched via AJAX when the modal opens, not rendered server-side.
+- **Modal stacking** — When a popup modal opens a second modal (e.g., injury detail inside body map), use `z-index: 1060` on the inner modal and scope event handlers with `#bodyMapModal` prefix to avoid conflicts.
+- **IIFE pattern** — Wrapped popup JS in `(function() { ... })()` to avoid polluting global scope and prevent variable name collisions with the full-page view's JS.
+
+---

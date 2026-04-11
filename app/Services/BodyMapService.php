@@ -37,10 +37,22 @@ class BodyMapService
 
     /**
      * Add a new injury point to the body map.
+     * Returns ['injury' => BodyMap, 'duplicate' => bool].
      */
-    public function addInjury(int $homeId, array $data): BodyMap
+    public function addInjury(int $homeId, array $data): array
     {
-        return BodyMap::create([
+        // Duplicate prevention: check if this body part already has an active entry for this risk
+        $existing = BodyMap::forHome($homeId)
+            ->active()
+            ->where('su_risk_id', $data['su_risk_id'])
+            ->where('sel_body_map_id', $data['sel_body_map_id'])
+            ->first();
+
+        if ($existing) {
+            return ['injury' => $existing, 'duplicate' => true];
+        }
+
+        $injury = BodyMap::create([
             'home_id'            => $homeId,
             'service_user_id'    => $data['service_user_id'],
             'staff_id'           => Auth::id(),
@@ -54,6 +66,8 @@ class BodyMapService
             'is_deleted'         => '0',
             'created_by'         => Auth::id(),
         ]);
+
+        return ['injury' => $injury, 'duplicate' => false];
     }
 
     /**

@@ -57,9 +57,13 @@ class BodyMapController extends Controller
             return response()->json(['success' => false, 'message' => 'Not authorised.'], 403);
         }
 
-        $injury = $this->service->addInjury($homeId, $data);
+        $result = $this->service->addInjury($homeId, $data);
 
-        return response()->json(['success' => true, 'id' => $injury->id]);
+        return response()->json([
+            'success'   => true,
+            'id'        => $result['injury']->id,
+            'duplicate' => $result['duplicate'],
+        ]);
     }
 
     public function removeInjury(Request $request)
