@@ -4,6 +4,42 @@
 
 ---
 
+## Session: 2026-04-11 (Security Hardening)
+
+### Log 1 — Body Maps Security Audit & Fixes
+**Time:** Session start  
+**Action:** Full security audit of Feature 3 (Body Maps), then fixed all 7 vulnerabilities found.
+
+**Vulnerabilities fixed:**
+1. **CRITICAL — API controller home_id parsing:** `Auth::user()->home_id` returned raw comma-separated string like `"8,18,1,9,11,12"`. Added `getHomeId()` helper with `explode(',', $homeIds)[0]` to match web controller pattern.
+2. **CRITICAL — API removeInjury() IDOR:** No ownership check before deletion. Added `BodyMap::forHome($homeId)->active()->find()` check in controller.
+3. **HIGH — Web removeInjury() IDOR:** Only validated in service layer. Added explicit controller-level ownership check before calling service.
+4. **HIGH — Web updateInjury() IDOR:** Same issue. Added controller-level ownership check.
+5. **HIGH — Client-side validation:** Added JS validation (description max 1000, size max 100, colour max 50, body part required) before AJAX submit.
+6. **MEDIUM — Audit logging:** Added `Log::info()` in `BodyMapService` for create, remove, and update operations with actor ID, home ID, and record details.
+7. **MEDIUM — FK constraints:** New migration `2026_04_11_215144_add_body_map_foreign_keys.php` — fixed column type mismatches (bigint unsigned → signed int to match parent PKs), added FKs for home_id, created_by, updated_by, plus composite indexes.
+
+**New tests added (7):**
+- `test_get_injury_rejects_cross_home_access` — IDOR on GET
+- `test_remove_injury_rejects_cross_home_access` — IDOR on DELETE
+- `test_update_injury_rejects_cross_home_access` — IDOR on UPDATE
+- `test_add_injury_rejects_description_over_max_length` — validation boundary
+- `test_add_injury_stores_xss_payload_safely` — XSS storage test
+- Cross-home test helper `createCrossHomeInjury()` for reuse
+
+**New file created:**
+- `docs/security-checklist.md` — 15-item vulnerability checklist with automated grep patterns for all future `/workflow` runs
+
+**Teaching notes:**
+- **IDOR (Insecure Direct Object Reference):** When an endpoint accepts an ID (like `injury_id=5`), an attacker can change it to `injury_id=6` to access another user's data. Fix: always verify the record's `home_id` matches the authenticated user's home BEFORE acting.
+- **Controller vs Service validation:** The service layer is a safety net, but IDOR checks should happen in the controller too. This gives two layers of protection and lets the controller return proper HTTP responses (404/403) rather than relying on the service returning `false`.
+- **FK type matching in MySQL:** Foreign key columns must have the EXACT same type and signedness as the parent PK. `int unsigned` cannot reference `int` (signed). Always check with `SHOW COLUMNS` before adding FKs.
+- **Audit logging in care homes:** UK CQC regulations require traceability for safeguarding. Every injury record change must be attributable to a specific staff member.
+
+**Test results:** 17/17 passed, 2 skipped (no test data), 0 failures.
+
+---
+
 ## Session: 2026-04-08
 
 ### Log 1 — Environment Check
@@ -748,5 +784,27 @@ DB_PASSWORD=
 - **Popup vs full-page view context** — The popup doesn't receive Blade variables like `$sel_injury_parts` or `$su_risk_id`. Instead, `su_risk_id` comes from a hidden input `su_rsk_id` set dynamically by `risk.blade.php` JS. Injury data must be fetched via AJAX when the modal opens, not rendered server-side.
 - **Modal stacking** — When a popup modal opens a second modal (e.g., injury detail inside body map), use `z-index: 1060` on the inner modal and scope event handlers with `#bodyMapModal` prefix to avoid conflicts.
 - **IIFE pattern** — Wrapped popup JS in `(function() { ... })()` to avoid polluting global scope and prevent variable name collisions with the full-page view's JS.
+
+---
+
+### Log 34 — Security Hardening & Workflow Update
+**Time:** 2026-04-11  
+**What:** Added XSS protection (`esc()` helper) to both body map views, rate limiting on POST routes, and updated `/workflow` with comprehensive 14-point security checklist across all stages (PLAN, BUILD, TEST, REVIEW, AUDIT).
+
+### Log 35 — Session 7 Saved
+**Time:** 2026-04-11  
+**What:** Saved full session history to `sessions/session7.md`. Covers Body Maps /workflow, production-readiness fixes, security hardening, and /workflow security update. 4 commits pushed (5dec11a6, 4ca264c2, ff158cf3, 4967a463).
+
+### Log 36 — CLAUDE.md Created
+**Time:** 2026-04-11  
+**What:** Created `CLAUDE.md` in project root for portability. Contains project overview, tech stack, local setup, git conventions, codebase patterns, all 10 security rules, and current progress. Allows any Claude Code instance to understand the project without needing memory files.
+
+### Log 37 — Global /workflow Command
+**Time:** 2026-04-11  
+**What:** Created `~/.claude/commands/workflow.md` — tech-agnostic version of /workflow that works on any project (React, Vue, Python, Node, etc.). Adds Stage 0: DETECT for auto-detecting tech stack. 15-point security checklist adapted for all stacks. Project-level /workflow in Care OS overrides this when inside the project.
+
+### Log 38 — Session 8 Saved
+**Time:** 2026-04-11  
+**What:** Saved session history to `sessions/session8.md`. Covers security hardening, CLAUDE.md creation, global /workflow, EVLENT-EDUCATION logs format, cross-project setup.
 
 ---

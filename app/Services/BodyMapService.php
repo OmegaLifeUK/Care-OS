@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\BodyMap;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class BodyMapService
 {
@@ -67,6 +68,14 @@ class BodyMapService
             'created_by'         => Auth::id(),
         ]);
 
+        Log::info('Body map injury created', [
+            'injury_id'       => $injury->id,
+            'home_id'         => $homeId,
+            'service_user_id' => $data['service_user_id'],
+            'body_part'       => $data['sel_body_map_id'],
+            'created_by'      => Auth::id(),
+        ]);
+
         return ['injury' => $injury, 'duplicate' => false];
     }
 
@@ -80,6 +89,14 @@ class BodyMapService
         if (!$injury) {
             return false;
         }
+
+        Log::info('Body map injury removed', [
+            'injury_id'       => $id,
+            'home_id'         => $homeId,
+            'service_user_id' => $injury->service_user_id,
+            'body_part'       => $injury->sel_body_map_id,
+            'removed_by'      => Auth::id(),
+        ]);
 
         $injury->update([
             'is_deleted'  => '1',
@@ -99,6 +116,12 @@ class BodyMapService
         if (!$injury) {
             return false;
         }
+
+        Log::info('Body map injury updated', [
+            'injury_id'  => $id,
+            'home_id'    => $homeId,
+            'updated_by' => Auth::id(),
+        ]);
 
         $injury->update([
             'injury_type'        => $data['injury_type'] ?? $injury->injury_type,

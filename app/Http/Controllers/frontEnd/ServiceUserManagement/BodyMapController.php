@@ -109,6 +109,12 @@ class BodyMapController extends ServiceUserManagementController
             return response()->json(['success' => false, 'message' => 'Only administrators can remove injuries.'], 403);
         }
 
+        // IDOR check: verify injury belongs to this home before deletion
+        $injury = \App\Models\BodyMap::forHome($homeId)->active()->find($data['injury_id']);
+        if (!$injury) {
+            return response()->json(['success' => false, 'message' => 'Injury not found.'], 404);
+        }
+
         $removed = $this->service->removeInjury($homeId, $data['injury_id']);
 
         if (!$removed) {
@@ -148,6 +154,12 @@ class BodyMapController extends ServiceUserManagementController
         ]);
 
         $homeId = $this->getHomeId();
+
+        // IDOR check: verify injury belongs to this home before update
+        $injury = \App\Models\BodyMap::forHome($homeId)->active()->find($data['id']);
+        if (!$injury) {
+            return response()->json(['success' => false, 'message' => 'Injury not found.'], 404);
+        }
 
         $updated = $this->service->updateInjury($homeId, $data['id'], $data);
 

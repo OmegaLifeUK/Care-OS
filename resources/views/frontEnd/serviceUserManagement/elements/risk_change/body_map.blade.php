@@ -376,6 +376,29 @@ $(document).on('click', 'path[id*="frt"], path[id*="bck"]', function(e) {
 
 // Save new injury
 $('#saveInjuryBtn').on('click', function() {
+    // Client-side validation before submit
+    var description = $('#modal_injury_description').val() || '';
+    var size = $('#modal_injury_size').val() || '';
+    var colour = $('#modal_injury_colour').val() || '';
+    var selBodyMapId = $('#modal_sel_body_map_id').val() || '';
+
+    if (!selBodyMapId) {
+        alert('No body part selected. Please click a body part first.');
+        return;
+    }
+    if (description.length > 1000) {
+        alert('Description must be 1000 characters or less.');
+        return;
+    }
+    if (size.length > 100) {
+        alert('Size must be 100 characters or less.');
+        return;
+    }
+    if (colour.length > 50) {
+        alert('Colour must be 50 characters or less.');
+        return;
+    }
+
     var $btn = $(this);
     $btn.prop('disabled', true).text('Saving...');
 
