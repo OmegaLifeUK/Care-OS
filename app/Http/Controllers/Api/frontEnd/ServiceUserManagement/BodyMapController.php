@@ -1,71 +1,85 @@
 <?php
 
-namespace App\Http\Controllers\frontEnd\ServiceUserManagement;
-use App\Http\Controllers\frontEnd\ServiceUserManagementController;
+namespace App\Http\Controllers\Api\frontEnd\ServiceUserManagement;
+
+use App\Http\Controllers\Controller;
+use App\Services\BodyMapService;
+use App\ServiceUserRisk;
 use Illuminate\Http\Request;
-use App\BodyMap, App\ServiceUserRisk;
-use Auth;
-//created on 22  june (neha)
+use Illuminate\Support\Facades\Auth;
 
-class BodyMapController extends ServiceUserManagementController
-{   
-    //for body map
-    public function index($su_risk_id = null) {
+class BodyMapController extends Controller
+{
+    protected BodyMapService $service;
 
-        // echo $su_risk_id; die;
-        $staff_id         = Auth::user()->id;
-
-        $service_user_id  = ServiceUserRisk::where('id', $su_risk_id)->value('service_user_id');
-        // echo $service_user_id; die;
-        $sel_injury_parts = BodyMap::select('id','sel_body_map_id','service_user_id','staff_id','su_risk_id')
-                                    ->where('service_user_id',$service_user_id)
-                                    ->where('staff_id',$staff_id)
-                                    ->where('su_risk_id',$su_risk_id)
-                                    ->where('is_deleted','0')
-                                    ->get()
-                                    ->toArray();
-                                    
-        // echo "<pre>";print_r($sel_injury_parts);die;
-
-        return view('frontEnd.serviceUserManagement.elements.risk_change.body_map',compact('su_risk_id','sel_injury_parts','service_user_id'));
-    }
-    
-    //to add injury point in bodymap
-    public function addInjury(Request $request) {
-
-        $data     = $request->input();
-        // echo "<pre>"; print_r($data); die;
-        $staff_id = Auth::user()->id;
-
-        if (!empty($data)) {
-            
-            $body_map                  = new BodyMap;
-            $body_map->service_user_id = $data['service_user_id'];
-            $body_map->staff_id        = $staff_id;
-            $body_map->sel_body_map_id = $data['sel_body_map_id'];
-            $body_map->su_risk_id      = $data['su_risk_id'];
-            $body_map->save();
-        }
-
-        echo"1";die;
-        
+    public function __construct()
+    {
+        $this->service = new BodyMapService();
     }
 
-    //to remove injury point in bodymap
-    public function removeInjury(Request $request,$service_user_id = null){
+    public function index($su_risk_id = null)
+    {
+        $homeId = Auth::user()->home_id;
 
-        $data        = $request->input();
-        $selected_id = $data['sel_body_map_id'];
-        $staff_id    = Auth::user()->id;
+        $risk = ServiceUserRisk::where('id', $su_risk_id)
+            ->where('home_id', $homeId)
+            ->first();
 
-        if (!empty($data)) {
-
-            $details = BodyMap::where('sel_body_map_id',$selected_id)->update(['is_deleted'=>'1']);
-            if ($details) {
-
-                echo "1";die;
-            }  
+        if (!$risk) {
+            return response()->json(['success' => false, 'message' => 'Risk not found.'], 404);
         }
 
+        $injuries = $this->service->listForRisk($homeId, $su_risk_id);
+
+        return response()->json(['success' => true, 'data' => $injuries]);
+    }
+
+    public function addInjury(Request $request)
+    {
+        $data = $request->validate([
+            'service_user_id' => 'required|integer|exists:service_user,id',
+            'su_risk_id'      => 'required|integer|exists:su_risk,id',
+            'sel_body_map_id' => 'required|string|max:20',
+            'injury_type'     => 'nullable|string|in:bruise,wound,rash,burn,swelling,pressure_sore,other',
+            'injury_description' => 'nullable|string|max:1000',
+            'injury_date'     => 'nullable|date',
+            'injury_size'     => 'nullable|string|max:100',
+            'injury_colour'   => 'nullable|string|max:50',
+        ]);
+
+        $homeId = Auth::user()->home_id;
+
+        $risk = ServiceUserRisk::where('id', $data['su_risk_id'])
+            ->where('home_id', $homeId)
+            ->first();
+
+        if (!$risk) {
+            return response()->json(['success' => false, 'message' => 'Not authorised.'], 403);
+        }
+
+        $injury = $this->service->addInjury($homeId, $data);
+
+        return response()->json(['success' => true, 'id' => $injury->id]);
+    }
+
+    public function removeInjury(Request $request)
+    {
+        $data = $request->validate([
+            'injury_id' => 'required|integer',
+        ]);
+
+        $homeId = Auth::user()->home_id;
+
+        if (Auth::user()->user_type !== 'A') {
+            return response()->json(['success' => false, 'message' => 'Only administrators can remove injuries.'], 403);
+        }
+
+        $removed = $this->service->removeInjury($homeId, $data['injury_id']);
+
+        if (!$removed) {
+            return response()->json(['success' => false, 'message' => 'Injury not found.'], 404);
+        }
+
+        return response()->json(['success' => true]);
     }
 }

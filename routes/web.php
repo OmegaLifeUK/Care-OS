@@ -1183,10 +1183,13 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::post('/service/user/edit-details', 'App\Http\Controllers\frontEnd\ServiceUserManagement\ProfileController@edit_detail_info');
 	/*Route::match(['get','post'], '/service/daily-records-bmp-rmp/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BmpRmpController@service_users_list');*/
 
-	//Body Map
-	Route::match(['get', 'post'], '/service/body-map/{risk_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@index');
-	Route::match(['get', 'post'], '/service/body-map/injury/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@addInjury');
-	Route::match(['get', 'post'], '/service/body-map/injury/remove/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@removeInjury');
+	//Body Map — specific routes before wildcard {risk_id}
+	Route::post('/service/body-map/injury/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@addInjury');
+	Route::post('/service/body-map/injury/remove', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@removeInjury');
+	Route::post('/service/body-map/injury/update', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@updateInjury');
+	Route::get('/service/body-map/injury/{id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@getInjury')->where('id', '[0-9]+');
+	Route::get('/service/body-map/history/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@history');
+	Route::get('/service/body-map/{risk_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@index');
 
 	//calender paths
 	Route::match(['get', 'post'], '/service/calendar/{service_user_id}', 'App\Http\Controllers\frontEnd\CalendarController@index');

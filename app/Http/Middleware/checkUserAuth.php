@@ -28,7 +28,7 @@ class checkUserAuth
         //checking current session for one user logged in at one time
         if(Auth::check()){
             $current_token = csrf_token();
-            // print_r($current_token); 
+            // print_r($current_token);
             // echo "<br>";
             $saved_token = Auth::user()->session_token;
             // print_r($current_token); die;

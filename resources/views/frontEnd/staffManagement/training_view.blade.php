@@ -55,6 +55,12 @@
                                 </div>
 
                             </div> -->
+                            @if(isset($remaining_capacity))
+                                <p style="color:#e67e22;margin-bottom:10px;">
+                                    <i class="fa fa-users"></i> <strong>{{ $remaining_capacity }}</strong> slot(s) remaining out of {{ $training->max_employees }}
+                                </p>
+                            @endif
+                            @if($is_admin)
                             <form id="training_user_add" method="post" action="{{ url('/staff/training/staff/add') }}">
                                 {{ csrf_field() }}
                                 <div class="form-group col-md-12 col-sm-12 col-xs-12 p-0" id="user-add">
@@ -79,7 +85,8 @@
                                     </div>
                                    
                                 </div>
-                            </form>    
+                            </form>
+                            @endif
                             <!-- Divider -->
                             <div class="col-md-12 col-sm-12 col-xs-12 p-0">
                                 <div class="below-divider"></div>

@@ -19,6 +19,9 @@ class StaffTraining extends Model
         'completed_date',
         'expiry_date',
         'completion_notes',
+        'assigned_by',
+        'status_changed_by',
+        'status_changed_at',
     ];
 
     protected $casts = [
@@ -26,6 +29,7 @@ class StaffTraining extends Model
         'started_date' => 'date',
         'completed_date' => 'date',
         'expiry_date' => 'date',
+        'status_changed_at' => 'datetime',
     ];
 
     // Status constants

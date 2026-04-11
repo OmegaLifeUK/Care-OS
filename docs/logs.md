@@ -591,3 +591,130 @@ DB_PASSWORD=
 - **Expiry tracking pattern** — store `completed_date` + `expiry_months` on the training, calculate `expiry_date = completed_date + expiry_months` at completion time. This makes queries for "expiring soon" trivial: `WHERE expiry_date <= NOW() + INTERVAL 30 DAY`.
 
 ---
+
+### Log 26 — Saved Session 5
+**Action:** Saved full conversation history to `sessions/session5.md`.
+**Contents:** Complete Phase 1 Feature 2 (Staff Training) workflow — PLAN through PUSH with new DEBUG stage, all security fixes, tests, and expiry tracking.
+
+---
+
+## Session: 2026-04-09 to 2026-04-10
+
+### Log 27 — Login Debugging & Manual Testing
+**Action:** Debugged login flow for manual browser testing of Staff Training feature.
+
+**Root cause:** komal's `access_rights` maxed at 543 but `/roster` route requires permission ID 554 (roster permissions 554-621 were added after her account was last updated). Auth::attempt succeeded but the `checkUserAuth` middleware's `checkPermission()` rejected access to `/roster`, redirecting back to login with a generic "not authorized" message.
+
+**Fix:** Added permissions 544-621 to komal's access_rights. Also reset komal's password to `123456`.
+
+**Teaching notes:**
+- Laravel's `Auth::attempt()` succeeding doesn't mean the user can access pages — middleware can still reject.
+- Generic error messages ("not authorized") make debugging extremely hard. Always add debug logging to trace the exact failure point.
+- The login flow: user lookup → home_id check → Auth::attempt → redirect to /roster → middleware permission check. Failure at any step shows the same error.
+
+---
+
+### Log 28 — Bug Fix: PHP 8.5 end() on Overloaded Property
+**Action:** Fixed "Indirect modification of overloaded property" error when assigning staff.
+**Cause:** `end($request->user_ids)` — PHP 8.5 doesn't allow `end()` on overloaded properties.
+**Fix:** Copy to local variable: `$userIds = $request->user_ids; $lastUserId = end($userIds);`
+
+**Teaching notes:**
+- PHP 8.5 is stricter about modifying overloaded properties (magic `__get()`). Functions like `end()`, `array_pop()`, `sort()` that modify arrays by reference will fail on `$request->property`. Always copy to a local variable first.
+
+---
+
+### Log 29 — New Features: Max Employees + Date Picker + Edit Fix
+**Action:** Added 3 features per user request:
+1. **Max Employees field** — number input on Add/Edit forms, migration, model, service, controller
+2. **Date picker** — replaced Month/Year dropdowns with `<input type="date">`, auto-derives month/year for calendar view, backfilled existing data
+3. **Edit modal fix** — jQuery validate still required old month/year fields (silent failure), modal opened in disabled view-mode by default
+
+**Teaching notes:**
+- When changing form fields, always check jQuery validate rules — they can silently block submission without any visible error.
+- `<input type="date">` value must be `YYYY-MM-DD` format. Browsers display it in locale format but the underlying value is always ISO.
+- When replacing fields, keep backwards compatibility: we still populate `training_month`/`training_year` from the date so the calendar view works without changes.
+
+---
+
+### Log 30 — Production Hardening (7 Items)
+**Action:** Made Staff Training production-ready with 7 improvements:
+
+1. **Role-based access** — `isAdmin()` check on all write operations, UI buttons hidden for non-admins
+2. **Async email** — `Mail::send()` → `Mail::queue()` for non-blocking assignment emails
+3. **Audit trail** — `created_by`, `updated_by`, `assigned_by`, `status_changed_by`, `status_changed_at` columns, auto-populated via `Auth::id()`
+4. **max_employees enforcement** — capacity check in `assignStaff()`, returns 'full' when exceeded, UI shows remaining slots
+5. **Error messages** — all redirects now have specific, descriptive messages
+6. **Database indexes** — 6 composite indexes for query performance at scale
+7. **Tests updated** — 14 tests (was 11), added 3 role-based access tests, all passing
+
+**Teaching notes:**
+- `Mail::queue()` vs `Mail::send()`: queue dispatches to a background job (requires `QUEUE_CONNECTION` set to redis/database, not sync). With `sync` driver it behaves like `send()` but the code is ready for production queues.
+- Audit columns (`created_by`, `updated_by`) are essential for compliance in care home software — CQC may require knowing who made what change and when.
+- Composite indexes should match your WHERE clause order: `(home_id, is_deleted)` matches `WHERE home_id = ? AND is_deleted = 0`.
+- Role checks should happen BEFORE validation — no point validating input if the user can't perform the action.
+
+---
+
+### Log 31 — Saved Session 6
+**Action:** Saved full conversation history to `sessions/session6.md`.
+**Contents:** Login debugging, PHP 8.5 bug fix, max employees field, date picker, edit modal fix, production hardening (7 items), reusable prompts document.
+
+---
+
+## Session: 2026-04-11
+
+### Log 32 — Phase 1, Feature 3: Body Maps — Full Pipeline
+**Action:** Ran PLAN → SCAFFOLD → BUILD → TEST → DEBUG → REVIEW → AUDIT pipeline for Body Maps.
+
+**Security fixes (BLOCKER):**
+1. Added `home_id` column to `body_map` table — previously relied on joining through `su_risk` (fragile multi-tenancy)
+2. Added `home_id` filtering to ALL controller methods — `index()`, `addInjury()`, `removeInjury()`, `getInjury()`, `updateInjury()`, `history()`
+3. Added CSRF token to all AJAX calls via `$.ajaxSetup({ headers: {'X-CSRF-TOKEN': csrfToken} })`
+4. Added `$request->validate()` with proper rules to all POST endpoints
+5. Role-based access: only admins (user_type=A) can remove injuries
+6. Replaced `echo "1"; die;` responses with proper JSON (`response()->json()`)
+
+**Bugs fixed (HIGH):**
+7. `index()` filtered by `staff_id` — each staff only saw their own marks. Changed to show ALL injuries for the service user
+8. `removeInjury()` had no `home_id` filter — any user could delete any injury across homes
+9. Route `{risk_id}` wildcard was catching `/injury/{id}` and `/history/{id}` routes — reordered routes and added `->where('id', '[0-9]+')` constraint
+10. `getHomeId()` — admin users have comma-separated `home_id` ("8,18,1,9"). Used `explode(',', $homeIds)[0]` pattern from Training controller
+11. `isAdmin()` method had infinite recursion (replace_all turned `Auth::user()->user_type === 'A'` into `$this->isAdmin()` inside the `isAdmin()` method itself)
+12. Routes changed from `Route::match(['get','post'])` to proper `Route::get()` / `Route::post()` for write operations
+
+**Features added:**
+13. Database migration: `home_id`, `injury_type`, `injury_description`, `injury_date`, `injury_size`, `injury_colour`, `created_by`, `updated_by` columns + indexes
+14. Backfill: existing 25 rows got `home_id` from `su_risk` join, `created_by` from `staff_id`
+15. Model: `app/Models/BodyMap.php` with fillable, casts, relationships (`staff`, `creator`, `serviceUserRisk`), scopes (`forHome`, `active`). Alias at `app/BodyMap.php`
+16. Service layer: `app/Services/BodyMapService.php` — 7 methods (listForServiceUser, listForRisk, addInjury, removeInjury, updateInjury, getInjury, getHistory)
+17. Injury detail capture: when clicking an empty body part, modal opens to capture type (dropdown: bruise/wound/rash/burn/swelling/pressure_sore/other), description, date, size, colour
+18. Injury info display: when clicking an active body part, modal shows recorded details (type badge, description, date, size, colour, recorded by, date recorded)
+19. Injury removal: admin-only, with confirmation, via dedicated remove button in info modal
+20. History endpoint: `GET /service/body-map/history/{service_user_id}` — returns all injuries (active + resolved) with staff names
+21. Audit trail: `created_by` on create, `updated_by` on update/delete
+
+**Files created:**
+- `database/migrations/2026_04_11_005829_enhance_body_map_table.php`
+- `app/Models/BodyMap.php`
+- `app/Services/BodyMapService.php`
+- `tests/Feature/BodyMapTest.php`
+- `phases/body-maps-plan.md`
+
+**Files modified:**
+- `app/BodyMap.php` — converted to alias extending `App\Models\BodyMap`
+- `app/Http/Controllers/frontEnd/ServiceUserManagement/BodyMapController.php` — full rewrite
+- `app/Http/Controllers/Api/frontEnd/ServiceUserManagement/BodyMapController.php` — rewritten with service layer
+- `resources/views/frontEnd/serviceUserManagement/elements/risk_change/body_map.blade.php` — CSRF, JSON, injury detail/info modals, cleaner JS
+- `routes/web.php` — 6 routes (was 3), reordered, proper methods
+
+**Tests:** 12/12 passing, 2 skipped (no test data for admin's home_id 8)
+
+**Teaching notes:**
+- **Route ordering matters** — `GET /path/{id}` will catch `GET /path/remove` if the wildcard route comes first. Either put specific routes before wildcards, or add `->where('id', '[0-9]+')` to constrain the wildcard.
+- **Comma-separated `home_id`** — admin users can belong to multiple homes. `Auth::user()->home_id` returns `"8,18,1,9"` as a string. Always use `explode(',', $homeId)[0]` to get the first home. This is a pattern from the Training controller.
+- **`replace_all` pitfall** — when doing a bulk replace of `Auth::user()->user_type === 'A'` to `$this->isAdmin()`, be careful if the replacement text matches the method you're defining. The method body will call itself recursively → stack overflow / memory exhaustion.
+- **`withoutMiddleware()`** — in tests, the `checkUserAuth` middleware compares `csrf_token()` with `session_token` from the user DB record. `actingAs()` alone won't set this, so tests that need to reach the controller must use `$this->withoutMiddleware()`. Auth tests (checking redirect) can keep middleware.
+- **`echo "1"; die;`** is the worst possible API pattern — raw string, no HTTP status code, no content type, kills the process. Always use `response()->json(['success' => true])`.
+
+---

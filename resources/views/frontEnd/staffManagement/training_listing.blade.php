@@ -58,7 +58,9 @@
                         </div> 
                         <div class="col-md-6 col-sm-6 col-xs-12"> 
                             <div class="add-schedule"> 
-                                <a href="javascript:void(0)" class="btn sche-btn training_add_btn"> <i class="fa fa-plus"></i> Add More </a> 
+                                @if($is_admin)
+                                <a href="javascript:void(0)" class="btn sche-btn training_add_btn"> <i class="fa fa-plus"></i> Add More </a>
+                                @endif 
                             </div> 
                         </div> 
                     </div> 
@@ -87,9 +89,11 @@
                                                                     @if(!empty($traini['is_mandatory']))
                                                                         <span class="badge badge-danger" style="background:#e74c3c;color:#fff;font-size:9px;padding:2px 5px;margin-left:4px;">Required</span>
                                                                     @endif
+                                                                    @if($is_admin)
                                                                     <span class="edit-icon edit_staff_training" traini_id="{{ $traini['id'] }}">
                                                                         <i class="fa fa-edit"></i>
                                                                     </span>
+                                                                    @endif
                                                                 </div>
                                                             </li>
 	                                            	@endforeach
@@ -172,43 +176,10 @@
                                 <textarea rows="3" class="form-control" name="desc"></textarea> 
                             </div> 
                         </div> 
-                        <div class="form-group col-md-12 col-sm-12 col-xs-12"> 
-                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Month: </label> 
-                            <div class="col-md-10 col-sm-9 col-xs-12"> 
-                                <div class="select-style"> 
-                                    <select name="month"> 
-                                        <option value=""> Select Month</option> 
-                                        <option value="1"> Jan</option> 
-                                        <option value="2"> Feb </option> 
-                                        <option value="3"> Mar </option> 
-                                        <option value="4"> Apr </option> 
-                                        <option value="5"> May </option> 
-                                        <option value="6"> Jun </option> 
-                                        <option value="7"> Jul </option> 
-                                        <option value="8"> Aug </option> 
-                                        <option value="9"> Sep </option> 
-                                        <option value="10"> Oct </option> 
-                                        <option value="11"> Nov </option> 
-                                        <option value="12"> Dec </option> 
-                                    </select> 
-                                </div> 
-                            </div> 
-                        </div> 
                         <div class="form-group col-md-12 col-sm-12 col-xs-12">
-                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Year: </label>
+                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Training Date: </label>
                             <div class="col-md-10 col-sm-9 col-xs-12">
-                                <div class="select-style">
-                                    <select name="year">
-                                        <option value=""> Select Year</option>
-                                        <?php
-                                        	$current_year = Date('Y');
-                                        	$end_year = $current_year+10;
-                                        ?>
-                                        @for($i = $current_year; $i <= $end_year; $i++)
-                                        	<option value="{{ $i }}"> {{ $i }} </option>
-                                        @endfor
-                                    </select>
-                                </div>
+                                <input type="date" name="training_date" class="form-control">
                             </div>
                         </div>
                         <div class="form-group col-md-12 col-sm-12 col-xs-12">
@@ -221,6 +192,12 @@
                             <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Expiry (months): </label>
                             <div class="col-md-10 col-sm-9 col-xs-12">
                                 <input type="number" name="expiry_months" class="form-control" min="1" max="120" placeholder="Leave blank if no expiry">
+                            </div>
+                        </div>
+                        <div class="form-group col-md-12 col-sm-12 col-xs-12">
+                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Max Employees: </label>
+                            <div class="col-md-10 col-sm-9 col-xs-12">
+                                <input type="number" name="max_employees" class="form-control" min="1" placeholder="Max attendees for this course">
                             </div>
                         </div>
                 		<div class="modal-footer">
@@ -274,43 +251,10 @@
                                 <textarea rows="3" class="form-control" name="desc"></textarea> 
                             </div> 
                         </div> 
-                        <div class="form-group col-md-12 col-sm-12 col-xs-12"> 
-                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Month: </label> 
-                            <div class="col-md-10 col-sm-9 col-xs-12"> 
-                                <div class="select-style"> 
-                                    <select name="month"> 
-                                        <option value=""> Select Month</option> 
-                                        <option value="1"> Jan</option> 
-                                        <option value="2"> Feb </option> 
-                                        <option value="3"> Mar </option> 
-                                        <option value="4"> Apr </option> 
-                                        <option value="5"> May </option> 
-                                        <option value="6"> Jun </option> 
-                                        <option value="7"> Jul </option> 
-                                        <option value="8"> Aug </option> 
-                                        <option value="9"> Sep </option> 
-                                        <option value="10"> Oct </option> 
-                                        <option value="11"> Nov </option> 
-                                        <option value="12"> Dec </option> 
-                                    </select> 
-                                </div> 
-                            </div> 
-                        </div> 
                         <div class="form-group col-md-12 col-sm-12 col-xs-12">
-                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Year: </label>
+                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Training Date: </label>
                             <div class="col-md-10 col-sm-9 col-xs-12">
-                                <div class="select-style">
-                                    <select name="year">
-                                        <option value=""> Select Year</option>
-                                        <?php
-                                            $current_year = Date('Y');
-                                            $end_year = $current_year+10;
-                                        ?>
-                                        @for($i = $current_year; $i <= $end_year; $i++)
-                                            <option value="{{ $i }}"> {{ $i }} </option>
-                                        @endfor
-                                    </select>
-                                </div>
+                                <input type="date" name="training_date" class="form-control">
                             </div>
                         </div>
                         <div class="form-group col-md-12 col-sm-12 col-xs-12">
@@ -323,6 +267,12 @@
                             <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Expiry (months): </label>
                             <div class="col-md-10 col-sm-9 col-xs-12">
                                 <input type="number" name="expiry_months" class="form-control" min="1" max="120" placeholder="Leave blank if no expiry">
+                            </div>
+                        </div>
+                        <div class="form-group col-md-12 col-sm-12 col-xs-12">
+                            <label class="col-md-2 col-sm-3 col-xs-12 p-0 control-label">Max Employees: </label>
+                            <div class="col-md-10 col-sm-9 col-xs-12">
+                                <input type="number" name="max_employees" class="form-control" min="1" placeholder="Max attendees for this course">
                             </div>
                         </div>
 
@@ -351,15 +301,15 @@
             $('#add_training')[0].reset(); 
         }); 
  
-        //view training record modal 
-        $(document).on('click', '.edit_staff_training', function(){ 
-            var training_id = $(this).attr('traini_id'); 
-            staffTainingRecord(training_id); 
-             
-            $('#edit_training').find('input').attr('disabled', true); 
-            $('#edit_training').find('textarea').attr('disabled', true); 
-            $('#edit_training').find('select').attr('disabled', true); 
-            $('#sbt-edit-dis').attr('disabled', true); 
+        //view training record modal — opens in edit mode directly
+        $(document).on('click', '.edit_staff_training', function(){
+            var training_id = $(this).attr('traini_id');
+            staffTainingRecord(training_id);
+
+            $('#edit_training').find('input').attr('disabled', false);
+            $('#edit_training').find('textarea').attr('disabled', false);
+            $('#edit_training').find('select').attr('disabled', false);
+            $('#sbt-edit-dis').attr('disabled', false);
         });  
  
         //edit training record 
@@ -392,11 +342,11 @@
                         $('input[name=\'name\']').val(resp['training_name']);
                         $('input[name=\'training_provider\']').val(resp['training_provider']);
                         $('textarea[name=\'desc\']').val(resp['training_desc']);
-                        $('select[name=\'month\']').val(resp['training_month']);
-                        $('select[name=\'year\']').val(resp['training_year']);
+                        $('input[name=\'training_date\']').val(resp['training_date']);
                         // New fields
                         $('input[name=\'is_mandatory\']').prop('checked', resp['is_mandatory'] == 1);
                         $('input[name=\'expiry_months\']').val(resp['expiry_months']);
+                        $('input[name=\'max_employees\']').val(resp['max_employees']);
                         $('#editShiftModal').modal('show'); 
  
                         $('#del-training-record').attr("href","{{ url('/staff/training/delete/') }}"+'/'+training_id); 
@@ -470,24 +420,21 @@
  
 <script type="text/javascript"> 
     $(function(){ 
-        $('#edit_training').validate({ 
-            rules:{ 
-                "name":{ 
-                    required:true 
-                }, 
-                "training_provider":{ 
-                    required:true   
-                }, 
-                "desc":{ 
-                    required:true 
-                }, 
-                "month":{ 
-                    required:true 
-                }, 
-                "year":{ 
-                    required:true 
-                } 
-            } 
+        $('#edit_training').validate({
+            rules:{
+                "name":{
+                    required:true
+                },
+                "training_provider":{
+                    required:true
+                },
+                "desc":{
+                    required:true
+                },
+                "training_date":{
+                    required:true
+                }
+            }
         }); 
     }); 
 </script> 

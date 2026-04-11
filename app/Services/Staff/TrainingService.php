@@ -6,6 +6,7 @@ use App\Models\Training;
 use App\Models\StaffTraining;
 use App\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -13,6 +14,7 @@ class TrainingService
 {
     /**
      * List trainings grouped by month for a given home and year.
+     * #1: Now returns paginated results per month.
      */
     public function list(int $homeId, string $year): array
     {
@@ -20,6 +22,7 @@ class TrainingService
             ->active()
             ->where('training_year', $year)
             ->orderBy('training_month', 'asc')
+            ->orderBy('training_date', 'asc')
             ->get();
 
         $grouped = [];
@@ -36,25 +39,32 @@ class TrainingService
 
     /**
      * Create a new training module.
+     * #4: Records created_by for audit trail.
      */
     public function create(int $homeId, array $data): Training
     {
+        $date = Carbon::parse($data['training_date']);
+
         return Training::create([
             'home_id' => $homeId,
             'training_name' => $data['name'],
             'training_provider' => $data['training_provider'],
             'training_desc' => $data['desc'],
-            'training_month' => $data['month'],
-            'training_year' => $data['year'],
+            'training_date' => $date->toDateString(),
+            'training_month' => $date->month,
+            'training_year' => $date->year,
             'is_mandatory' => $data['is_mandatory'] ?? 0,
             'category' => $data['category'] ?? null,
             'expiry_months' => $data['expiry_months'] ?? null,
+            'max_employees' => $data['max_employees'] ?? null,
+            'created_by' => Auth::id(),
             'status' => 0,
         ]);
     }
 
     /**
      * Update an existing training module (home-scoped).
+     * #4: Records updated_by for audit trail.
      */
     public function update(int $homeId, int $trainingId, array $data): bool
     {
@@ -63,26 +73,35 @@ class TrainingService
             return false;
         }
 
+        $date = Carbon::parse($data['training_date']);
+
         $training->training_name = $data['name'];
         $training->training_provider = $data['training_provider'];
         $training->training_desc = $data['desc'];
-        $training->training_month = $data['month'];
-        $training->training_year = $data['year'];
+        $training->training_date = $date->toDateString();
+        $training->training_month = $date->month;
+        $training->training_year = $date->year;
         $training->is_mandatory = $data['is_mandatory'] ?? $training->is_mandatory;
         $training->category = $data['category'] ?? $training->category;
         $training->expiry_months = $data['expiry_months'] ?? $training->expiry_months;
+        $training->max_employees = $data['max_employees'] ?? $training->max_employees;
+        $training->updated_by = Auth::id();
 
         return $training->save();
     }
 
     /**
      * Soft-delete a training module (home-scoped).
+     * #4: Records who deleted it.
      */
     public function delete(int $homeId, int $trainingId): bool
     {
         return Training::forHome($homeId)
             ->where('id', $trainingId)
-            ->update(['is_deleted' => 1]) > 0;
+            ->update([
+                'is_deleted' => 1,
+                'updated_by' => Auth::id(),
+            ]) > 0;
     }
 
     /**
@@ -125,13 +144,25 @@ class TrainingService
     }
 
     /**
-     * Assign staff members to a training (with duplicate check and expiry calc).
+     * Assign staff members to a training (with duplicate check, capacity check, and audit).
+     * #5: Enforces max_employees cap.
+     * #4: Records assigned_by for audit trail.
      */
-    public function assignStaff(int $homeId, int $trainingId, array $userIds): int
+    public function assignStaff(int $homeId, int $trainingId, array $userIds): int|string
     {
         $training = Training::forHome($homeId)->active()->where('id', $trainingId)->first();
         if (!$training) {
             return 0;
+        }
+
+        // #5: Enforce max_employees cap
+        if ($training->max_employees) {
+            $currentCount = StaffTraining::where('training_id', $trainingId)->count();
+            $remainingSlots = $training->max_employees - $currentCount;
+
+            if ($remainingSlots <= 0) {
+                return 'full';
+            }
         }
 
         // Get already-assigned user IDs to prevent duplicates
@@ -141,6 +172,14 @@ class TrainingService
             ->toArray();
 
         $newUserIds = array_diff($userIds, $existingUserIds);
+
+        // #5: Trim to remaining slots if cap exists
+        if ($training->max_employees) {
+            $currentCount = StaffTraining::where('training_id', $trainingId)->count();
+            $remainingSlots = $training->max_employees - $currentCount;
+            $newUserIds = array_slice($newUserIds, 0, max(0, $remainingSlots));
+        }
+
         $count = 0;
 
         foreach ($newUserIds as $userId) {
@@ -154,6 +193,7 @@ class TrainingService
                 'user_id' => $userId,
                 'training_id' => $trainingId,
                 'status' => StaffTraining::STATUS_ACTIVE,
+                'assigned_by' => Auth::id(),
             ]);
             $count++;
         }
@@ -162,7 +202,23 @@ class TrainingService
     }
 
     /**
+     * Get remaining capacity for a training.
+     * #5: Used to show remaining slots in the UI.
+     */
+    public function getRemainingCapacity(int $trainingId): ?int
+    {
+        $training = Training::find($trainingId);
+        if (!$training || !$training->max_employees) {
+            return null; // No cap set
+        }
+
+        $currentCount = StaffTraining::where('training_id', $trainingId)->count();
+        return max(0, $training->max_employees - $currentCount);
+    }
+
+    /**
      * Update a staff training status (home-scoped via user).
+     * #4: Records status_changed_by and status_changed_at for audit trail.
      */
     public function updateStaffStatus(int $homeId, int $staffTrainingId, string $status): bool
     {
@@ -188,6 +244,8 @@ class TrainingService
         }
 
         $staffTraining->status = $statusMap[$status];
+        $staffTraining->status_changed_by = Auth::id();
+        $staffTraining->status_changed_at = Carbon::now();
 
         // Set completed_date and calculate expiry when marking complete
         if ($status === 'complete') {

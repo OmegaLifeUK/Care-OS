@@ -13,7 +13,7 @@
 |---|---------|-----|----------------|--------|
 | 1 | Incident Management | 3h | PLAN → BUILD → TEST → REVIEW → AUDIT → **PUSH** | **DONE** ✓ |
 | 2 | Staff Training | 4h | PLAN → SCAFFOLD → BUILD → TEST → DEBUG → REVIEW → AUDIT → **PUSH** | **DONE** ✓ |
-| 3 | Body Maps | 3h | — | Pending |
+| 3 | Body Maps | 3h | PLAN → SCAFFOLD → BUILD → TEST → DEBUG → REVIEW → AUDIT → **PUSH** | **DONE** ✓ |
 | 4 | Handover Notes | 4h | — | Pending |
 | 5 | DoLS | 4h | — | Pending |
 | 6 | MAR Sheets | 8h | — | Pending |
@@ -21,7 +21,7 @@
 | 8 | Notifications | 5h | — | Pending |
 | 9 | Safeguarding | 6h | — | Pending |
 
-**Completed:** 2/9 features | **Commit:** pending
+**Completed:** 3/9 features
 
 ### Decisions & Scope Changes
 - Incident Management: Skipped SCAFFOLD (files exist). AI report section removed from detail view (deferred to Phase 3). Safeguarding referral linking deferred to Feature 9 (Safeguarding).

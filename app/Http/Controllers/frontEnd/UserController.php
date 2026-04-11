@@ -30,7 +30,7 @@ class UserController extends Controller
 			$current_date = date('m/d/Y');
 
 			// $current_date = '10/03/2018';
-			// echo "<pre>"; print_r($current_date);  
+			// echo "<pre>"; print_r($current_date);
 			$user_info 	= user::select('id', 'home_id', 'admn_id', 'user_type', 'login_date', 'login_home_id')
 				->where('user_name', $username)
 				->where('is_deleted', '0')
@@ -52,7 +52,7 @@ class UserController extends Controller
 							$data = $request->input();
 							if ($user_info->user_type != 'N') {
 								if (Auth::attempt(['user_name' => $data['username'], 'password' => $data['password'], 'admn_id' => $user_info->admn_id])) {
-									// echo "<pre>"; print_r($user_info); die; 
+									// echo "<pre>"; print_r($user_info); die;
 									$new_home_ids = $hme_id . ',' . $user_info->home_id;
 									$new_home_ids = implode(',', array_unique(explode(',', $new_home_ids)));
 									$update_home_id = User::where('user_name', $username)->update(['home_id' => $new_home_ids]);

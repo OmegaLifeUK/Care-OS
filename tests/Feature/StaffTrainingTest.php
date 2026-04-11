@@ -9,12 +9,16 @@ use App\Models\StaffTraining;
 
 class StaffTrainingTest extends TestCase
 {
-    protected $user;
+    protected $adminUser;
+    protected $staffUser;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user = User::where('is_deleted', 0)->where('status', 1)->first();
+        // Admin user (type=A) for write operations
+        $this->adminUser = User::where('is_deleted', 0)->where('status', 1)->where('user_type', 'A')->first();
+        // Normal staff user (type=N) for role-based access tests
+        $this->staffUser = User::where('is_deleted', 0)->where('status', 1)->where('user_type', 'N')->first();
     }
 
     // --- Authentication tests ---
@@ -37,7 +41,7 @@ class StaffTrainingTest extends TestCase
     public function unauthenticated_user_cannot_add_training()
     {
         $response = $this->post('/staff/training/add', [
-            'name' => 'Test', 'training_provider' => 'P', 'desc' => 'D', 'month' => 1, 'year' => '2026'
+            'name' => 'Test', 'training_provider' => 'P', 'desc' => 'D', 'training_date' => '2027-06-15'
         ]);
         $response->assertRedirect('/login');
     }
@@ -48,7 +52,7 @@ class StaffTrainingTest extends TestCase
     public function authenticated_user_can_view_training_list()
     {
         $response = $this->withoutMiddleware()
-            ->actingAs($this->user)
+            ->actingAs($this->adminUser)
             ->get('/staff/trainings');
 
         $response->assertStatus(200);
@@ -58,7 +62,7 @@ class StaffTrainingTest extends TestCase
     /** @test */
     public function authenticated_user_can_view_training_detail()
     {
-        $homeId = explode(',', $this->user->home_id)[0];
+        $homeId = explode(',', $this->adminUser->home_id)[0];
         $training = Training::where('home_id', $homeId)->where('is_deleted', 0)->first();
 
         if (!$training) {
@@ -66,7 +70,7 @@ class StaffTrainingTest extends TestCase
         }
 
         $response = $this->withoutMiddleware()
-            ->actingAs($this->user)
+            ->actingAs($this->adminUser)
             ->get('/staff/training/view/' . $training->id);
 
         $response->assertStatus(200);
@@ -79,44 +83,42 @@ class StaffTrainingTest extends TestCase
     public function add_training_requires_name()
     {
         $response = $this->withoutMiddleware()
-            ->actingAs($this->user)
+            ->actingAs($this->adminUser)
             ->post('/staff/training/add', [
                 'training_provider' => 'Provider',
                 'desc' => 'Description',
-                'month' => 1,
-                'year' => '2026',
+                'training_date' => '2027-06-15',
             ]);
 
         $response->assertSessionHasErrors('name');
     }
 
     /** @test */
-    public function add_training_validates_month_range()
+    public function add_training_validates_date_format()
     {
         $response = $this->withoutMiddleware()
-            ->actingAs($this->user)
+            ->actingAs($this->adminUser)
             ->post('/staff/training/add', [
                 'name' => 'Test Training',
                 'training_provider' => 'Provider',
                 'desc' => 'Description',
-                'month' => 13,  // Invalid
-                'year' => '2026',
+                'training_date' => 'not-a-date',
             ]);
 
-        $response->assertSessionHasErrors('month');
+        $response->assertSessionHasErrors('training_date');
     }
 
     /** @test */
     public function edit_training_requires_all_fields()
     {
         $response = $this->withoutMiddleware()
-            ->actingAs($this->user)
+            ->actingAs($this->adminUser)
             ->post('/staff/training/edit_fields', [
                 'training_id' => 1,
                 // Missing required fields
             ]);
 
-        $response->assertSessionHasErrors(['name', 'training_provider', 'desc', 'month', 'year']);
+        $response->assertSessionHasErrors(['name', 'training_provider', 'desc', 'training_date']);
     }
 
     // --- Multi-tenancy tests ---
@@ -124,7 +126,7 @@ class StaffTrainingTest extends TestCase
     /** @test */
     public function cannot_view_training_from_different_home()
     {
-        $homeId = explode(',', $this->user->home_id)[0];
+        $homeId = explode(',', $this->adminUser->home_id)[0];
 
         // Find a training that belongs to a different home
         $otherTraining = Training::where('home_id', '!=', $homeId)->where('is_deleted', 0)->first();
@@ -134,7 +136,7 @@ class StaffTrainingTest extends TestCase
         }
 
         $response = $this->withoutMiddleware()
-            ->actingAs($this->user)
+            ->actingAs($this->adminUser)
             ->get('/staff/training/view/' . $otherTraining->id);
 
         // Should redirect away since training not found for this home
@@ -144,7 +146,7 @@ class StaffTrainingTest extends TestCase
     /** @test */
     public function view_fields_returns_false_for_other_homes_training()
     {
-        $homeId = explode(',', $this->user->home_id)[0];
+        $homeId = explode(',', $this->adminUser->home_id)[0];
         $otherTraining = Training::where('home_id', '!=', $homeId)->where('is_deleted', 0)->first();
 
         if (!$otherTraining) {
@@ -152,25 +154,65 @@ class StaffTrainingTest extends TestCase
         }
 
         $response = $this->withoutMiddleware()
-            ->actingAs($this->user)
+            ->actingAs($this->adminUser)
             ->get('/staff/training/view_fields/' . $otherTraining->id);
 
         $response->assertJson(['response' => false]);
     }
 
-    // --- Staff assignment tests ---
+    // --- Role-based access tests (#2) ---
 
     /** @test */
-    public function assign_staff_validates_user_ids()
+    public function non_admin_cannot_add_training()
     {
+        if (!$this->staffUser) {
+            $this->markTestSkipped('No staff user available to test.');
+        }
+
         $response = $this->withoutMiddleware()
-            ->actingAs($this->user)
-            ->post('/staff/training/staff/add', [
-                'training_id' => 1,
-                // Missing user_ids
+            ->actingAs($this->staffUser)
+            ->post('/staff/training/add', [
+                'name' => 'Test',
+                'training_provider' => 'P',
+                'desc' => 'D',
+                'training_date' => '2027-06-15',
             ]);
 
-        $response->assertSessionHasErrors('user_ids');
+        $response->assertRedirect();
+        $response->assertSessionHas('error', 'Only administrators can add trainings.');
+    }
+
+    /** @test */
+    public function non_admin_cannot_delete_training()
+    {
+        if (!$this->staffUser) {
+            $this->markTestSkipped('No staff user available to test.');
+        }
+
+        $response = $this->withoutMiddleware()
+            ->actingAs($this->staffUser)
+            ->post('/staff/training/delete/1');
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error', 'Only administrators can delete trainings.');
+    }
+
+    /** @test */
+    public function non_admin_cannot_assign_staff()
+    {
+        if (!$this->staffUser) {
+            $this->markTestSkipped('No staff user available to test.');
+        }
+
+        $response = $this->withoutMiddleware()
+            ->actingAs($this->staffUser)
+            ->post('/staff/training/staff/add', [
+                'training_id' => 1,
+                'user_ids' => [1],
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error', 'Only administrators can assign staff to trainings.');
     }
 
     // --- Delete tests ---
@@ -180,7 +222,7 @@ class StaffTrainingTest extends TestCase
     {
         // GET should return 405 Method Not Allowed
         $response = $this->withoutMiddleware()
-            ->actingAs($this->user)
+            ->actingAs($this->adminUser)
             ->get('/staff/training/delete/1');
 
         $response->assertStatus(405);

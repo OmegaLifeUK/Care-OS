@@ -16,18 +16,24 @@ class Training extends Model
         'training_desc',
         'training_month',
         'training_year',
+        'training_date',
         'status',
         'is_mandatory',
         'category',
         'expiry_months',
+        'max_employees',
+        'created_by',
+        'updated_by',
         'is_deleted',
     ];
 
     protected $casts = [
         'is_mandatory' => 'boolean',
         'is_deleted' => 'boolean',
+        'training_date' => 'date',
         'training_month' => 'integer',
         'expiry_months' => 'integer',
+        'max_employees' => 'integer',
     ];
 
     // Relationships
