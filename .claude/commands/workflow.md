@@ -144,27 +144,29 @@ When invoked, ask the user what feature or task they want to build, then execute
 **Goal**: Catch issues before they ship. (Code review — separate from DEBUG runtime checks.)
 
 1. Review all changed files (`git diff` from before the workflow started)
-2. **Security review checklist** (check every item, report each as PASS/FAIL):
+2. **Read `docs/security-checklist.md`** — this is the master checklist. Check every item below (report each as PASS/FAIL):
 
    | # | Check | Severity | What to look for |
    |---|-------|----------|-----------------|
-   | 1 | Multi-tenancy | BLOCKER | Every DB query filters by `home_id` — no query returns data across homes |
-   | 2 | SQL injection | BLOCKER | Zero `DB::raw()` with user input, zero string-concatenated queries, all queries use Eloquent/query builder with parameter binding |
-   | 3 | XSS (server) | BLOCKER | Zero `{!! !!}` with user-supplied data in Blade templates — all output uses `{{ }}` |
-   | 4 | XSS (client) | BLOCKER | All API data rendered via `.html()` in JavaScript is escaped with `esc()` helper — no raw concatenation of user data into HTML strings |
-   | 5 | CSRF | HIGH | Every form has `@csrf`, every AJAX POST has `X-CSRF-TOKEN` header |
-   | 6 | Input validation | HIGH | Every POST endpoint has `$request->validate()` with type checks, length limits, and enum constraints |
-   | 7 | Mass assignment | HIGH | Models use `$fillable` (not `$guarded = []`), sensitive fields (`id`, `home_id`) set server-side only |
-   | 8 | Rate limiting | HIGH | All POST routes have `->middleware('throttle:N,1')` |
-   | 9 | Access control | HIGH | Admin-only actions have server-side role check (`user_type === 'A'`), not just UI hiding |
-   | 10 | IDOR | MEDIUM | GET endpoints that take record IDs verify `home_id` ownership before returning data |
+   | 1 | Data isolation (multi-tenancy) | BLOCKER | Every DB query filters by `home_id` — no query returns data across homes. `home_id` parsed with `explode()` on both web and API controllers |
+   | 2 | IDOR prevention (resource ownership) | BLOCKER | Every endpoint verifies the record's `home_id` matches the user's home **in the controller** (not just service layer). Tests exist for cross-home access |
+   | 3 | SQL injection | BLOCKER | Zero `DB::raw()` with user input, zero string-concatenated queries, all queries use Eloquent/query builder with parameter binding |
+   | 4 | XSS (server) | BLOCKER | Zero `{!! !!}` with user-supplied data in Blade templates — all output uses `{{ }}` |
+   | 5 | XSS (client) | BLOCKER | All API data rendered via `.html()` in JavaScript is escaped with `esc()` helper — no raw concatenation of user data into HTML strings |
+   | 6 | CSRF | HIGH | Every form has `@csrf`, every AJAX POST has `X-CSRF-TOKEN` header |
+   | 7 | Input validation | HIGH | Every POST endpoint has `$request->validate()` with type checks, length limits, and enum constraints. Client-side validation mirrors server-side |
+   | 8 | Mass assignment | HIGH | Models use `$fillable` (not `$guarded = []`), sensitive fields (`id`, `home_id`) set server-side only |
+   | 9 | Rate limiting | HIGH | All POST routes have `->middleware('throttle:N,1')` — create/update: 30,1 — delete: 20,1 |
+   | 10 | Auth & access control | HIGH | Admin-only actions have server-side role check (`user_type === 'A'`), not just UI hiding. Unauthenticated requests redirect |
    | 11 | Route constraints | MEDIUM | All `{param}` routes have `->where('param', '[0-9]+')` to prevent wildcard matching |
-   | 12 | N+1 queries | IMPORTANT | List views with relationships use `->with()` eager loading |
-   | 13 | Error leaking | MEDIUM | Error responses don't expose stack traces, DB structure, or internal paths to the client |
-   | 14 | Pattern violations | MINOR | Code follows existing Care OS conventions |
+   | 12 | Audit logging | MEDIUM | `Log::info()` on every create/update/delete with actor ID, home_id, and record details |
+   | 13 | Database integrity | MEDIUM | FK constraints where practical, composite indexes on frequently queried columns, proper `down()` in migrations |
+   | 14 | Error handling | MEDIUM | Error responses don't expose stack traces, DB structure, or internal paths to the client. Use 404 not 403 for missing/unauthorized resources |
+   | 15 | Code conventions | MINOR | Service layer for business logic, proper model location, no `dd()`/`console.log()` left, N+1 queries handled with `->with()` |
 
 3. Fix any BLOCKER or HIGH issues immediately
 4. **Report review findings to the user as a table with PASS/FAIL per check**
+5. After all fixes, update the vulnerability history table at the bottom of `docs/security-checklist.md` with any new vulnerabilities found and fixed
 
 ## Stage 7: AUDIT
 **Goal**: Ensure no regressions in the broader codebase AND final security sweep.
@@ -173,15 +175,17 @@ When invoked, ask the user what feature or task they want to build, then execute
 2. Check for new backup/duplicate files
 3. Check for misplaced files
 4. Verify route loading: `php artisan route:list 2>&1 | grep -i error`
-5. **Security audit of ALL new/modified files:**
-   - `grep -r 'DB::raw\|DB::select\|DB::statement' [new files]` — zero results expected
-   - `grep -r '{!!' [new blade files]` — zero results expected (or justified exceptions)
-   - `grep -r '\.html(' [new JS/blade files]` — every match must use `esc()` for user data
-   - `grep -r 'throttle' routes/web.php` — verify all new POST routes have rate limiting
-   - `grep -r '\$guarded' [new model files]` — zero results expected (use `$fillable` instead)
+5. **Run the automated grep patterns from `docs/security-checklist.md`** on all new/modified files:
+   - `grep -rn 'DB::raw\|->whereRaw\|->selectRaw' [new files]` — zero results expected
+   - `grep -rn '{!!' [new blade files]` — zero results expected (or justified exceptions)
+   - `grep -rn '\.html(\|\.innerHTML' [new JS/blade files]` — every match must use `esc()` for user data
+   - `grep -n 'Route::post' routes/web.php | grep -v throttle` — zero new POST routes without rate limiting
+   - `grep -rn '\$guarded\s*=\s*\[\]' [new model files]` — zero results expected (use `$fillable` instead)
+   - `grep -rn 'dd(\|dump(\|console\.log(' [new files]` — zero debug statements
+   - `grep -rn 'http://127\|http://localhost\|http://care' [new blade files]` — zero hardcoded URLs
    - Verify no hardcoded credentials, API keys, or secrets in new files
-   - Verify no `console.log` with sensitive data left in production JS
-6. **Report audit results — PASS or FAIL with details per check**
+6. **Verify all 15 checklist items from REVIEW are still PASS** (no regressions from last-minute fixes)
+7. **Report audit results — PASS or FAIL with details per check**
 
 ## Stage 8: PUSH
 **Goal**: Ship it.
@@ -233,7 +237,7 @@ WORKFLOW: [Feature Name]
 [x] BUILD    — 6 steps completed, security rules enforced
 [x] TEST     — 5/5 tests passing (incl. security tests)
 [x] DEBUG    — 0 errors in laravel.log, 0 N+1s, 0 dead code
-[x] REVIEW   — 14/14 security checks PASS, 0 blockers
+[x] REVIEW   — 15/15 security checks PASS, 0 blockers
 [x] AUDIT    — all checks PASS (incl. security audit)
 [x] PUSH     — commit abc1234 pushed to main
 ━━━━━━━━━━━━━━━━━━━━━━
