@@ -5,11 +5,11 @@ When invoked, ask the user what feature or task they want to build, then execute
 ## The Care OS Development Pipeline
 
 ```
-┌─────────┐    ┌──────────┐    ┌─────────┐    ┌────────┐    ┌─────────┐    ┌──────────┐    ┌────────┐    ┌──────┐
-│  PLAN   │───▶│ SCAFFOLD │───▶│  BUILD  │───▶│  TEST  │───▶│  DEBUG  │───▶│  REVIEW  │───▶│ AUDIT  │───▶│ PUSH │
-└─────────┘    └──────────┘    └─────────┘    └────────┘    └─────────┘    └──────────┘    └────────┘    └──────┘
-     │              │               │              │              │              │              │            │
-  Plan doc     Boilerplate     Working code    Tests pass    Runtime clean   Issues fixed    Clean scan   On GitHub
+┌─────────┐    ┌──────────┐    ┌─────────┐    ┌────────┐    ┌─────────┐    ┌──────────┐    ┌────────┐    ┌───────────┐    ┌──────┐
+│  PLAN   │───▶│ SCAFFOLD │───▶│  BUILD  │───▶│  TEST  │───▶│  DEBUG  │───▶│  REVIEW  │───▶│ AUDIT  │───▶│ PROD-READY│───▶│ PUSH │
+└─────────┘    └──────────┘    └─────────┘    └────────┘    └─────────┘    └──────────┘    └────────┘    └───────────┘    └──────┘
+     │              │               │              │              │              │              │              │              │
+  Plan doc     Boilerplate     Working code    Tests pass    Runtime clean   Issues fixed    Clean scan   Ship-quality    On GitHub
 ```
 
 ## Stage 1: PLAN
@@ -187,7 +187,40 @@ When invoked, ask the user what feature or task they want to build, then execute
 6. **Verify all 15 checklist items from REVIEW are still PASS** (no regressions from last-minute fixes)
 7. **Report audit results — PASS or FAIL with details per check**
 
-## Stage 8: PUSH
+## Stage 8: PROD-READY
+**Goal**: Verify the feature is ship-quality — not just secure, but robust, user-friendly, and performant.
+
+This is the final quality gate before push. Security was checked in REVIEW/AUDIT. This stage checks everything else.
+
+### 8a. Error & Edge Case Handling
+- [ ] **Empty states** — what does the page show when there's no data? (No injuries, no records, no history.) Must show a helpful message, not a blank page or broken layout.
+- [ ] **Loading states** — AJAX calls show "Loading..." or a spinner while waiting. Buttons disable during submit to prevent double-click.
+- [ ] **Error feedback** — when AJAX fails (network error, 422, 500), the user sees a clear message. No silent failures.
+- [ ] **Validation feedback** — server validation errors (422) are shown to the user in readable form, not raw JSON.
+- [ ] **Boundary values** — what happens with very long text, special characters (`& < > " '`), or unusual date values? No layout breaks.
+
+### 8b. Performance
+- [ ] **N+1 queries** — list views that load related data use `->with()` eager loading (e.g., `->with('staff:id,name')`)
+- [ ] **Database indexes** — columns used in WHERE/ORDER BY have indexes. Composite indexes for common multi-column queries.
+- [ ] **Payload size** — API responses return only needed fields (`->select(...)`) not entire models with all columns.
+- [ ] **No unnecessary queries** — the same data isn't fetched multiple times in a single request.
+
+### 8c. UI/UX Quality
+- [ ] **Consistent styling** — new UI matches existing Care OS pages (Bootstrap 3, same button styles, table styles, modals).
+- [ ] **Responsive layout** — page doesn't break on smaller screens (tablets are used in care homes).
+- [ ] **Form reset** — after successful submit, form fields clear properly. Modals close. Success feedback shown.
+- [ ] **Confirmation dialogs** — destructive actions (delete/remove) show a confirm prompt before executing.
+- [ ] **URL hygiene** — all links use `{{ url('/path') }}`, no hardcoded domains. Back buttons work.
+
+### 8d. Graceful Degradation
+- [ ] **Missing data** — if a related record is null (staff member deleted, risk removed), the page still renders without crashing. Shows "Unknown" or "N/A" instead.
+- [ ] **Concurrent users** — if two staff members edit the same record, no data corruption. Last write wins is acceptable, but no 500 errors.
+- [ ] **Session timeout** — if the user's session expires mid-form, the next action redirects to login cleanly (not a raw 419 error).
+
+### Gate
+Report as a table with PASS/FAIL per section (8a, 8b, 8c, 8d). Any FAIL must be fixed before PUSH.
+
+## Stage 9: PUSH
 **Goal**: Ship it.
 
 1. `git add` the changed files (specific files, not `-A`)
@@ -210,6 +243,7 @@ Each stage has a gate — you cannot proceed to the next stage if the gate fails
 | DEBUG | No new errors in laravel.log | Fix runtime errors, N+1s, dead code |
 | REVIEW | No BLOCKER or HIGH issues in security checklist | Fix all blockers/highs before continuing |
 | AUDIT | No FAIL results in security audit | Fix audit failures |
+| PROD-READY | All 4 sections PASS (error handling, performance, UI/UX, graceful degradation) | Fix before push |
 | PUSH | Push succeeds | Resolve git conflicts |
 
 ## Skipping Stages
@@ -239,6 +273,7 @@ WORKFLOW: [Feature Name]
 [x] DEBUG    — 0 errors in laravel.log, 0 N+1s, 0 dead code
 [x] REVIEW   — 15/15 security checks PASS, 0 blockers
 [x] AUDIT    — all checks PASS (incl. security audit)
+[x] PROD-READY — 4/4 sections PASS (errors, performance, UI/UX, graceful degradation)
 [x] PUSH     — commit abc1234 pushed to main
 ━━━━━━━━━━━━━━━━━━━━━━
 ```
