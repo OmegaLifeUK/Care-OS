@@ -1184,9 +1184,9 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	/*Route::match(['get','post'], '/service/daily-records-bmp-rmp/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BmpRmpController@service_users_list');*/
 
 	//Body Map — specific routes before wildcard {risk_id}
-	Route::post('/service/body-map/injury/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@addInjury');
-	Route::post('/service/body-map/injury/remove', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@removeInjury');
-	Route::post('/service/body-map/injury/update', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@updateInjury');
+	Route::post('/service/body-map/injury/add', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@addInjury')->middleware('throttle:30,1');
+	Route::post('/service/body-map/injury/remove', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@removeInjury')->middleware('throttle:20,1');
+	Route::post('/service/body-map/injury/update', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@updateInjury')->middleware('throttle:30,1');
 	Route::get('/service/body-map/injury/{id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@getInjury')->where('id', '[0-9]+');
 	Route::get('/service/body-map/history/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@history')->where('service_user_id', '[0-9]+');
 	Route::get('/service/body-map/{risk_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@index')->where('risk_id', '[0-9]+');

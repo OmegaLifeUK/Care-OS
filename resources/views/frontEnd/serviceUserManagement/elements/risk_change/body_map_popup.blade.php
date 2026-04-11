@@ -830,6 +830,14 @@
 
 <script>
 (function() {
+    // HTML-escape user-supplied strings to prevent XSS
+    function esc(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
     var csrfToken = $('meta[name="csrf-token"]').attr('content')
                  || $('input[name="_token"]').first().val();
 
@@ -890,19 +898,20 @@
                 success: function(resp) {
                     if (resp.success && resp.data) {
                         var d = resp.data;
-                        var staffName = d.staff ? d.staff.name : 'Unknown';
-                        var typeBadge = d.injury_type
-                            ? '<span class="injury-badge injury-badge-' + d.injury_type + '">' + d.injury_type.replace('_', ' ') + '</span>'
+                        var staffName = esc(d.staff ? d.staff.name : 'Unknown');
+                        var typeVal = d.injury_type ? d.injury_type.replace(/[^a-z_]/g, '') : '';
+                        var typeBadge = typeVal
+                            ? '<span class="injury-badge injury-badge-' + typeVal + '">' + esc(typeVal.replace('_', ' ')) + '</span>'
                             : '<em>Not specified</em>';
                         var html = '<table class="table table-bordered">'
-                            + '<tr><td><strong>Body Region</strong></td><td>' + d.sel_body_map_id + '</td></tr>'
+                            + '<tr><td><strong>Body Region</strong></td><td>' + esc(d.sel_body_map_id) + '</td></tr>'
                             + '<tr><td><strong>Type</strong></td><td>' + typeBadge + '</td></tr>'
-                            + '<tr><td><strong>Description</strong></td><td>' + (d.injury_description || '<em>None</em>') + '</td></tr>'
-                            + '<tr><td><strong>Date Discovered</strong></td><td>' + (d.injury_date || '<em>Not set</em>') + '</td></tr>'
-                            + '<tr><td><strong>Size</strong></td><td>' + (d.injury_size || '<em>Not recorded</em>') + '</td></tr>'
-                            + '<tr><td><strong>Colour</strong></td><td>' + (d.injury_colour || '<em>Not recorded</em>') + '</td></tr>'
+                            + '<tr><td><strong>Description</strong></td><td>' + (d.injury_description ? esc(d.injury_description) : '<em>None</em>') + '</td></tr>'
+                            + '<tr><td><strong>Date Discovered</strong></td><td>' + (d.injury_date ? esc(d.injury_date) : '<em>Not set</em>') + '</td></tr>'
+                            + '<tr><td><strong>Size</strong></td><td>' + (d.injury_size ? esc(d.injury_size) : '<em>Not recorded</em>') + '</td></tr>'
+                            + '<tr><td><strong>Colour</strong></td><td>' + (d.injury_colour ? esc(d.injury_colour) : '<em>Not recorded</em>') + '</td></tr>'
                             + '<tr><td><strong>Recorded By</strong></td><td>' + staffName + '</td></tr>'
-                            + '<tr><td><strong>Date Recorded</strong></td><td>' + d.created_at + '</td></tr>'
+                            + '<tr><td><strong>Date Recorded</strong></td><td>' + esc(d.created_at) + '</td></tr>'
                             + '</table>';
                         $('#popupInjuryInfoBody').html(html);
                     }
