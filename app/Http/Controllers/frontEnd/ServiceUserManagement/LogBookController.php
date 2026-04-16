@@ -835,7 +835,7 @@ class LogBookController extends ServiceUserManagementController
                                 <option value=""></option>';
 
         foreach ($staffuserlist as $value) {
-            echo '<option value="' . $value->id . '">' . ucfirst($value->user_name) . '</option>';
+            echo '<option value="' . (int)$value->id . '">' . e(ucfirst($value->user_name)) . '</option>';
         }
 
         echo '</select>

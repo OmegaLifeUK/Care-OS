@@ -187,23 +187,12 @@
 
         var service_usr_id  = $('select[name=service_usr_id]').val();
         var token           = $('input[name=_token]').val();
-        error = 0;
-        // if(service_usr_id =='') {
 
-        //     $('select[name=\'service_usr_id\']').parent().addClass('red_border');
-        //     error = 1;
-        // } else {
-        //     $('select[name=\'service_usr_id\']').parent().removeClass('red_border');
-        // }
-        // if(error == 1) {
-        //     return false;
-        // }
         $('.loader').show();
         $.ajax({
             type :  'post',
             url  :  "{{ url('/handover/daily/log') }}",
-            // data :  {'service_usr_id':service_usr_id, '_token':token },
-            //dataType : 'json',
+            data :  {'_token': token},
             success: function(resp){
                 if (isAuthenticated(resp) == false){
                     return false;
@@ -220,6 +209,12 @@
 
                 $('.loader').hide();
                 $('body').removeClass('body-overflow');
+            },
+            error: function(){
+                $('.loader').hide();
+                $('span.popup_error_txt').text('Failed to load handover log. Please try again.');
+                $('.popup_error').show();
+                setTimeout(function(){$(".popup_error").fadeOut()}, 5000);
             }
         });
     }); 

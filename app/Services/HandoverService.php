@@ -100,6 +100,15 @@ class HandoverService
             return ['success' => false, 'message' => 'Log book entry not found.'];
         }
 
+        // Verify assigned staff belongs to the same home (prevent cross-home assignment)
+        $staffUser = \App\User::where('id', $staffUserId)
+            ->where('is_deleted', '0')
+            ->first();
+
+        if (!$staffUser || !in_array($homeId, array_map('intval', explode(',', $staffUser->home_id)))) {
+            return ['success' => false, 'message' => 'Staff member not found.'];
+        }
+
         // Prevent duplicate handover to same staff for same logbook entry
         $existing = HandoverLogBook::forHome($homeId)
             ->where('log_book_id', $logBookId)

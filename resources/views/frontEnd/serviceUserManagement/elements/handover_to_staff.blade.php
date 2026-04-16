@@ -99,7 +99,6 @@
                 if (isAuthenticated(resp) == false){
                     return false;
                 }
-                // alert(resp); return false;
                 if (resp == '0') {
                     $('span.popup_error_txt').text('Error Occured');
                     $('.popup_error').show();
@@ -109,18 +108,23 @@
                     $('.popup_success').show();
                     setTimeout(function(){$('.popup_success').fadeOut()},5000);
                     $('.logged-btn').click();
-                    
+
                 }   else {
                     $('span.popup_error_txt').text('Log is already handovered to this staff member');
                     $('.popup_error').show();
                     setTimeout(function(){$('.popup_error').fadeOut()},5000);
-                    // $('#service-user-add-log').find('select').val('');
                 }
                 $('#StaffUserlogBookModal').modal('hide');
                 $('#logBookModal').modal('show');
 
                 $('.loader').hide();
                 $('body').addClass('body-overflow');
+            },
+            error: function(){
+                $('.loader').hide();
+                $('span.popup_error_txt').text('An error occurred. Please try again.');
+                $('.popup_error').show();
+                setTimeout(function(){$('.popup_error').fadeOut()},5000);
             }
         });
     });
