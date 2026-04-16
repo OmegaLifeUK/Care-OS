@@ -434,6 +434,17 @@ Start with the most complete features (quick wins) and work toward the ones need
 
 ---
 
+## Phase 1.5 — Enhancement Backlog
+
+Items discovered during Phase 1 that go beyond "finish what's half-built" but should land before Phase 2. This list will grow as we work through the remaining features.
+
+| # | Feature | Enhancement | Est | Source |
+|---|---------|-------------|-----|--------|
+| 1 | Body Maps | **Sub-region selection** — click part of a limb instead of the whole body part. Requires splitting SVG paths into smaller sub-paths, new path IDs, schema update for granularity level, update paint/load logic. | 4–6h | Session 12 |
+| 2 | Body Maps | **Side views** — left/right profile views in addition to front/back. Requires new SVG artwork with matching path ID conventions, view-switcher UI, wiring to existing save/load flow. | 4–6h | Session 12 |
+
+---
+
 ## Key Rules
 
 - **Do not start new modules** — Phase 1 is finishing what exists

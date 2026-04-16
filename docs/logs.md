@@ -993,3 +993,15 @@ Confirmed via grep of `resources/views/frontEnd/roster/common/roster_header.blad
 **What:** Saved full session history to `sessions/session12.md`.
 
 ---
+
+### Log 49 — Session 12 Pushed to GitHub
+**Time:** 2026-04-16
+**What:** Committed and pushed 17 prior-session commits + 1 new session-12 commit to `OmegaLifeUK/Care-OS` main branch.
+
+- **New commit:** `ba5115e2` — "Session 12: Care Roster wire-up, body map persistence fix, Feature 10"
+- **27 files changed:** 5,724 insertions, 351 deletions
+- **Push range:** `cb30b604..ba5115e2 komal -> main`
+- **Files included (session 12 scope):** `checkUserAuth.php`, `client_details.blade.php`, `body_map_popup.blade.php`, `phases/phase1.md`, `docs/feature10-careroster-wireup.md`, `docs/logs.md`, `sessions/session12.md`
+- **Also swept up from prior sessions:** session 7–11 history files, `CLAUDE.md`, `careos-workflow.md` rename, `add_gender_to_service_user` migration, and other stacked changes to `ClientController`, `BodyMapController`, `RiskController`, `ServiceUserController`, `profile.blade.php`, `risk.blade.php`, `routes/web.php`.
+
+---
