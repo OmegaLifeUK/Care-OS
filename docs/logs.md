@@ -6,6 +6,31 @@
 
 ## Session: 2026-04-11 (Security Hardening)
 
+### Log 2 — Workflow Upgraded to 9-Stage Pipeline
+**Time:** Mid-session  
+**Action:** Updated `/workflow` with security checklist integration and new PROD-READY stage.
+
+**Changes to `.claude/commands/workflow.md`:**
+1. REVIEW stage now references `docs/security-checklist.md` as mandatory — 15-item checklist (was 14)
+2. IDOR promoted from MEDIUM to BLOCKER
+3. AUDIT stage runs automated grep patterns from the checklist
+4. New Stage 8: **PROD-READY** — checks error handling, performance, UI/UX, graceful degradation
+5. Pipeline is now: PLAN → SCAFFOLD → BUILD → TEST → DEBUG → REVIEW → AUDIT → PROD-READY → PUSH
+
+**Commits:** `79afb25e` (security checklist), `cb30b604` (PROD-READY stage)
+
+**Teaching notes:**
+- Production readiness is more than security. A feature can be "secure" but still break in production if it doesn't handle empty states, loading delays, null relationships, or session timeouts.
+- The PROD-READY stage is the final quality gate — it checks everything security doesn't: UX, performance, edge cases, and graceful degradation.
+
+---
+
+### Log 3 — Session Saved
+**Time:** Session end  
+**Action:** Saved full conversation history to `sessions/session9.md`.
+
+---
+
 ### Log 1 — Body Maps Security Audit & Fixes
 **Time:** Session start  
 **Action:** Full security audit of Feature 3 (Body Maps), then fixed all 7 vulnerabilities found.
@@ -806,5 +831,165 @@ DB_PASSWORD=
 ### Log 38 — Session 8 Saved
 **Time:** 2026-04-11  
 **What:** Saved session history to `sessions/session8.md`. Covers security hardening, CLAUDE.md creation, global /workflow, EVLENT-EDUCATION logs format, cross-project setup.
+
+---
+
+## Session: 2026-04-15 (Body Map Gender Filter + Colour Persistence)
+
+### Log 39 — Body Map Gender Filter
+**Time:** 2026-04-15
+**What:** Scoped from a manual-test clarification. The body map popup was showing two silhouettes (male + female) for every client regardless of sex. Added gender filtering end-to-end.
+
+**Changes:**
+1. New migration: `database/migrations/2026_04_15_120000_add_gender_to_service_user.php` — `ENUM('M','F') NULL` after `date_of_birth`. Ran via `--path` flag because a pre-existing broken migration (`2025_11_20_111238_add_is_completed...`) blocks bulk `artisan migrate`.
+2. `resources/views/backEnd/serviceUser/service_user_form.blade.php` — added Gender dropdown.
+3. `app/Http/Controllers/backEnd/serviceUser/ServiceUserController.php` — `add()` + `edit()` sanitise via `in_array($input, ['M','F'], true)`.
+4. `resources/views/frontEnd/serviceUserManagement/elements/risk_change/body_map_popup.blade.php` — added `@php` block with hardcoded left-figure / right-figure ID arrays (63 / 65 IDs, pre-classified by first-M x-coordinate with split at x=260, ~50-unit safety margin). Emits `<style>` rules with ID-based selectors. Gender class (`gender-M` / `gender-F`) applied to `#organswrapper` when `$patient->gender` is set.
+5. Confirmed visually: left = male, right = female.
+
+**Teaching note:** First tried a runtime JS classifier that tagged each path with `fig-left` / `fig-right`. Abandoned because `paintInjuryPath` used `.attr('class', 'active')` which wipes class state. Switched to hardcoded ID selectors — ID-based CSS can't be defeated by class manipulation, runs before any JS, bulletproof.
+
+### Log 40 — Injury Colour Persistence Bug
+**Time:** 2026-04-15
+**What:** Five-round debugging marathon. Symptom: typed injury colours rendered correctly on save, then reverted to red on page reload or risk re-open.
+
+**Root causes found (in order):**
+1. `RiskController@view` SELECT was missing `injury_type` and `injury_colour` → response had no colour data at all. Added to SELECT.
+2. `risk.blade.php:1215` painted injuries via `$('#'+id).attr('class', 'active')` — no colour applied, falls back to path's default `fill="#FF0000"`. Rewrote to call `paintInjuryPath(id, obj)`.
+3. `paintInjuryPath` was defined inside an IIFE wrapper at `body_map_popup.blade.php:850` (`(function() { ... })()`) → not in global scope → `risk.blade.php` hit the fallback branch. **Exposed on `window.paintInjuryPath` / `window.clearInjuryPath`.**
+4. Popup's `shown.bs.modal` AJAX hit `/service/body-map/{risk_id}` expecting JSON but that route returns a VIEW. Silent failure. Added new JSON endpoint `BodyMapController@listForRisk` + route `/service/body-map/list/{risk_id}`. Popup now wipes all paths then repaints from canonical source.
+5. `public/frontEnd/js/muscle3x.min.js` (third-party body-map library, 2982 lines) binds `.hover()` / `.mousedown()` / `.mouseup()` on every path that rewrite `fill`/`stroke` to `#FF0000` via `.css()` on every mouse cycle. Fix: `paintInjuryPath` now calls `.off('mouseenter mouseleave mouseover mouseout mousedown mouseup')` on injured paths before painting. `clearInjuryPath` re-invokes `frt_addEvent`/`bck_addEvent` to restore normal hover behaviour after removal. The delegated click handler survives because it's bound to `document`, not the path.
+
+**Teaching note:** Debugging this took 5 rounds because multiple unrelated bugs were stacked. The breakthrough came from adding `console.log` diagnostics and getting Vedang to paste the browser output — the logs showed `paintInjuryPath not defined — fallback` which instantly pinpointed the IIFE scoping issue. **Without the console logs I would have kept guessing. Always add diagnostic logging early when a bug doesn't yield to code inspection.**
+
+### Log 41 — Session 10 Saved
+**Time:** 2026-04-15
+**What:** Saved full session history to `sessions/session10.md`. Covers gender filter implementation end-to-end, IIFE scoping discovery, muscle3x hover interference, new JSON listForRisk endpoint.
+
+---
+
+## Session: 2026-04-16 (Body Maps → Care Roster UI)
+
+### Log 42 — Lifted staff_id filter + verified hover fix
+**Time:** 2026-04-16
+**What:** Removed the `staff_id` filter from `RiskController@view` so every staff member sees every injury on a risk (was limited to injuries they personally recorded). Moved the home_id auth check above the BodyMap query and added explicit `home_id` scoping on the SELECT for defence-in-depth. Verified the hover fix (`paintInjuryPath .off(...)` + `window.paintInjuryPath` / `window.clearInjuryPath`) is still intact in `body_map_popup.blade.php:899-926`.
+
+**Teaching notes:**
+- When tightening a controller query, run auth checks BEFORE the data query. Even if the query itself is scoped, failing fast on auth errors prevents accidental information leaks through SQL errors or timing differences.
+- A `staff_id` filter on shared data models is a trap: it feels like "privacy" but it breaks multi-user workflows. Multi-tenancy belongs at the `home_id` level; per-user scoping should be a deliberate UX choice, not accidental.
+
+---
+
+### Log 43 — New endpoint + aggregated read-only body map on profile
+**Time:** 2026-04-16
+**What:** Added `BodyMapController@listForServiceUser(int $serviceUserId)` returning all active injuries for a SU across risks (home_id scoped, 404 on wrong home). Registered route `GET /service/body-map/service-user/{service_user_id}/list` with integer constraint, placed before the wildcard risk route.
+
+Extended `body_map_popup.blade.php` with an "aggregated read-only" mode: a new `bm_aggregated_su_id` hidden input, branching in the `shown.bs.modal` handler (aggregated → fetch by SU; risk → fetch by risk), a `.bm-readonly` class toggle, `hidden.bs.modal` reset, and a short-circuit in the click handler that shows the info modal but hides the remove button and skips the add flow entirely.
+
+Added a Body Map trigger icon (`fa-male`) to `profile.blade.php` next to the Calendar link, with `data-service-user-id` and a click handler that sets `bm_aggregated_su_id`, clears `su_rsk_id`, and opens `#bodyMapModal`.
+
+**Teaching notes:**
+- When a modal needs to behave differently based on context, prefer a **class toggle on the modal element itself** (`.bm-readonly`) over scattered boolean flags. The class survives re-renders and can be inspected from any handler via `.hasClass()`.
+- Reset state in `hidden.bs.modal`: modals are reused, so the next open inherits any leftover data attributes, hidden inputs, or classes. Always wipe them on close.
+
+---
+
+### Log 44 — Discovered body map was integrated into the wrong UI
+**Time:** 2026-04-16
+**What:** Vedang tested the integration and reported "nothing is clickable." Screenshot showed `/roster/client-details/27` — the new half-built Care Roster UI — not the old `/service/user-profile/{id}` page I had edited. The Care Roster sidebar's "Clients" link goes to `/roster/client` → `/roster/client-details/{id}` and has **no link** to the old service user management flow. The user was permanently stuck in the new UI and couldn't reach my integration through menu navigation.
+
+Confirmed via grep of `resources/views/frontEnd/roster/common/roster_header.blade.php` (no `service-user-management` / `service/user-profile` references). Offered three options: test the old UI via the SCITS root dashboard, move the work to the new UI, or do both. Vedang chose **move it to the new UI**.
+
+**Teaching notes:**
+- Always confirm which UI the user is actually using before picking an integration point. "The codebase has a profile page" is not the same as "the user can reach it from the menu they use." Blade includes + modals only help if the parent page is actually in a live navigation path.
+- A half-built mockup screen can look functional from a distance. Hardcoded cards with hover states and icon buttons read as "wired up" at a glance. The tell is usually a giant click handler that only toggles between two on-page sections (`.riskAssessmentSectionFirst` / `.riskAssessmentSectionSecond`) without hitting a controller.
+
+---
+
+### Log 45 — Wired body maps into Care Roster client_details
+**Time:** 2026-04-16
+**What:** Rebuilt the Risk Assessments tab of the new Care Roster UI to use real data.
+
+**ClientController changes (`Roster/Client/ClientController.php:client_details`):**
+- Added home_id scoping via `explode(',', Auth::user()->home_id)[0]` — this screen had **zero** multi-tenancy before.
+- `abort(404)` if the service_user doesn't belong to the caller's home.
+- Loads `$patient` (ServiceUser row) so the body map popup can apply the gender filter.
+- Passes `$service_user_id` so the popup trigger knows which SU to aggregate.
+- Queries `su_risk` joined to `risk`, scoped by `service_user_id` + `home_id` + `risk.is_deleted = 0`, ordered by `created_at` desc, as `$risks`.
+
+**View changes (`roster/client/client_details.blade.php`):**
+- Replaced the 6 hardcoded `planCard` blocks (~125 lines) with a single `@forelse($risks ?? [] as $risk)` loop. Each card renders `$risk->description`, a status badge (historic/live/no risk), the assessed date, and a new `.realRiskBodyMapBtn` carrying `data-su-risk-id`.
+- Added a **Body Map** button with `bx-body` icon to the page header, between Edit Client and Import Documents, with class `.openBodyMapProfile` + `data-service-user-id`.
+- `@included` `frontEnd.serviceUserManagement.elements.risk_change.body_map_popup` before `@endsection` so the modal markup + JS are pulled into the page.
+- Added two click handlers to the trailing script block: `.openBodyMapProfile` (aggregated read-only mode — every injury across every risk) and `.realRiskBodyMapBtn` (risk mode — add/remove scoped to a single `su_risk_id`).
+- `@empty` block shows "No risk assessments recorded for this client yet."
+
+**Security note:** `client_details` was previously letting anyone with the URL open any client across homes. That's now closed.
+
+**Teaching notes:**
+- `@forelse ... @empty ... @endforelse` is the clean Blade pattern for "list or empty state." Avoids the `if ($collection->isEmpty())` wrapper.
+- When grafting a modal into a new host page, make sure **every variable the modal reads from Blade scope is passed by the host controller**. The body map popup reads `$patient->gender` and `$service_user_id`. Missing either produces silent breakage: gender filter won't apply, or the profile-trigger JS reads `undefined`.
+- The Care Roster client_details page is still ~95% mocked — only the Risk Assessments tab is wired now. Care Plan, Medication, PEEP, Repositioning, Behavior, Mental Capacity, DoLS, DNACPR, and Safeguarding tabs all still have hardcoded content. These become Phase 1 / Phase 2 work as those features get built.
+
+---
+
+### Log 46 — Session 11 Saved
+**Time:** 2026-04-16
+**What:** Saved full session history to `sessions/session11.md`. Covers the old-UI body map polish (staff_id filter, profile page integration), the wrong-UI discovery, and the full rewire into the Care Roster `client_details` page.
+
+---
+
+### Log 47 — Session 12: Care Roster wire-up audit, body map persistence bug, Feature 10
+**Time:** 2026-04-16
+**What:** Investigated broken buttons on Care Roster `client_details.blade.php`, fixed three concrete issues, audited the page, documented Feature 10.
+
+**1. Risk Assessments tab — static mockup → dynamic loop**
+- `resources/views/frontEnd/roster/client/client_details.blade.php:3254` had 6 hardcoded placeholder `planCard` blocks inside `#clientRiskAssessmentsTab` that ignored `$risks`.
+- Replaced with `@forelse($risks ?? [] as $risk) ... @empty ... @endforelse` loop that renders real risk data + `.realRiskBodyMapBtn` wired to open the body map in risk-edit mode.
+- The dynamic loop mirrors the one that already existed in a hidden `.onboardContent.d-none` block at line 603 — I adapted it with the extra `.danger`/`.riskAssessmentDeatils` actions to match the new layout.
+
+**2. Body map dual-gender bug — gender fallback**
+- `resources/views/frontEnd/serviceUserManagement/elements/risk_change/body_map_popup.blade.php:72` set `$bmGender = ''` when `$patient->gender` was unset, which meant `#organswrapper` never got a `gender-M` or `gender-F` class, which meant the CSS hiding logic never kicked in, which meant both male and female figures rendered side-by-side.
+- Fix: default to `'M'` when gender is missing. `class="gender-{{ $bmGender }}"` is now always emitted.
+- The proper long-term fix is the Add/Edit Client form enforcing gender — that's Add Client workstream, not body map.
+
+**3. THE BIG ONE — body map injuries disappear on refresh**
+- Symptom: saved injuries paint correctly right after save, but on page reload the body map modal shows no colors.
+- Root cause: `app/Http/Middleware/checkUserAuth.php:125` strips all digits from the URL before permission-checking (`$path = preg_replace('/\d/', '', $path);`). So `/service/body-map/service-user/180/list` becomes `service/body-map/service-user//list` (with a literal double-slash), which matches nothing in `$allowed_path` or in the user's access_rights table.
+- When the AJAX permission check fails, the middleware does `echo json_encode('unauthorize'); die;` — it outputs the JSON string `"unauthorize"`, not an error object. jQuery parses it as a valid JSON response, my `shown.bs.modal` success callback runs with `resp = "unauthorize"`, `resp.success` is `undefined`, and the early-return fires. No paint.
+- Why save worked: `/service/body-map/injury/add` has no digits, stays as itself, matches Komal's access rights. The save success callback paints directly without hitting the list endpoint — that's why colors appear right after save but vanish on reload.
+- Fix: add the digit-stripped forms of the body-map read endpoints to the middleware's `$allowed_path` whitelist: `service/body-map/service-user//list`, `service/body-map/list/`, `service/body-map/history/`, `service/body-map/`.
+- Also cleans up: per-risk `listForRisk`, the history endpoint, and the standalone `/service/body-map/{risk_id}` index route — all were broken for the same reason.
+
+**4. Full audit of `client_details.blade.php`**
+- Ran an Explore subagent: ~95 interactive elements, ~35 wired, ~60 unwired.
+- Orphaned tabs (not fixed by any existing phase plan): Care Tasks, Care Plan, PEEP, Behavior Chart, Mental Capacity, Onboarding, Progress Report, Documents, residual Risk Assessments CRUD.
+- Tabs that get fixed by Phase 1 features: Medication (→ Feature 6 MAR Sheets), Safeguarding (→ Feature 9).
+- Tabs deferred to Phase 3: AI Insights, AI Generate buttons in Progress Report/Documents.
+
+**5. Feature 10 documentation**
+- Created `docs/feature10-careroster-wireup.md` — detailed spec covering this session's fixes, all pre-existing wired handlers (so future work doesn't duplicate), Feature 10's actual scope (orphaned buttons only), implementation approach, security checklist, and definition of done.
+- Added Feature 10 row to `phases/phase1.md` pipeline table with 10h estimate. Updated completed counter from `1/9` → `1/10`.
+
+**Teaching notes:**
+- **Latent middleware bug:** the digit-stripping hack in `checkUserAuth` is load-bearing and silently broken for any numeric URL segment. Any future Ajax GET with an integer in the path will hit the same trap. Flag this in code review when wiring new endpoints. A proper fix is to replace the digit-strip with a permission check that honours route parameter placeholders — but that's a bigger refactor and needs its own planning round.
+- **`$request->ajax()` is `X-Requested-With: XMLHttpRequest`**, which jQuery sets by default. If you ever hit a "middleware returns HTML, not JSON" problem, check whether the middleware has an AJAX branch that emits raw strings. That's what bit us — a JSON *string* `"unauthorize"` parses fine but has no `.success` property.
+- **Bootstrap modals keep DOM on hide.** Painted SVG paths persist across modal close/open within one page session. That's why the user saw colors "working" initially — they were leftover from the save callback's direct paint, not from a successful reload. Always test by refreshing the full page, not just closing the modal.
+- **Blade `@forelse` is the right pattern** for "list or empty state" rather than wrapping a foreach in an if-isEmpty.
+- **Per-risk vs aggregated body maps:** the body map is scoped per-risk-assessment, not per-service-user. Injuries saved from risk X don't show when you open risk Y's body map. The header "Body Map" button opens an aggregated read-only view across all risks, but clicks are no-ops there. Consider whether this per-risk scoping is actually the right product decision — it's surprising UX.
+
+**Files changed:**
+- `resources/views/frontEnd/roster/client/client_details.blade.php` (line 3254: dynamic risk cards)
+- `resources/views/frontEnd/serviceUserManagement/elements/risk_change/body_map_popup.blade.php` (line 72: gender fallback)
+- `app/Http/Middleware/checkUserAuth.php` (line 132+: whitelist body-map read paths)
+- `phases/phase1.md` (Feature 10 row)
+- `docs/feature10-careroster-wireup.md` (new, ~250 lines)
+- `sessions/session12.md` (new)
+
+---
+
+### Log 48 — Session 12 Saved
+**Time:** 2026-04-16
+**What:** Saved full session history to `sessions/session12.md`.
 
 ---

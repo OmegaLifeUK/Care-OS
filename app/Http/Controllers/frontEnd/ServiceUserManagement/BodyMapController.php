@@ -180,4 +180,48 @@ class BodyMapController extends ServiceUserManagementController
 
         return response()->json(['success' => true, 'data' => $history]);
     }
+
+    /**
+     * List all active injuries for a risk assessment (AJAX/JSON).
+     * Used by the body map popup's shown.bs.modal handler to re-paint
+     * every path with its persisted injury_type and injury_colour.
+     */
+    public function listForRisk(int $suRiskId)
+    {
+        $homeId = $this->getHomeId();
+
+        $risk = ServiceUserRisk::where('id', $suRiskId)
+            ->where('home_id', $homeId)
+            ->first();
+
+        if (!$risk) {
+            return response()->json(['success' => false, 'message' => 'Risk not found.'], 404);
+        }
+
+        $injuries = $this->service->listForRisk($homeId, $suRiskId);
+
+        return response()->json(['success' => true, 'data' => $injuries]);
+    }
+
+    /**
+     * List all active injuries for a service user across every risk (AJAX/JSON).
+     * Used by the profile page's read-only aggregated body map view — shows
+     * every current injury regardless of which risk assessment recorded it.
+     */
+    public function listForServiceUser(int $serviceUserId)
+    {
+        $homeId = $this->getHomeId();
+
+        $su = \App\ServiceUser::where('id', $serviceUserId)
+            ->where('home_id', $homeId)
+            ->first();
+
+        if (!$su) {
+            return response()->json(['success' => false, 'message' => 'Service user not found.'], 404);
+        }
+
+        $injuries = $this->service->listForServiceUser($homeId, $serviceUserId);
+
+        return response()->json(['success' => true, 'data' => $injuries]);
+    }
 }

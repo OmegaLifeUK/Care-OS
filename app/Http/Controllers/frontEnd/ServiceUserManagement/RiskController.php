@@ -44,7 +44,7 @@ class RiskController extends ServiceUserManagementController
             //                 ->join('category', 'log_book.category_id', '=', 'category.id')
             //                 ->orderBy('date','desc');
             $log_book_records =  DB::table('su_risk as sur')
-                ->select('sur.*', 'd.*', 'u.name as staff_name', 'r.description', 'r.icon')
+                ->select('sur.*', 'd.*', 'u.name as staff_name', 'r.description', 'r.icon', 'sur.id as id')
                 ->join('dynamic_form as d', 'd.id', 'sur.dynamic_form_id')
                 ->join('risk as r', 'r.id', 'sur.risk_id')
                 ->join('service_user', 'sur.service_user_id', '=', 'service_user.id')
@@ -92,7 +92,7 @@ class RiskController extends ServiceUserManagementController
         //                                ->join('service_user', 'su_health_record.service_user_id', '=', 'service_user.id')
         //                                ->orderBy('su_health_record.created_at','desc')->get();
         $log_book_records = DB::table('su_risk as sur')
-            ->select('sur.*', 'd.*', 'u.name as staff_name', 'r.description', 'r.icon')
+            ->select('sur.*', 'd.*', 'u.name as staff_name', 'r.description', 'r.icon', 'sur.id as id')
             ->join('dynamic_form as d', 'd.id', 'sur.dynamic_form_id')
             ->join('risk as r', 'r.id', 'sur.risk_id')
             ->whereDate('sur.created_at', '=', $today)
@@ -274,19 +274,8 @@ class RiskController extends ServiceUserManagementController
         //echo "<pre>"; print_r($risk); die;
         if (!empty($risk)) {
 
-            $staff_id         = Auth::user()->id;
-
             $service_user_id  = ServiceUserRisk::where('id', $risk->sur_id)->value('service_user_id');
-            // echo $service_user_id; die;
-            $sel_injury_parts = BodyMap::select('id', 'sel_body_map_id', 'service_user_id', 'staff_id', 'su_risk_id')
-                ->where('service_user_id', $service_user_id)
-                ->where('staff_id', $staff_id)
-                ->where('su_risk_id', $risk->sur_id)
-                ->where('is_deleted', '0')
-                ->get()
-                ->toArray();
 
-            // echo "<pre>"; print_r($sel_injury_parts); die;
             $risk_home_id = $risk->home_id;
             $home_ids = Auth::user()->home_id;
             $ex_home_ids = explode(',', $home_ids);
@@ -295,6 +284,14 @@ class RiskController extends ServiceUserManagementController
                 $result['response'] = 'AUTH_ERR';
                 return $result;
             }
+
+            $sel_injury_parts = BodyMap::select('id', 'sel_body_map_id', 'service_user_id', 'staff_id', 'su_risk_id', 'injury_type', 'injury_colour')
+                ->where('home_id', $home_id)
+                ->where('service_user_id', $service_user_id)
+                ->where('su_risk_id', $risk->sur_id)
+                ->where('is_deleted', '0')
+                ->get()
+                ->toArray();
 
             if ($risk->status == '1') {
                 $status_txt = 'Historic';

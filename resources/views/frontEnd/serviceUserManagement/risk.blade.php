@@ -123,9 +123,10 @@
                             <div class="col-md-10 col-sm-10 col-xs-12">
                                 <div data-date-viewmode="years" data-date-format="dd-mm-yyyy" data-date=""
                                     class="input-group date">
-                                    <input id="date_range_input" style="cursor: pointer;" name="daterange"
-                                        value="{{ date('d-m-Y') }} - {{ date('d-m-Y') }}" type="text" value=""
-                                        readonly="" size="16" class="form-control log-book-datetime">
+                                    <input id="date_range_input" style="cursor: text;" name="daterange"
+                                        value="{{ date('d/m/Y') }} - {{ date('d/m/Y') }}" type="text"
+                                        placeholder="DD/MM/YYYY - DD/MM/YYYY"
+                                        size="24" class="form-control log-book-datetime">
                                     <span class="input-group-btn add-on datetime-picker2">
                                         <button onclick="showDate()" class="btn btn-primary" type="button"><span
                                                 class="glyphicon glyphicon-calendar"></span></button>
@@ -288,6 +289,9 @@
         <!--main content end-->
 
     </section>
+
+    @include('frontEnd.serviceUserManagement.elements.risk_change.body_map_popup')
+
     <!-- risk view modal -->
     <div class="modal fade" tabindex="-1" role="dialog" id="riskViewModal">
         <div class="modal-dialog" role="document">
@@ -470,12 +474,39 @@
         $(function() {
             $('input[name="daterange"]').daterangepicker({
                 opens: 'left',
+                autoUpdateInput: true,
                 locale: {
                     format: 'DD/MM/YYYY'
                 }
             }, function(start, end, label) {
                 console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end
                     .format('YYYY-MM-DD'));
+            });
+
+            // Allow manual typing: parse "DD/MM/YYYY - DD/MM/YYYY" on Enter or blur
+            function applyTypedRange($input) {
+                var val = ($input.val() || '').trim();
+                var parts = val.split(/\s*-\s*/);
+                if (parts.length !== 2) return false;
+                var start = moment(parts[0], 'DD/MM/YYYY', true);
+                var end = moment(parts[1], 'DD/MM/YYYY', true);
+                if (!start.isValid() || !end.isValid() || end.isBefore(start)) return false;
+                var picker = $input.data('daterangepicker');
+                picker.setStartDate(start);
+                picker.setEndDate(end);
+                $input.val(start.format('DD/MM/YYYY') + ' - ' + end.format('DD/MM/YYYY'));
+                $input.trigger('apply.daterangepicker', [picker]);
+                return true;
+            }
+
+            $('input[name="daterange"]').on('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (applyTypedRange($(this))) {
+                        $(this).data('daterangepicker').hide();
+                        $(this).blur();
+                    }
+                }
             });
         });
     </script>
@@ -638,7 +669,7 @@
 
                                 var pannel = document.createElement("div");
                                 pannel.setAttribute("class", "panel");
-                                // pannel.setAttribute("onclick", "view_risk(`${resp.log_book_records[i]['id']}`)");
+                                pannel.setAttribute("onclick", "view_risk("+resp.log_book_records[i]['id']+")");
 
                                 var pannel_body = document.createElement("div");
                                 pannel_body.setAttribute("class", "panel-body");
@@ -746,7 +777,7 @@
 
                                 var pannel = document.createElement("div");
                                 pannel.setAttribute("class", "panel");
-                                // pannel.setAttribute("onclick", "view_risk("+resp.log_book_records[i]['id']+")");
+                                pannel.setAttribute("onclick", "view_risk("+resp.log_book_records[i]['id']+")");
                                 var pannel_body = document.createElement("div");
                                 pannel_body.setAttribute("class", "panel-body");
 
@@ -918,6 +949,7 @@
 
                                 var pannel = document.createElement("div");
                                 pannel.setAttribute("class", "panel");
+                                pannel.setAttribute("onclick", "view_risk("+resp.log_book_records[i]['id']+")");
 
                                 var pannel_body = document.createElement("div");
                                 pannel_body.setAttribute("class", "panel-body");
@@ -1018,6 +1050,7 @@
 
                                 var pannel = document.createElement("div");
                                 pannel.setAttribute("class", "panel");
+                                pannel.setAttribute("onclick", "view_risk("+resp.log_book_records[i]['id']+")");
 
                                 var pannel_body = document.createElement("div");
                                 pannel_body.setAttribute("class", "panel-body");
@@ -1182,9 +1215,11 @@
                         var obj = JSON.parse(sel_injury_parts);
                         var len = obj.length;
                         for (var i = 0; i < len; i++) {
-
-                            var sel_body_map_id = obj[i].sel_body_map_id;
-                            $('#' + sel_body_map_id).attr('class', 'active');
+                            if (typeof window.paintInjuryPath === 'function') {
+                                window.paintInjuryPath(obj[i].sel_body_map_id, obj[i]);
+                            } else {
+                                $('#' + obj[i].sel_body_map_id).addClass('active');
+                            }
                         }
                         $('input[name=su_rsk_id]').val(su_risk_id);
 
@@ -1196,6 +1231,8 @@
                         setTimeout(function() {
                             autosize($("textarea"));
                         }, 200);
+
+                        $('#riskViewModal').modal('show');
 
                     } else if (response == 'AUTH_ERR') {
                         $('#riskViewModal').modal('hide');

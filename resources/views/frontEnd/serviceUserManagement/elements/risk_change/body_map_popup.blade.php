@@ -28,6 +28,23 @@
     .injury-badge-other { background: #455A64; }
 </style>
 
+@php
+/*
+ * Gender-filtered body map. The SVG below contains two figures drawn side by
+ * side in each view: left = male, right = female. We hide the opposite figure
+ * with hardcoded ID selectors, generated from first-M x-coordinates in the
+ * path data (left figure x < 260, right figure x >= 260, with a ~50-unit gap).
+ */
+$bodyMapLeftIds  = ['frt_1','frt_2','frt_3','frt_4','frt_5','frt_6','frt_7','frt_8','frt_9','frt_10','frt_11','frt_12','frt_13','frt_14','frt_15','frt_16','frt_17','frt_18','frt_19','frt_20','frt_21','frt_22','frt_23','frt_24','frt_25','frt_26','frt_27','frt_28','frt_29','frt_30','frt_31','frt_32','frt_33','frt_34','bck_1','bck_2','bck_3','bck_4','bck_5','bck_6','bck_7','bck_8','bck_9','bck_10','bck_11','bck_12','bck_13','bck_14','bck_15','bck_16','bck_17','bck_18','bck_19','bck_20','bck_21','bck_22','bck_23','bck_24','bck_25','bck_26','bck_27','bck_28','bck_29'];
+$bodyMapRightIds = ['frt_35','frt_36','frt_37','frt_38','frt_39','frt_40','frt_41','frt_42','frt_43','frt_44_2_','frt_44_1_','frt_45','frt_46','frt_47','frt_48','frt_49','frt_50','frt_51','frt_52','frt_53','frt_54','frt_55','frt_56','frt_57','frt_58','frt_59','frt_60','frt_61','frt_62','frt_63','frt_64','frt_65','frt_66','frt_67','frt_68','frt_69','bck_30','bck_31','bck_32','bck_33','bck_34','bck_35','bck_36','bck_37','bck_38','bck_39','bck_40','bck_41','bck_42','bck_43','bck_44','bck_45','bck_46','bck_47','bck_48','bck_49','bck_50','bck_51','bck_52','bck_53','bck_54','bck_55','bck_56','bck_57','bck_58'];
+$hideWhenMale   = implode(',', array_map(fn($id) => '#organswrapper.gender-M #'.$id, $bodyMapRightIds));
+$hideWhenFemale = implode(',', array_map(fn($id) => '#organswrapper.gender-F #'.$id, $bodyMapLeftIds));
+@endphp
+<style>
+    {!! $hideWhenMale !!} { display: none !important; pointer-events: none !important; }
+    {!! $hideWhenFemale !!} { display: none !important; pointer-events: none !important; }
+</style>
+
 
 <!-- Plan Modal -->
 <div class="modal fade" id="bodyMapModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -48,10 +65,12 @@
                                     <div class="title">
                                         <input type="hidden" name="su_rsk_id">
                                         <input type="hidden" name="sel_injury_parts">
+                                        <input type="hidden" name="bm_aggregated_su_id">
                                     </div>
                                     <div>
                                     </div>
-                                    <div id="organswrapper">
+                                    @php $bmGender = (isset($patient) && in_array($patient->gender ?? null, ['M','F'], true)) ? $patient->gender : 'M'; @endphp
+                                    <div id="organswrapper" class="gender-{{ $bmGender }}">
                                      
                                             <div id="frt_base">
                                                 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="473.235px" height="457.375px" viewBox="0 0 473.235 457.375" enable-background="new 0 0 473.235 457.375" xml:space="preserve">
@@ -849,26 +868,124 @@
     // Track body-part → DB injury ID mapping
     var popupInjuryMap = {};
 
-    // When the body map modal opens, load injury data from API
+    // Injury-type → fallback colour (used when user didn't type a free-text colour)
+    var injuryTypeColours = {
+        bruise: '#7B1FA2',
+        wound: '#C62828',
+        rash: '#EF6C00',
+        burn: '#D84315',
+        swelling: '#1565C0',
+        pressure_sore: '#AD1457',
+        other: '#455A64'
+    };
+
+    // Pick a marker colour for an injury: prefer the user-typed colour, else the type colour, else red
+    function colourForInjury(injury) {
+        if (injury && injury.injury_colour && String(injury.injury_colour).trim()) {
+            return String(injury.injury_colour).trim().toLowerCase();
+        }
+        if (injury && injury.injury_type && injuryTypeColours[injury.injury_type]) {
+            return injuryTypeColours[injury.injury_type];
+        }
+        return '#FF0000';
+    }
+
+    // Mark a body part as injured and paint it with the appropriate colour.
+    // `muscle3x.min.js` binds jQuery .hover()/.mousedown()/.mouseup() handlers
+    // on every path that rewrite `fill`/`stroke` to its own upColor/overColor
+    // (both #FF0000) via .css(). Those fire on every hover cycle and trample
+    // our injury colour, so we .off() those direct handlers on injured paths.
+    // The click handler is delegated via $(document).on(...) so it survives.
+    // Exposed on window so risk.blade.php (outside this IIFE) can call it.
+    function paintInjuryPath(selId, injury) {
+        var colour = colourForInjury(injury);
+        $('#' + selId)
+            .off('mouseenter mouseleave mouseover mouseout mousedown mouseup')
+            .addClass('active')
+            .css({ 'fill': colour, 'stroke': colour })
+            .attr({ 'fill': colour, 'stroke': colour });
+    }
+    window.paintInjuryPath = paintInjuryPath;
+
+    // Clear an injury marker (used on remove). Rebinds the muscle3x hover
+    // handlers by re-invoking frt_addEvent/bck_addEvent so normal hover
+    // behaviour resumes for this path after the injury is removed.
+    function clearInjuryPath(selId) {
+        $('#' + selId)
+            .removeClass('active')
+            .css({ 'fill': '', 'stroke': '' })
+            .removeAttr('fill')
+            .removeAttr('stroke');
+        try {
+            if (selId.indexOf('frt_') === 0 && typeof frt_addEvent === 'function') {
+                frt_addEvent(selId);
+            } else if (selId.indexOf('bck_') === 0 && typeof bck_addEvent === 'function') {
+                bck_addEvent(selId);
+            }
+        } catch (e) { /* muscle3x may not have config for every id */ }
+    }
+    window.clearInjuryPath = clearInjuryPath;
+
+    // When the body map modal opens, wipe any previous paint and reload all
+    // injuries from the canonical JSON endpoint. This is the sole source of
+    // truth for injury rendering on the popup — even if another script (e.g.
+    // risk.blade.php's risk-view handler) paints the same paths with wrong
+    // data, opening the body map pulls the real injury_colour / injury_type
+    // from the DB and re-paints every path.
     $(document).on('shown.bs.modal', '#bodyMapModal', function() {
         var suRiskId = $('input[name=su_rsk_id]').val();
-        if (!suRiskId) return;
+        var aggregatedSuId = $('input[name=bm_aggregated_su_id]').val();
+        var url;
 
-        // Fetch current injuries from API and build the injuryMap
+        // Aggregated (read-only) mode is used by the profile page — show every
+        // active injury for the service user regardless of which risk recorded it.
+        // Risk mode (legacy) is scoped to a single su_risk_id.
+        if (aggregatedSuId) {
+            url = "{{ url('/service/body-map/service-user') }}/" + aggregatedSuId + "/list";
+        } else if (suRiskId) {
+            url = "{{ url('/service/body-map/list') }}/" + suRiskId;
+        } else {
+            return;
+        }
+
+        // Toggle read-only state on the modal so the click handler can skip
+        // the add/remove flows and leave the map as a viewer.
+        $('#bodyMapModal').toggleClass('bm-readonly', !!aggregatedSuId);
+
         $.ajax({
             type: 'GET',
-            url: "{{ url('/service/body-map') }}/" + suRiskId,
+            url: url,
+            dataType: 'json',
             success: function(resp) {
-                if (resp.success && resp.data) {
-                    popupInjuryMap = {};
-                    for (var i = 0; i < resp.data.length; i++) {
-                        var inj = resp.data[i];
-                        popupInjuryMap[inj.sel_body_map_id] = inj.id;
-                        $('#' + inj.sel_body_map_id).attr('class', 'active');
+                if (!resp || !resp.success) return;
+
+                // Wipe any existing paint so stale colours from prior handlers
+                // don't bleed through. Then rebuild from the fresh response.
+                $('#frt_base path, #bck_base path').each(function() {
+                    if ($(this).hasClass('active')) {
+                        clearInjuryPath(this.id);
                     }
+                });
+
+                popupInjuryMap = {};
+                var data = resp.data || [];
+                for (var i = 0; i < data.length; i++) {
+                    var inj = data[i];
+                    popupInjuryMap[inj.sel_body_map_id] = inj.id;
+                    paintInjuryPath(inj.sel_body_map_id, inj);
                 }
+            },
+            error: function(xhr) {
+                console.error('[BodyMap] list failed:', xhr.status, xhr.responseText);
             }
         });
+    });
+
+    // Reset aggregated flag when the modal closes so the next open (e.g. from
+    // a risk assessment) starts in the correct mode.
+    $(document).on('hidden.bs.modal', '#bodyMapModal', function() {
+        $('input[name=bm_aggregated_su_id]').val('');
+        $('#bodyMapModal').removeClass('bm-readonly');
     });
 
     // Click handler for both front (frt) and back (bck) body parts
@@ -877,19 +994,62 @@
         var selBodyMapId = $path.attr('id');
         var suRiskId = $('input[name=su_rsk_id]').val();
         var serviceUserId = "{{ isset($service_user_id) ? $service_user_id : '' }}";
+        var isReadOnly = $('#bodyMapModal').hasClass('bm-readonly');
+
+        // Aggregated/read-only mode: only allow viewing existing injuries.
+        // No add flow (there's no risk context), and no remove button.
+        if (isReadOnly) {
+            if (!$path.hasClass('active')) return;
+            var injIdRO = popupInjuryMap[selBodyMapId];
+            if (!injIdRO) return;
+
+            $('#popupInjuryInfoBody').html('<p>Loading...</p>');
+            $('#popupRemoveInjuryBtn').hide();
+            $('#popupInjuryInfoModal').modal('show');
+
+            $.ajax({
+                type: 'GET',
+                url: "{{ url('/service/body-map/injury') }}/" + injIdRO,
+                success: function(resp) {
+                    if (resp.success && resp.data) {
+                        var d = resp.data;
+                        var staffName = esc(d.staff ? d.staff.name : 'Unknown');
+                        var typeVal = d.injury_type ? d.injury_type.replace(/[^a-z_]/g, '') : '';
+                        var typeBadge = typeVal
+                            ? '<span class="injury-badge injury-badge-' + typeVal + '">' + esc(typeVal.replace('_', ' ')) + '</span>'
+                            : '<em>Not specified</em>';
+                        var html = '<table class="table table-bordered">'
+                            + '<tr><td><strong>Body Region</strong></td><td>' + esc(d.sel_body_map_id) + '</td></tr>'
+                            + '<tr><td><strong>Type</strong></td><td>' + typeBadge + '</td></tr>'
+                            + '<tr><td><strong>Description</strong></td><td>' + (d.injury_description ? esc(d.injury_description) : '<em>None</em>') + '</td></tr>'
+                            + '<tr><td><strong>Date Discovered</strong></td><td>' + (d.injury_date ? esc(d.injury_date) : '<em>Not set</em>') + '</td></tr>'
+                            + '<tr><td><strong>Size</strong></td><td>' + (d.injury_size ? esc(d.injury_size) : '<em>Not recorded</em>') + '</td></tr>'
+                            + '<tr><td><strong>Colour</strong></td><td>' + (d.injury_colour ? esc(d.injury_colour) : '<em>Not recorded</em>') + '</td></tr>'
+                            + '<tr><td><strong>Recorded By</strong></td><td>' + staffName + '</td></tr>'
+                            + '<tr><td><strong>Date Recorded</strong></td><td>' + esc(d.created_at) + '</td></tr>'
+                            + '</table>';
+                        $('#popupInjuryInfoBody').html(html);
+                    }
+                },
+                error: function() {
+                    $('#popupInjuryInfoBody').html('<p class="text-danger">Failed to load injury details.</p>');
+                }
+            });
+            return;
+        }
 
         if (!suRiskId) {
             alert('No risk assessment selected.');
             return;
         }
 
-        if ($path.attr('class') === 'active') {
+        if ($path.hasClass('active')) {
             // Clicking an active (injured) body part — show info modal
             var injuryId = popupInjuryMap[selBodyMapId];
             if (!injuryId) return;
 
             $('#popupInjuryInfoBody').html('<p>Loading...</p>');
-            $('#popupRemoveInjuryBtn').data('injury-id', injuryId).data('body-part', selBodyMapId);
+            $('#popupRemoveInjuryBtn').show().data('injury-id', injuryId).data('body-part', selBodyMapId);
             $('#popupInjuryInfoModal').modal('show');
 
             $.ajax({
@@ -946,7 +1106,12 @@
             success: function(resp) {
                 if (resp.success) {
                     var selId = $('#popup_add_sel_body_map_id').val();
-                    $('#' + selId).attr('class', 'active');
+                    var typedColour = $('#popupInjuryAddForm input[name=injury_colour]').val();
+                    var typedType = $('#popup_add_injury_type').val();
+                    paintInjuryPath(selId, {
+                        injury_colour: typedColour,
+                        injury_type: typedType
+                    });
                     popupInjuryMap[selId] = resp.id;
                     $('#popupInjuryAddModal').modal('hide');
                     if (resp.duplicate) {
@@ -988,7 +1153,7 @@
             data: { injury_id: injuryId },
             success: function(resp) {
                 if (resp.success) {
-                    $('#' + bodyPart).attr('class', '');
+                    clearInjuryPath(bodyPart);
                     delete popupInjuryMap[bodyPart];
                     $('#popupInjuryInfoModal').modal('hide');
                 } else {

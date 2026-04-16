@@ -401,6 +401,8 @@
                                 <span class="profile-bigico">
                                     <a href="{{ url('/service/calendar/' . $service_user_id) }}" title="Calendar"><i
                                             class="fa fa-calendar"></i></a>
+                                    <a href="javascript:void(0)" class="openBodyMapProfile" data-service-user-id="{{ $service_user_id }}" title="Body Map"><i
+                                            class="fa fa-male"></i></a>
                                     <!-- <a href="" title="{{ $labels['mfc']['label'] }}" class="mfc"><i class="fa fa-user-times"></i></a>
                                     <a href="" title="{{ $labels['living_skill']['label'] }}" class="living-skill-list"><i class="fa fa-child"></i></a>  -->
                                     <a data-toggle="modal" href="#filemngrModal" title="File Manager"><i
@@ -729,6 +731,17 @@
     @include('frontEnd.serviceUserManagement.elements.risk_change.body_map_popup')
     @include('frontEnd.serviceUserManagement.elements.report')
 
+    <script>
+        // Profile-page trigger: open the body map popup in aggregated (read-only)
+        // mode so carers can see every active injury for this service user
+        // without picking a specific risk assessment.
+        $(document).on('click', '.openBodyMapProfile', function() {
+            var suId = $(this).data('service-user-id');
+            $('input[name=bm_aggregated_su_id]').val(suId);
+            $('input[name=su_rsk_id]').val('');
+            $('#bodyMapModal').modal('show');
+        });
+    </script>
     <script>
         var ellipse = $('.wdgt-value')[0];
         $clamp(ellipse, {

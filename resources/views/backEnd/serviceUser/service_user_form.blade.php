@@ -95,6 +95,16 @@ if (isset($user_info)) {
                                     </div>
                                 </div>
                                 <div class="form-group">
+                                    <label class="col-lg-3 control-label">Gender</label>
+                                    <div class="col-lg-9">
+                                        <select name="gender" class="form-control" {{ (isset($del_status)) ? $disabled: '' }}>
+                                            <option value="">— Not specified —</option>
+                                            <option value="M" {{ (isset($user_info->gender) && $user_info->gender === 'M') ? 'selected' : '' }}>Male</option>
+                                            <option value="F" {{ (isset($user_info->gender) && $user_info->gender === 'F') ? 'selected' : '' }}>Female</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
                                         <label class="col-lg-3 control-label">Department</label>
                                         <div class="col-lg-9">
                                             <select class="form-control" name="department" id="">

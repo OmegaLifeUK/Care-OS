@@ -130,6 +130,16 @@ class checkUserAuth
                 //if requested path is not one of them that don't need permission. then check it for permission 
                 // Ram 10/06/2025 new array create to temprary for Rota Management by Abhishek sir when testing task done then we have to remove it.
                 array_push($allowed_path,'rota/staff','rota/staff-add','/rota/staff-delete/{id}','get_leave_record_for_1_week','get_leave_record_for__week','staff/logs','staff/log/view','satff/log/view/filter','satff/log/view/is_valid','staff/timesheet','staff/timesheet_filter','pending-request-data','approve_leave','date_validation_for_user','rota-planner','publish_unpublish_rota','unpublish_rota_employee','publish_rota_employee','delete_rota_employee','edit_rota/','get-all-users','get-all-users-search','assign_rota_users','update_rota_name','get_all_shift','get_rota_employee','edit_shift_data_get','check_users_add_in_shift','update-shift-data','service/missing-care-form-records/','rota-absence','get-dynamic-form-daily-log/','service/dynamic-form/view/pattern_log');
+
+                // Body map read endpoints — digit-stripping above turns /service/body-map/service-user/180/list
+                // into service/body-map/service-user//list (double slash), which matches nothing in the
+                // access rights table. Whitelist the stripped forms so the reload-on-open fetch succeeds.
+                array_push($allowed_path,
+                    'service/body-map/service-user//list',
+                    'service/body-map/list/',
+                    'service/body-map/history/',
+                    'service/body-map/'
+                );
                 // echo "<pre>";print_r($allowed_path);die;
                 // end here
                 if(!in_array($path, $allowed_path)) {

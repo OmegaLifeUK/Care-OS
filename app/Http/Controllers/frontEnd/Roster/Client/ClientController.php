@@ -48,6 +48,20 @@ class ClientController extends Controller
 
     public function client_details($client_id)
     {
+        $home_ids = Auth::user()->home_id;
+        $ex_home_ids = explode(',', $home_ids);
+        $home_id = (int) $ex_home_ids[0];
+
+        // Multi-tenancy check: client must belong to this home
+        $patient = ServiceUser::where('id', $client_id)
+            ->where('home_id', $home_id)
+            ->where('is_deleted', '0')
+            ->first();
+
+        if (!$patient) {
+            abort(404, 'Client not found.');
+        }
+
         $clientData = $this->child_courses($client_id);
         $responseData = $clientData->getData(true);
         $data['clientDetails'] = $responseData['data'];
@@ -61,8 +75,20 @@ class ClientController extends Controller
         $data['status'] = $status;
         $requestData['user_id'] = Auth::user()->id;
         $data['client_id'] = $client_id;
+        $data['service_user_id'] = $client_id;
+        $data['patient'] = $patient;
         $data['alert_type'] = AlertType::where('status',1)->get();
-        // echo "<pre>";print_r($data['clientCareTask']);die;
+
+        // Risk assessments for the Risk Assessments tab
+        $data['risks'] = DB::table('su_risk as sur')
+            ->select('sur.id', 'sur.risk_id', 'sur.status', 'sur.created_at', 'r.description')
+            ->join('risk as r', 'r.id', '=', 'sur.risk_id')
+            ->where('sur.service_user_id', $client_id)
+            ->where('sur.home_id', $home_id)
+            ->where('r.is_deleted', '0')
+            ->orderBy('sur.created_at', 'desc')
+            ->get();
+
         return view('frontEnd.roster.client.client_details',$data);
     }
     public function child_courses($childId){

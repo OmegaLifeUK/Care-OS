@@ -89,7 +89,8 @@ class ServiceUserController extends Controller
             $user->password              =  '';
             $user->phone_no              =  $data['phone_no'];
             $user->date_of_birth         =  $date_of_birth;
-            $user->department            =  $data['department'];   
+            $user->gender                =  in_array($request->input('gender'), ['M', 'F'], true) ? $request->input('gender') : null;
+            $user->department            =  $data['department'];
             // $user->child_type            =  $data['child_type'];
             // $user->room_type             =  $data['room_type'];
             // $user->weekly_rate           =  $data['weekly_rate'];
@@ -216,7 +217,8 @@ class ServiceUserController extends Controller
                 $user->email            =  $data['email'];
                 $user->phone_no         =  $data['phone_no'];
                 $user->date_of_birth    =  $date_of_birth;
-                $user->department       =  $data['department'];  
+                $user->gender           =  in_array($request->input('gender'), ['M', 'F'], true) ? $request->input('gender') : null;
+                $user->department       =  $data['department'];
                 $user->section          =  $data['section'];
                 $user->admission_number =  $data['admission_number'];
                 $user->short_description =  $data['short_description'];
