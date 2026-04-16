@@ -213,3 +213,11 @@ grep -rn "function.*Request" app/Http/Controllers/ | head -20
 | 2026-04-11 | Body Maps | No client-side validation | HIGH | Added JS validation |
 | 2026-04-11 | Body Maps | No audit logging | MEDIUM | Added Log::info() in service |
 | 2026-04-11 | Body Maps | No FK constraints | MEDIUM | Added migration with FKs + indexes |
+| 2026-04-16 | Handover Notes | XSS: controller echoed raw user data | BLOCKER | All output escaped with e() |
+| 2026-04-16 | Handover Notes | Mass assignment: $request->all() in LogBookController | HIGH | Moved to HandoverController with validated specific fields |
+| 2026-04-16 | Handover Notes | No input validation on any endpoint | HIGH | Added $request->validate() on all 3 POST endpoints |
+| 2026-04-16 | Handover Notes | No IDOR check on edit endpoint | HIGH | Added getById($homeId, $id) check before update |
+| 2026-04-16 | Handover Notes | home_id not parsed with explode() | HIGH | Fixed: explode(',', Auth::user()->home_id)[0] |
+| 2026-04-16 | Handover Notes | createFromLogBook() didn't verify logbook's home_id | HIGH | Added ->where('home_id', $homeId) on LogBook query |
+| 2026-04-16 | Handover Notes | No rate limiting on POST routes | HIGH | Added throttle:30,1 middleware |
+| 2026-04-16 | Handover Notes | View query used raw Auth::user()->home_id | MEDIUM | Fixed with explode() in handover_logbook.blade.php |

@@ -90,8 +90,9 @@ class HandoverService
         $staffUserId = $data['staff_user_id'];
         $serviceUserId = $data['service_user_id'];
 
-        // Check source logbook entry exists
+        // Check source logbook entry exists AND belongs to the same home (IDOR prevention)
         $logBook = \App\LogBook::where('id', $logBookId)
+            ->where('home_id', $homeId)
             ->where('is_deleted', '0')
             ->first();
 

@@ -265,6 +265,41 @@ class HandoverTest extends TestCase
         $crossHomeHandover->forceDelete();
     }
 
+    // --- IDOR: Cross-home logbook reference ---
+
+    public function test_handover_to_staff_rejects_cross_home_logbook()
+    {
+        $this->assertNotNull($this->adminUser, 'No admin user found in DB');
+
+        // Find a logbook entry from a different home
+        $otherHomeId = \Illuminate\Support\Facades\DB::table('home')
+            ->where('id', '!=', $this->homeId)->value('id');
+        if (!$otherHomeId) {
+            $this->markTestSkipped('No other home for IDOR test');
+        }
+
+        $otherLogBook = \Illuminate\Support\Facades\DB::table('log_book')
+            ->where('home_id', $otherHomeId)
+            ->where('is_deleted', '0')
+            ->first();
+
+        if (!$otherLogBook) {
+            $this->markTestSkipped('No logbook entry in other home for IDOR test');
+        }
+
+        $response = $this->actingAs($this->adminUser)
+            ->withoutMiddleware()
+            ->post('/handover/service/log', [
+                'log_id' => $otherLogBook->id,
+                'staff_user_id' => $this->adminUser->id,
+                'servc_use_id' => 1,
+            ]);
+
+        $response->assertStatus(200);
+        // Should return "0" because the logbook entry doesn't belong to this user's home
+        $response->assertSee('0');
+    }
+
     // --- XSS Tests ---
 
     public function test_xss_payload_stored_safely()
