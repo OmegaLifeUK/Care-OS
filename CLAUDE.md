@@ -18,7 +18,7 @@ Care OS is a Laravel-based care home management system for **Omega Life UK**. We
 php artisan serve
 # → http://127.0.0.1:8000
 
-# Login: admin / 123456 (Mick Carter, Admin ID 1)
+# Login: komal / 123456, house: Aries (Komal Gautam, Admin ID 194)
 ```
 
 **.env essentials:**

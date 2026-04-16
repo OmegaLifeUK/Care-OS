@@ -118,3 +118,109 @@ The command should be self-contained — when invoked with /workflow, it asks wh
 **Django:** multi-tenancy via tenant FK, `{% csrf_token %}`, `|escape` filter, `forms.py` validation, pytest-django, `debug.log`
 
 **Rails:** multi-tenancy via `belongs_to :org`, `authenticity_token`, `sanitize()`, strong params, RSpec, `log/development.log`
+
+---
+
+## Prompt 3: Start Next Feature (Care OS — Phase 1)
+
+Copy-paste this at the start of a new session to pick up Feature 4: Handover Notes.
+After Feature 4 is done, update the feature number/name for the next one.
+
+---
+
+**PROMPT:**
+
+```
+You are continuing development on Care OS, a Laravel-based care home management
+system for Omega Life UK. You're starting Feature 4: Handover Notes (4h est).
+
+Features 1-3 (Incident Management, Staff Training, Body Maps) are DONE.
+
+## Step 1: Read these files (in this order)
+
+1. `CLAUDE.md` — project conventions, tech stack, security rules, multi-tenancy
+   patterns, git conventions, dev process. Re-read "Security Rules" (10 items)
+   and "Key Codebase Patterns" sections carefully.
+
+2. `docs/logs.md` — read the MOST RECENT 10-15 entries (bottom of file) to
+   understand what was just done and why.
+
+3. `sessions/session12.md` — last session history. Covers: Risk Assessments tab
+   wire-up, body map gender fallback, checkUserAuth middleware digit-stripping
+   bug fix, full audit of client_details.blade.php (~95 buttons, ~60 unwired),
+   Feature 10 documentation.
+
+4. `phases/phase1.md` — Phase 1 pipeline table + detailed spec for Feature 4
+   (Handover Notes) starting at the "Feature 3: Handover Notes" section. Read
+   the "What Exists" and "What's Missing" subsections — they tell you exactly
+   what files exist and what to build.
+
+5. `docs/feature10-careroster-wireup.md` — audit of every button in
+   client_details.blade.php. Reference this if Feature 4 touches the Care
+   Roster client details page.
+
+6. `docs/security-checklist.md` — 15-item security gate enforced by /workflow.
+
+## Step 2: Check current state
+
+Run these commands:
+- `git status` — any uncommitted changes?
+- `git log --oneline -5` — last commit?
+- `php artisan serve` — start dev server if not running (http://127.0.0.1:8000)
+- Log in with komal / 123456, house: Aries (Komal Gautam, Admin ID 194)
+
+## Step 3: Run /careos-workflow
+
+Execute the full pipeline for Feature 4: Handover Notes:
+PLAN → SCAFFOLD → BUILD → TEST → DEBUG → REVIEW → AUDIT → PROD-READY → PUSH
+
+Feature 4 spec from phase1.md:
+- DB table: `handover_log_book`
+- Controller: `app/Http/Controllers/frontEnd/HandoverController.php` (index + edit)
+- Views: `handover_logbook.blade.php`, `handover_to_staff.blade.php`
+- Routes: POST/GET /handover/daily/log, /handover/daily/log/edit, /handover/service/log
+- Missing: Model, Service layer, verify views render, staff-to-staff handover flow
+
+## Critical reminders
+
+- **checkUserAuth.php line 125**: strips ALL digits from URLs before permission
+  checking. Any new AJAX GET with a number in the URL will silently fail with
+  "unauthorize" unless the digit-stripped form is whitelisted in $allowed_path.
+  This burned us in session 12 — always check when adding routes.
+
+- **client_details.blade.php**: ~9000 lines, mostly static mockups. If Handover
+  Notes has a tab here, wire real buttons while building. Cross-reference
+  docs/feature10-careroster-wireup.md.
+
+- **Multi-tenancy**: every DB query MUST filter by home_id. Admin users have
+  comma-separated home_id (e.g. "8,104,18,12"). Use explode(',', $homeIds)[0].
+
+- **is_deleted flag**: use this, NOT Laravel SoftDeletes trait.
+
+- **user_type column**: it's `user_type`, NOT `type`. Admin = 'A'.
+
+- **home_id on service_user**: verify the client belongs to the user's home
+  before any data access (IDOR prevention).
+
+## Logging
+
+- Log EVERY action to `docs/logs.md` with teaching notes
+- If conversation gets long, proactively save to sessions/session13.md BEFORE
+  autocompact loses context
+- At session end, run /save-session
+- Update pipeline status in phases/phase1.md when Feature 4 is complete
+
+## Before writing code, output a status report (under 150 words):
+- What exists for Feature 4 already
+- What needs to be built
+- Any open questions for me
+```
+
+---
+
+**After Feature 4 is done**, update this prompt for the next feature by changing:
+- Feature number/name (4 → 5, Handover Notes → DoLS)
+- "Features 1-3 are DONE" → "Features 1-4 are DONE"
+- The spec section with the next feature's details from phase1.md
+- Session number references (session12 → session13, session13 → session14)
+- The remaining build order
