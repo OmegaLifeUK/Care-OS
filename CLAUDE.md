@@ -101,11 +101,12 @@ These are non-negotiable on every feature:
 
 ## Current Progress
 
-Phase 1: Patch & Polish (3/9 features done)
+Phase 1: Patch & Polish (4/10 features done)
 - Feature 1: Incident Management — DONE
 - Feature 2: Staff Training — DONE
 - Feature 3: Body Maps — DONE
-- Features 4-9: Pending
+- Feature 4: Handover Notes — DONE
+- Features 5-10: Pending
 
 ## Running Tests
 

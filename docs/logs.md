@@ -1069,3 +1069,22 @@ Confirmed via grep of `resources/views/frontEnd/roster/common/roster_header.blad
 - `phases/feature4-handover-plan.md` (new)
 
 ---
+
+### Log 51 — Feature 4: Post-Push Security Hardening
+**Time:** 2026-04-16
+**What:** Adversarial security audit found and fixed 3 additional vulnerabilities after initial push:
+
+1. **IDOR in createFromLogBook()** (`73e2bca9`) — logbook home_id not verified. Fixed.
+2. **Cross-home staff assignment** (`7c68d614`) — staff_user_id not validated against user's home. Fixed with `in_array()` check.
+3. **Missing CSRF on initial list AJAX** (`7c68d614`) — POST sent no `_token`. Fixed.
+4. **Pre-existing XSS in staffuserlist** (`7c68d614`) — `$value->user_name` unescaped. Fixed with `e()`.
+
+Updated `docs/security-checklist.md` vulnerability history with 8 new entries.
+
+---
+
+### Log 52 — Session 13 Saved
+**Time:** 2026-04-16
+**What:** Saved full session history to `sessions/session13.md`. Feature 4 complete. Phase 1: 4/10 features done.
+
+---
