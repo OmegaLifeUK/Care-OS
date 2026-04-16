@@ -1005,3 +1005,67 @@ Confirmed via grep of `resources/views/frontEnd/roster/common/roster_header.blad
 - **Also swept up from prior sessions:** session 7–11 history files, `CLAUDE.md`, `careos-workflow.md` rename, `add_gender_to_service_user` migration, and other stacked changes to `ClientController`, `BodyMapController`, `RiskController`, `ServiceUserController`, `profile.blade.php`, `risk.blade.php`, `routes/web.php`.
 
 ---
+
+### Log 50 — Feature 4: Handover Notes — BUILD
+**Time:** 2026-04-16
+**What:** Full implementation of Feature 4 (Handover Notes) via /careos-workflow.
+
+**1. Migration** — Added 3 columns to `handover_log_book`: `is_deleted` (TINYINT DEFAULT 0), `acknowledged_at` (DATETIME NULL), `acknowledged_by` (INT UNSIGNED NULL). Added composite index `(home_id, is_deleted, date)` and index on `log_book_id`.
+
+**2. Model** — Created `app/Models/HandoverLogBook.php` with:
+- `$fillable` whitelist (12 fields), `$casts` for type safety
+- 4 relationships: `creator()`, `assignedStaff()`, `acknowledgedByUser()`, `serviceUser()`
+- 2 scopes: `forHome($homeId)`, `active()` (is_deleted = 0)
+- Converted `app/HandoverLogBook.php` to alias extending the Models version
+
+**3. Service** — Created `app/Services/HandoverService.php` with 6 methods:
+- `list()` — paginated listing with search (title or date), joins user table for staff names
+- `getById()` — single record with home_id scope (IDOR prevention)
+- `update()` — update details/notes with audit logging
+- `createFromLogBook()` — create handover from logbook entry, duplicate prevention
+- `acknowledge()` — mark handover as acknowledged with timestamp + staff ID
+- `softDelete()` — soft-delete with full record snapshot in audit log
+
+**4. Controller rewrite** — Completely rewrote `HandoverController.php`:
+- **XSS fix:** all output now uses `e()` helper (was echoing raw `$value->title`, `$value->details`, `$value->notes`, `$value->staff_name`)
+- **home_id fix:** uses `explode(',', Auth::user()->home_id)[0]` (was using raw `Auth::user()->home_id`)
+- **Input validation:** `$request->validate()` on every POST endpoint
+- **IDOR check:** every operation verifies record belongs to user's home via service layer
+- **New endpoint:** `acknowledge()` for incoming staff to mark handover as received
+- **Acknowledgment UI:** renders "Acknowledged" badge or "Pending + Acknowledge button" per record
+
+**5. Moved `log_handover_to_staff_user()`** from `LogBookController` to `HandoverController::handoverToStaff()`:
+- Fixed mass assignment: was `$request->all()`, now uses validated specific fields
+- Fixed: added `$request->validate()` with type checks
+- Kept response format ("1", "0", "already") for backward compat with view JS
+
+**6. Routes** — Updated `routes/web.php`:
+- Changed `/handover/daily/log/edit` from `match(['get','post'])` to `POST` only
+- Moved `/handover/service/log` from LogBookController to HandoverController
+- Added `POST /handover/acknowledge` endpoint
+- Added `->middleware('throttle:30,1')` on all 3 POST routes
+
+**7. View fixes:**
+- `handover_logbook.blade.php`: fixed `home_id` explode in service user query (line 1), added search handler JS, added acknowledge handler JS, added error feedback on AJAX failures
+- `handover_to_staff.blade.php`: verified OK (already had CSRF, proper URLs, client validation)
+
+**8. Middleware whitelist** — Added handover routes to `$allowed_path` in `checkUserAuth.php`
+
+**Teaching notes:**
+- **`e()` is Laravel's HTML-escaping helper** — equivalent to `htmlspecialchars($value, ENT_QUOTES, 'UTF-8')`. Use it for all user data echoed in PHP strings. In Blade templates, `{{ }}` calls `e()` automatically.
+- **Response format backward compat:** The views expect raw string responses ("1", "0", "already"), not JSON. Converting to JSON would require updating all the JS handlers. We kept the format but fixed the security issues underneath.
+- **Middleware whitelist vs access_rights:** The `checkUserAuth` middleware first checks `$allowed_path` (hardcoded whitelist), then falls back to `$this->checkPermission()` (DB lookup). Adding routes to the whitelist bypasses the DB check — appropriate for routes all authenticated staff should access.
+
+**Files changed:**
+- `database/migrations/2026_04_16_113613_add_handover_columns_to_handover_log_book.php` (new)
+- `app/Models/HandoverLogBook.php` (new)
+- `app/HandoverLogBook.php` (converted to alias)
+- `app/Services/HandoverService.php` (new)
+- `app/Http/Controllers/frontEnd/HandoverController.php` (full rewrite)
+- `app/Http/Controllers/frontEnd/ServiceUserManagement/LogBookController.php` (removed method)
+- `routes/web.php` (updated handover routes)
+- `resources/views/frontEnd/common/handover_logbook.blade.php` (security + search + acknowledge)
+- `app/Http/Middleware/checkUserAuth.php` (whitelist handover routes)
+- `phases/feature4-handover-plan.md` (new)
+
+---

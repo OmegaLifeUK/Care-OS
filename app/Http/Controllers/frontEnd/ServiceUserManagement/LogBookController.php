@@ -844,67 +844,7 @@ class LogBookController extends ServiceUserManagementController
                     </div>';
         die;
     }
-    public function log_handover_to_staff_user(Request $request)
-    {
-        // echo "<pre>"; print_r($request->input()); die;
-
-        if ($request->isMethod('post')) {
-
-            $home_ids = Auth::user()->home_id;
-            $searchString = ',';
-            //$homde_id = 1,2
-            if (strpos(@$home_ids, $searchString) !== false) {
-                $home_id =  explode(',', @$home_ids);
-                $login_home_id = @$home_id[0];
-            } else {
-                $login_home_id = @$home_ids;
-            }
-
-            $data = $request->all();
-            $log_book_info = LogBook::where('id', $data['log_id'])
-                ->where('is_deleted', '0')
-                ->first();
-
-            if (!empty($log_book_info)) {
-                $handover_log = HandoverLogBook::where('log_book_id', $data['log_id'])
-                    ->where('assigned_staff_user_id', $data['staff_user_id'])
-                    ->where('service_user_id', $data['servc_use_id'])
-                    ->first();
-
-                if (empty($handover_log)) {
-
-                    $andover_log_record                             = new HandoverLogBook;
-                    $andover_log_record->log_book_id                = $data['log_id'];
-                    $andover_log_record->assigned_staff_user_id     = $data['staff_user_id'];
-                    $andover_log_record->service_user_id            = $data['servc_use_id'];
-                    $andover_log_record->user_id                    = Auth::user()->id;
-                    $andover_log_record->home_id                    = $login_home_id;
-                    $andover_log_record->title                      = $log_book_info->title;
-                    $andover_log_record->details                    = !empty($log_book_info->details) ? $log_book_info->details : '';
-                    $andover_log_record->date                       = !empty($log_book_info->date) ? $log_book_info->date : '';
-                    //$su_log_record->category_id     = $data['category_id'];
-
-                    // echo "<pre>"; print_r($su_log_yp); die;
-                    if ($andover_log_record->save()) {
-                        $response = 1;
-                        //$result['response'] = '1';
-                    } else {
-                        $response = 0;
-                        //$result['response'] = '0';
-                    }
-                } else {
-                    $response = 'already';
-                    //$result['response'] = 'already_su_log_book';
-                }
-            } else {
-                $response = 0;
-            }
-
-            echo $response;
-            die;
-        }
-        //return $result;
-    }
+    // log_handover_to_staff_user() moved to HandoverController::handoverToStaff()
 
     //ETA Weekly Report
     public function weekly_report(Request $request, $log_book_id = null)

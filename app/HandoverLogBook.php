@@ -2,9 +2,11 @@
 
 namespace App;
 
-use Illuminate\Database\Eloquent\Model;
-
-class HandoverLogBook extends Model
+/**
+ * Alias for backwards compatibility.
+ * Real model lives at App\Models\HandoverLogBook.
+ */
+class HandoverLogBook extends \App\Models\HandoverLogBook
 {
-    protected $table = 'handover_log_book';
+    //
 }

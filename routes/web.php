@@ -1306,9 +1306,13 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 
 	//handover point
 	Route::get('/staff-user-list', 'App\Http\Controllers\frontEnd\ServiceUserManagement\LogBookController@staffuserlist');
-	Route::post('/handover/service/log', 'App\Http\Controllers\frontEnd\ServiceUserManagement\LogBookController@log_handover_to_staff_user');
 	Route::match(['get', 'post'], '/handover/daily/log', 'App\Http\Controllers\frontEnd\HandoverController@index');
-	Route::match(['get', 'post'], '/handover/daily/log/edit', 'App\Http\Controllers\frontEnd\HandoverController@handover_log_edit');
+	Route::post('/handover/daily/log/edit', 'App\Http\Controllers\frontEnd\HandoverController@update')
+		->middleware('throttle:30,1');
+	Route::post('/handover/service/log', 'App\Http\Controllers\frontEnd\HandoverController@handoverToStaff')
+		->middleware('throttle:30,1');
+	Route::post('/handover/acknowledge', 'App\Http\Controllers\frontEnd\HandoverController@acknowledge')
+		->middleware('throttle:30,1');
 
 	//add to weekly
 	Route::match(['get', 'post'], '/weekly/report/{log_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\LogBookController@weekly_report');

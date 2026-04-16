@@ -1,8 +1,9 @@
-<?php $service_user_list = App\ServiceUser::where('is_deleted','0')
-                                ->where('home_id', Auth::user()->home_id)
+<?php
+    $homeId = (int) explode(',', Auth::user()->home_id)[0];
+    $service_user_list = App\ServiceUser::where('is_deleted','0')
+                                ->where('home_id', $homeId)
                                 ->select('id', 'name', 'user_name')
                                 ->get();
-
 ?>
 <!-- Child list Modal -->
 <div class="modal fade" id="ServiceUserlistModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -204,8 +205,6 @@
             // data :  {'service_usr_id':service_usr_id, '_token':token },
             //dataType : 'json',
             success: function(resp){
-                // console.log(resp);
-                // return false;
                 if (isAuthenticated(resp) == false){
                     return false;
                 }
@@ -229,29 +228,130 @@
 <script type="text/javascript">
     $(document).on('click','.sbmt_btn',function(){
         var handover_log_book_id = $(this).attr('handover_log_book_id');
-        // console.log(handover_log_book_id); return false;
         var formdata = $('#edit-hndovr-daily-logged-form'+handover_log_book_id).serialize();
-            // alert(formdata); return false;
             $('.loader').show();
             $.ajax({
                 type : 'post',
                 data : formdata,
                 url  : "{{ url('/handover/daily/log/edit') }}",
                 success : function(resp){
-                    // console.log(resp);
                     if (isAuthenticated(resp) == false){
                         return false;
                     }
                     if(resp == '1'){
-                        $('span.popup_success_txt').text('Record edit Successsfully');
+                        $('span.popup_success_txt').text('Record edited successfully');
                         $('.popup_success').show();
                         setTimeout(function(){$(".popup_success").fadeOut()}, 5000);
+                    } else {
+                        $('span.popup_error_txt').text('Failed to update record');
+                        $('.popup_error').show();
+                        setTimeout(function(){$(".popup_error").fadeOut()}, 5000);
                     }
                     $('.loader').hide();
-                    
+                },
+                error: function(){
+                    $('.loader').hide();
+                    $('span.popup_error_txt').text('An error occurred. Please try again.');
+                    $('.popup_error').show();
+                    setTimeout(function(){$(".popup_error").fadeOut()}, 5000);
                 }
             });
             return false;
+    });
+</script>
+
+<script type="text/javascript">
+    // Search handler
+    $(document).on('click','.search_log_record_btn',function(){
+        var searchType = $('select[name=log_book_search_type]').val();
+        var searchVal = '';
+        var dateVal = '';
+
+        if(searchType == 'log_title'){
+            searchVal = $('input[name=log_book_title_search]').val();
+            if(!searchVal) { return false; }
+        } else {
+            dateVal = $('input[name=log_book_date_search]').val();
+            if(!dateVal) { return false; }
+        }
+
+        var token = $('input[name=_token]').val();
+        $('.loader').show();
+        $.ajax({
+            type : 'post',
+            url  : "{{ url('/handover/daily/log') }}?search=" + encodeURIComponent(searchVal) + "&log_book_search_type=" + encodeURIComponent(searchType) + "&log_book_date_search=" + encodeURIComponent(dateVal),
+            data : {'_token': token},
+            success: function(resp){
+                if (isAuthenticated(resp) == false){
+                    return false;
+                }
+                if(resp == 0 || resp == '') {
+                    $('.log_book_searched_records').html('No records found');
+                } else {
+                    $('.log_book_searched_records').html(resp);
+                }
+                $('.loader').hide();
+            },
+            error: function(){
+                $('.loader').hide();
+                $('span.popup_error_txt').text('Search failed. Please try again.');
+                $('.popup_error').show();
+                setTimeout(function(){$(".popup_error").fadeOut()}, 5000);
+            }
+        });
+    });
+
+    // Toggle search fields based on type
+    $(document).on('change','select[name=log_book_search_type]',function(){
+        var val = $(this).val();
+        if(val == 'log_title'){
+            $('input[name=log_book_title_search]').closest('.srch-field').show();
+            $('input[name=log_book_date_search]').closest('.srch-field').hide();
+        } else {
+            $('input[name=log_book_title_search]').closest('.srch-field').hide();
+            $('input[name=log_book_date_search]').closest('.srch-field').show();
+        }
+    });
+</script>
+
+<script type="text/javascript">
+    // Acknowledge handover handler
+    $(document).on('click','.acknowledge-handover-btn',function(){
+        var btn = $(this);
+        var handoverId = btn.data('handover-id');
+        var token = $('input[name=_token]').first().val();
+
+        btn.prop('disabled', true).text('Acknowledging...');
+
+        $.ajax({
+            type : 'post',
+            url  : "{{ url('/handover/acknowledge') }}",
+            data : {'handover_log_book_id': handoverId, '_token': token},
+            success: function(resp){
+                if (isAuthenticated(resp) == false){
+                    btn.prop('disabled', false).text('Acknowledge');
+                    return false;
+                }
+                if(resp == '1'){
+                    btn.closest('.pull-center').find('.label-warning').removeClass('label-warning').addClass('label-success').text('Acknowledged');
+                    btn.remove();
+                    $('span.popup_success_txt').text('Handover acknowledged');
+                    $('.popup_success').show();
+                    setTimeout(function(){$(".popup_success").fadeOut()}, 5000);
+                } else {
+                    btn.prop('disabled', false).text('Acknowledge');
+                    $('span.popup_error_txt').text('Failed to acknowledge');
+                    $('.popup_error').show();
+                    setTimeout(function(){$(".popup_error").fadeOut()}, 5000);
+                }
+            },
+            error: function(){
+                btn.prop('disabled', false).text('Acknowledge');
+                $('span.popup_error_txt').text('An error occurred. Please try again.');
+                $('.popup_error').show();
+                setTimeout(function(){$(".popup_error").fadeOut()}, 5000);
+            }
+        });
     });
 </script>
 

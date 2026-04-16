@@ -140,6 +140,15 @@ class checkUserAuth
                     'service/body-map/history/',
                     'service/body-map/'
                 );
+
+                // Handover logbook endpoints — no digits in paths, but whitelist to avoid
+                // access_rights table lookup failures for staff without explicit route permissions.
+                array_push($allowed_path,
+                    'handover/daily/log',
+                    'handover/daily/log/edit',
+                    'handover/service/log',
+                    'handover/acknowledge'
+                );
                 // echo "<pre>";print_r($allowed_path);die;
                 // end here
                 if(!in_array($path, $allowed_path)) {
