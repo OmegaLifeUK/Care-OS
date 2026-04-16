@@ -105,25 +105,48 @@ When invoked, ask the user what feature or task they want to build, then execute
 8. **Show the user what was built**
 
 ## Stage 4: TEST
-**Goal**: Verify the feature works and catches regressions.
+**Goal**: Verify the feature works, catches regressions, and is secure against all attack vectors.
 
-1. Write PHPUnit feature tests:
-   - Happy path (valid request → expected response)
-   - Authentication (no login → redirect)
-   - Authorization (wrong role → 403)
-   - Multi-tenancy (wrong home → 403 or empty)
-   - Validation (bad input → errors)
-   - **Security-specific tests:**
-     - XSS payload in text fields (`<script>alert(1)</script>`) → stored safely, rendered escaped
-     - SQL injection payload in input (`' OR 1=1 --`) → rejected by validation or handled safely by ORM
-     - CSRF missing → 419 response
-     - Integer overflow / boundary values in numeric fields
-     - Oversized input (exceed `max:N`) → 422 validation error
-     - Accessing another home's records → 403 or 404
-     - Non-admin attempting admin-only action → 403
-2. Run tests: `php -d error_reporting=0 artisan test --filter=[Feature]`
-3. Fix any failures
-4. **Report test results to the user**
+### 4a. Unit & Endpoint Tests
+Write PHPUnit feature tests covering:
+- Happy path (valid request → expected response with correct data)
+- Authentication (no login → redirect)
+- Authorization (wrong role → 403)
+- Validation (bad input → 422 with error messages)
+
+### 4b. Multi-Step Flow Tests
+Don't just test endpoints in isolation. Test the actual user journey:
+- Create a record → verify it appears in the list endpoint response
+- Update the record → verify the list reflects the change
+- Delete/soft-delete → verify it no longer appears in the list
+- If there's a workflow (e.g., acknowledge, change status), test the full sequence
+
+### 4c. IDOR & Multi-Tenancy Tests (Cross-Home AND Cross-Entity)
+This is where previous features had vulnerabilities caught late. Test **every** attack surface:
+
+**Cross-home record access** (basic IDOR):
+- Create a record for home A → try to read/update/delete it as home B → expect 404
+
+**Cross-home foreign key injection** (the gap that was missed):
+- For every parameter that references another entity (staff_user_id, logbook_id, service_user_id, etc.):
+  - Send a valid ID that exists but belongs to a **different home**
+  - Expect: rejection (404 or validation error), NOT silent success
+- List all foreign key parameters in the feature and test each one explicitly
+
+**Cross-home via source record** (the createFromLogBook gap):
+- If a record can be created FROM another record, verify the source record's home_id is checked
+
+### 4d. Security Payload Tests
+- XSS: `<script>alert(1)</script>` in every text field → stored raw, rendered escaped
+- SQLi: `' OR 1=1 --` in text/search fields → 0 results or validation error, no DB error
+- CSRF: POST without `_token` → 419 response
+- Oversized input: exceed `max:N` → 422
+- Wrong types: string in integer field, future date in past-only field → 422
+
+### 4e. Run & Report
+1. Run: `php -d error_reporting=0 artisan test --filter=[Feature]`
+2. Fix any failures
+3. **Report test results with explicit count per category (4a-4d)**
 
 ## Stage 5: DEBUG
 **Goal**: Catch runtime errors, N+1 queries, and dead code before review.
@@ -140,33 +163,81 @@ When invoked, ask the user what feature or task they want to build, then execute
    - Unused `use` imports at the top of PHP files
 6. **Gate: no new errors in `storage/logs/laravel.log` after hitting all routes**
 
-## Stage 6: REVIEW
-**Goal**: Catch issues before they ship. (Code review — separate from DEBUG runtime checks.)
+## Stage 6: REVIEW — Adversarial Security Testing
+**Goal**: Try to break every endpoint. Think like an attacker, not a checklist auditor.
 
-1. Review all changed files (`git diff` from before the workflow started)
-2. **Read `docs/security-checklist.md`** — this is the master checklist. Check every item below (report each as PASS/FAIL):
+**CRITICAL RULE**: Do NOT just read code and mark PASS/FAIL. You must **actually exploit** each attack vector using curl against the running dev server. Pattern-matching ("does the code use forHome()? yes → PASS") is how vulnerabilities slipped through in Features 3 and 4. The only acceptable evidence for PASS is a failed attack.
 
-   | # | Check | Severity | What to look for |
-   |---|-------|----------|-----------------|
-   | 1 | Data isolation (multi-tenancy) | BLOCKER | Every DB query filters by `home_id` — no query returns data across homes. `home_id` parsed with `explode()` on both web and API controllers |
-   | 2 | IDOR prevention (resource ownership) | BLOCKER | Every endpoint verifies the record's `home_id` matches the user's home **in the controller** (not just service layer). Tests exist for cross-home access |
-   | 3 | SQL injection | BLOCKER | Zero `DB::raw()` with user input, zero string-concatenated queries, all queries use Eloquent/query builder with parameter binding |
-   | 4 | XSS (server) | BLOCKER | Zero `{!! !!}` with user-supplied data in Blade templates — all output uses `{{ }}` |
-   | 5 | XSS (client) | BLOCKER | All API data rendered via `.html()` in JavaScript is escaped with `esc()` helper — no raw concatenation of user data into HTML strings |
-   | 6 | CSRF | HIGH | Every form has `@csrf`, every AJAX POST has `X-CSRF-TOKEN` header |
-   | 7 | Input validation | HIGH | Every POST endpoint has `$request->validate()` with type checks, length limits, and enum constraints. Client-side validation mirrors server-side |
-   | 8 | Mass assignment | HIGH | Models use `$fillable` (not `$guarded = []`), sensitive fields (`id`, `home_id`) set server-side only |
-   | 9 | Rate limiting | HIGH | All POST routes have `->middleware('throttle:N,1')` — create/update: 30,1 — delete: 20,1 |
-   | 10 | Auth & access control | HIGH | Admin-only actions have server-side role check (`user_type === 'A'`), not just UI hiding. Unauthenticated requests redirect |
-   | 11 | Route constraints | MEDIUM | All `{param}` routes have `->where('param', '[0-9]+')` to prevent wildcard matching |
-   | 12 | Audit logging | MEDIUM | `Log::info()` on every create/update/delete with actor ID, home_id, and record details |
-   | 13 | Database integrity | MEDIUM | FK constraints where practical, composite indexes on frequently queried columns, proper `down()` in migrations |
-   | 14 | Error handling | MEDIUM | Error responses don't expose stack traces, DB structure, or internal paths to the client. Use 404 not 403 for missing/unauthorized resources |
-   | 15 | Code conventions | MINOR | Service layer for business logic, proper model location, no `dd()`/`console.log()` left, N+1 queries handled with `->with()` |
+### Step 1: Start the server and authenticate
+```bash
+php artisan serve &
+# Get a valid session cookie by logging in as komal
+curl -c cookies.txt -X POST http://127.0.0.1:8000/login -d "user_name=komal&password=123456&home=Aries&_token=..."
+```
 
-3. Fix any BLOCKER or HIGH issues immediately
-4. **Report review findings to the user as a table with PASS/FAIL per check**
-5. After all fixes, update the vulnerability history table at the bottom of `docs/security-checklist.md` with any new vulnerabilities found and fixed
+### Step 2: Attack every endpoint (do ALL of these, not a subset)
+
+**IDOR — Cross-home record access:**
+For every endpoint that takes a record ID:
+- Find a valid record ID belonging to a **different** home_id
+- `curl` the endpoint with that ID using your authenticated session
+- **PASS only if**: response is 404 or empty, NOT the other home's data
+
+**IDOR — Cross-home foreign key injection:**
+For every parameter that references another entity (staff_user_id, service_user_id, logbook_id, etc.):
+- Find a valid ID of that entity type from a **different** home
+- Submit a create/update request using that foreign ID
+- **PASS only if**: request is rejected, record is NOT created with the cross-home reference
+
+**CSRF:**
+For every POST endpoint:
+- `curl` the endpoint WITHOUT the `_token` / `X-CSRF-TOKEN` header
+- **PASS only if**: response is 419
+
+**XSS — Server-side:**
+For every text input field:
+- Submit `<script>alert('xss')</script>` as the value
+- Fetch the record back via the list/detail endpoint
+- **PASS only if**: the response contains `&lt;script&gt;` (escaped), NOT raw `<script>`
+
+**XSS — Client-side:**
+For every `.html()` / `.innerHTML` / `.append()` call in the feature's JavaScript:
+- Trace the data source: where does the HTML string come from?
+- If it renders API response data, verify the API response pre-escapes with `e()`, OR the JS uses `esc()` before insertion
+- **PASS only if**: you can prove no path exists where raw user text reaches `.html()` unescaped
+
+**SQL Injection:**
+For every text/search input:
+- Submit `' OR 1=1 --` and `'; DROP TABLE users; --`
+- **PASS only if**: response is empty results or validation error, NOT a database error or all records
+
+**Mass Assignment:**
+- Submit a POST with extra fields: `home_id=999`, `is_deleted=1`, `id=1`
+- **PASS only if**: the created/updated record does NOT have the injected values
+
+**Rate Limiting:**
+- For each POST route in `routes/web.php`, verify `throttle` middleware exists
+- **PASS only if**: every new POST route has throttle
+
+### Step 3: Checklist verification (after attacks)
+Also verify these by code inspection (these can't be curl-tested):
+| # | Check | Severity |
+|---|-------|----------|
+| 1 | Data isolation — every query filters by home_id, explode() used | BLOCKER |
+| 2 | Auth middleware on all routes | HIGH |
+| 3 | $fillable whitelist, no $guarded = [] | HIGH |
+| 4 | Route constraints ->where('id', '[0-9]+') on all params | MEDIUM |
+| 5 | Audit logging — Log::info() on create/update/delete | MEDIUM |
+| 6 | DB integrity — indexes, proper down() in migrations | MEDIUM |
+| 7 | Error handling — no stack traces/internal paths leaked | MEDIUM |
+| 8 | Code conventions — service layer, no dd()/console.log() | MINOR |
+
+### Step 4: Report & Fix
+1. Report every attack attempted and result (PASS with evidence / FAIL with exploit details)
+2. Fix ALL BLOCKER and HIGH failures immediately
+3. **Re-run the failed attacks after fixing** to confirm the fix works
+4. Update `docs/security-checklist.md` vulnerability history with any new findings
+5. **Report final results to user**
 
 ## Stage 7: AUDIT
 **Goal**: Ensure no regressions in the broader codebase AND final security sweep.
@@ -187,38 +258,93 @@ When invoked, ask the user what feature or task they want to build, then execute
 6. **Verify all 15 checklist items from REVIEW are still PASS** (no regressions from last-minute fixes)
 7. **Report audit results — PASS or FAIL with details per check**
 
-## Stage 8: PROD-READY
-**Goal**: Verify the feature is ship-quality — not just secure, but robust, user-friendly, and performant.
+## Stage 8: PROD-READY — Verified, Not Self-Graded
+**Goal**: Verify the feature is ship-quality through actual testing, not code reading.
 
-This is the final quality gate before push. Security was checked in REVIEW/AUDIT. This stage checks everything else.
+**CRITICAL RULE**: Every check below must be verified by actually hitting the endpoint or reading the rendered response. "I read the code and it looks right" is NOT a PASS. The Body Maps color bug passed code review — it took a browser to find it. The Handover CSRF gap passed code review — it took a curl to find it.
 
-### 8a. Error & Edge Case Handling
-- [ ] **Empty states** — what does the page show when there's no data? (No injuries, no records, no history.) Must show a helpful message, not a blank page or broken layout.
-- [ ] **Loading states** — AJAX calls show "Loading..." or a spinner while waiting. Buttons disable during submit to prevent double-click.
-- [ ] **Error feedback** — when AJAX fails (network error, 422, 500), the user sees a clear message. No silent failures.
-- [ ] **Validation feedback** — server validation errors (422) are shown to the user in readable form, not raw JSON.
-- [ ] **Boundary values** — what happens with very long text, special characters (`& < > " '`), or unusual date values? No layout breaks.
+### 8a. Error & Edge Case Handling — VERIFY VIA CURL
+For each endpoint in the feature:
 
-### 8b. Performance
-- [ ] **N+1 queries** — list views that load related data use `->with()` eager loading (e.g., `->with('staff:id,name')`)
-- [ ] **Database indexes** — columns used in WHERE/ORDER BY have indexes. Composite indexes for common multi-column queries.
-- [ ] **Payload size** — API responses return only needed fields (`->select(...)`) not entire models with all columns.
-- [ ] **No unnecessary queries** — the same data isn't fetched multiple times in a single request.
+**Empty state:**
+- `curl` the list endpoint for a home/filter combination that returns zero records
+- **PASS only if**: response contains a "no records" message, NOT a blank page or JS error
 
-### 8c. UI/UX Quality
-- [ ] **Consistent styling** — new UI matches existing Care OS pages (Bootstrap 3, same button styles, table styles, modals).
-- [ ] **Responsive layout** — page doesn't break on smaller screens (tablets are used in care homes).
-- [ ] **Form reset** — after successful submit, form fields clear properly. Modals close. Success feedback shown.
-- [ ] **Confirmation dialogs** — destructive actions (delete/remove) show a confirm prompt before executing.
-- [ ] **URL hygiene** — all links use `{{ url('/path') }}`, no hardcoded domains. Back buttons work.
+**Validation errors:**
+- `curl` a POST with missing required fields
+- **PASS only if**: response is 422 with readable error messages, NOT a 500 or raw exception
 
-### 8d. Graceful Degradation
-- [ ] **Missing data** — if a related record is null (staff member deleted, risk removed), the page still renders without crashing. Shows "Unknown" or "N/A" instead.
-- [ ] **Concurrent users** — if two staff members edit the same record, no data corruption. Last write wins is acceptable, but no 500 errors.
-- [ ] **Session timeout** — if the user's session expires mid-form, the next action redirects to login cleanly (not a raw 419 error).
+**Boundary values:**
+- Submit a 10,000-character string in a text field
+- Submit `& < > " '` in every text field
+- **PASS only if**: no 500 errors, no layout-breaking HTML in the response
+
+**AJAX error handling (code inspection — can't curl this easily):**
+- Read the JS: does every `$.ajax` have an `error:` callback?
+- Does the error callback show a user-visible message (alert/toast/div)?
+- **PASS only if**: no AJAX call silently swallows errors
+
+### 8b. Performance — VERIFY VIA CODE
+- [ ] **N+1 queries** — list views with related data use `->with()` eager loading
+- [ ] **Database indexes** — columns in WHERE/ORDER BY have indexes
+- [ ] **Payload size** — `->select(...)` used, not `SELECT *` for large tables
+- [ ] **No duplicate queries** — same data not fetched twice in one request
+
+### 8c. UI/UX Quality — VERIFY BY TRACING THE INCLUDE CHAIN
+**Where is this view rendered?**
+- Trace the Blade `@include` chain: which parent page includes this partial?
+- Does that parent page have jQuery loaded? Does it have the `.loader` element? Does it have the CSS?
+- **PASS only if**: you can name the exact parent page and confirm its dependencies
+
+**Form/modal behavior (code inspection):**
+- After successful AJAX submit, does the JS clear form fields and close the modal?
+- Do destructive actions (delete) have a `confirm()` prompt?
+- Do all links use `{{ url('/path') }}`?
+
+### 8d. Graceful Degradation — VERIFY VIA CURL
+**Null related data:**
+- What happens if a referenced staff member has been deleted? If a related record is null?
+- `curl` or read the controller: is there a null check / optional chaining before accessing related fields?
+- **PASS only if**: page renders with "Unknown" or "N/A", NOT a PHP error
+
+**Session timeout:**
+- `curl` a POST endpoint with an expired/invalid session cookie
+- **PASS only if**: response is a redirect to login, NOT a raw 419 error page
+
+### 8e. MANUAL TEST CHECKLIST — PRINTED FOR USER
+**This is mandatory.** Before PUSH, generate a step-by-step manual test checklist specific to this feature. Format:
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║  MANUAL TEST CHECKLIST — [Feature Name]                      ║
+║  Test these in the browser before I push.                    ║
+╠══════════════════════════════════════════════════════════════╣
+║                                                              ║
+║  Login: komal / 123456, house: Aries                         ║
+║  URL: http://127.0.0.1:8000                                  ║
+║                                                              ║
+║  □ Step 1: Navigate to [exact page path]                     ║
+║  □ Step 2: [exact action — click what, fill what]            ║
+║  □ Step 3: [what you should see]                             ║
+║  ...                                                         ║
+║  □ Edge: [test with zero records / empty state]              ║
+║  □ Edge: [test with special characters in input]             ║
+║                                                              ║
+║  Reply "tested" or report bugs.                              ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+Include:
+- The golden path (create → view → edit → delete)
+- The empty state (what shows when there are no records)
+- Search/filter if applicable
+- Any multi-modal flow (modal A → modal B → modal C)
+- At least one edge case (special characters, long text)
 
 ### Gate
-Report as a table with PASS/FAIL per section (8a, 8b, 8c, 8d). Any FAIL must be fixed before PUSH.
+- 8a-8d: Report PASS/FAIL with evidence (curl output or specific code line)
+- 8e: Checklist printed, **user confirms "tested" before PUSH**
+- Any FAIL in 8a-8d must be fixed. If user reports bugs from 8e, fix before PUSH.
 
 ## Stage 9: PUSH
 **Goal**: Ship it.
@@ -239,11 +365,11 @@ Each stage has a gate — you cannot proceed to the next stage if the gate fails
 | PLAN | User approves the plan (including security checklist) | Revise plan based on feedback |
 | SCAFFOLD | Files created without errors | Fix file generation issues |
 | BUILD | Feature loads without PHP errors AND all security rules followed | Debug and fix |
-| TEST | All tests pass (including security tests) | Fix failing tests |
+| TEST | All tests pass: endpoint, flow, IDOR (cross-home + cross-entity), security payloads | Fix failing tests |
 | DEBUG | No new errors in laravel.log | Fix runtime errors, N+1s, dead code |
-| REVIEW | No BLOCKER or HIGH issues in security checklist | Fix all blockers/highs before continuing |
+| REVIEW | Every attack attempted via curl PASSES — no exploitable endpoint | Fix vulnerability, re-attack to confirm |
 | AUDIT | No FAIL results in security audit | Fix audit failures |
-| PROD-READY | All 4 sections PASS (error handling, performance, UI/UX, graceful degradation) | Fix before push |
+| PROD-READY | 8a-8d PASS with evidence + 8e manual checklist printed + **user confirms "tested"** | Fix before push |
 | PUSH | Push succeeds | Resolve git conflicts |
 
 ## Skipping Stages
@@ -271,9 +397,9 @@ WORKFLOW: [Feature Name]
 [x] BUILD    — 6 steps completed, security rules enforced
 [x] TEST     — 5/5 tests passing (incl. security tests)
 [x] DEBUG    — 0 errors in laravel.log, 0 N+1s, 0 dead code
-[x] REVIEW   — 15/15 security checks PASS, 0 blockers
-[x] AUDIT    — all checks PASS (incl. security audit)
-[x] PROD-READY — 4/4 sections PASS (errors, performance, UI/UX, graceful degradation)
+[x] REVIEW   — N attacks attempted via curl, all failed (0 exploitable), M code checks PASS
+[x] AUDIT    — all grep patterns clean, no regressions
+[x] PROD-READY — 8a-8d PASS with curl evidence, manual checklist printed, user confirmed "tested"
 [x] PUSH     — commit abc1234 pushed to main
 ━━━━━━━━━━━━━━━━━━━━━━
 ```
