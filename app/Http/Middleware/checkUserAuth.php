@@ -147,7 +147,8 @@ class checkUserAuth
                     'handover/daily/log',
                     'handover/daily/log/edit',
                     'handover/service/log',
-                    'handover/acknowledge'
+                    'handover/acknowledge',
+                    'handover/from-daily-log'
                 );
                 // echo "<pre>";print_r($allowed_path);die;
                 // end here

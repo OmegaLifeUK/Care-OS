@@ -19,13 +19,18 @@ When invoked, ask the user what feature or task they want to build, then execute
 2. Check the CareRoster reference (`/Users/vedangvaidya/Desktop/Omega Life/CareRoster/`) to understand how the feature works in the Base44 app
 3. Explore existing Care OS code for related features
 4. Check the database for existing tables
-5. **Security planning** — identify attack surfaces for this feature:
+5. **Target the new roster UI only** — All features MUST be built on the new roster pages (`/roster/...`), NOT the old service user management pages (`/service/...`, `frontEnd/serviceUserManagement/`). The old pages are dead ends — they are no longer reachable from the sidebar navigation. Key target pages:
+   - Roster client details: `resources/views/frontEnd/roster/client/client_details.blade.php`
+   - Daily Log: the roster daily log page
+   - Dashboard: `/roster`
+   - Verify your target page is reachable from the current sidebar before planning
+6. **Security planning** — identify attack surfaces for this feature:
    - Which endpoints accept user input? (forms, AJAX, URL params)
    - Which data is displayed back to users? (potential XSS targets)
    - Are there any admin-only actions? (role-based access needed)
    - Does the feature handle file uploads, rich text, or external data?
    - Will any JavaScript render API data into the DOM? (client-side XSS)
-6. Write a plan document to `phases/` with:
+7. Write a plan document to `phases/` with:
    - Goal (one sentence — what "done" looks like)
    - Files to touch
    - Step-by-step implementation
@@ -35,7 +40,7 @@ When invoked, ask the user what feature or task they want to build, then execute
      - XSS risks (any `.html()` / `{!! !!}` / DOM insertion from API data)
      - Access control (which actions need role checks)
    - Verification steps
-7. **STOP — Present the plan to the user and wait for approval before proceeding**
+8. **STOP — Present the plan to the user and wait for approval before proceeding**
 
 ## Stage 2: SCAFFOLD
 **Goal**: Generate boilerplate so we're not starting from blank files.
@@ -101,8 +106,16 @@ When invoked, ask the user what feature or task they want to build, then execute
      - Route parameter constraints: `->where('id', '[0-9]+')` on all `{id}` params to prevent wildcard matching
    - **Mass assignment**: Models MUST use `$fillable` whitelist — never include `id`, `home_id` (set server-side), or `is_deleted` in fillable unless explicitly needed for service layer
    - **IDOR prevention**: Every GET/POST that takes a record ID must verify the record's `home_id` matches the authenticated user's home before returning data or performing actions
-7. Log actions in `docs/logs.md` with teaching notes
-8. **Show the user what was built**
+7. **Post-build checklist (from Handover post-mortem — all 7 are mandatory):**
+   - [ ] **UI entry point visible** — Is the link/button/menu item that opens this feature uncommented and visible? Not `<!-- -->`, not `display:none`, not behind a broken `@if`.
+   - [ ] **Route whitelisted in checkUserAuth** — Every new route MUST be added to the `$allowed_path` array in `app/Http/Middleware/checkUserAuth.php`. Without this, AJAX calls return "unauthorize" silently.
+   - [ ] **Test data exists for Aries (home_id 8)** — Seed data for the home we test with (komal / 123456 / Aries). Empty state is valid to test, but the feature must also work with data.
+   - [ ] **Dropdowns filtered by home_id** — Any dropdown listing staff/clients/records MUST filter by the current user's `home_id`. Never reuse an unfiltered variable.
+   - [ ] **Icons use Font Awesome 4.7** — Only use `fa fa-*` icons. Don't assume Boxicons (`bx bx-*`) has every icon — some render blank.
+   - [ ] **Built on new roster UI** — Target pages under `/roster/...`. Old `serviceUserManagement/` pages are unreachable dead ends.
+   - [ ] **AJAX error messages are specific** — If the server returns a validation error, show the actual message, not a generic "Error". Wire up the `error:` callback on every `$.ajax`.
+8. Log actions in `docs/logs.md` with teaching notes
+9. **Show the user what was built**
 
 ## Stage 4: TEST
 **Goal**: Verify the feature works, catches regressions, and is secure against all attack vectors.
@@ -219,7 +232,14 @@ For every text/search input:
 - For each POST route in `routes/web.php`, verify `throttle` middleware exists
 - **PASS only if**: every new POST route has throttle
 
-### Step 3: Checklist verification (after attacks)
+### Step 3: UI Reachability Check
+**Can a user actually click something to open this feature?**
+- Trace the full navigation path from login to the feature (e.g., Dashboard → Menu → Link → Modal)
+- Verify the link/button exists in the rendered HTML — not commented out (`<!-- -->`), not hidden by CSS, not behind a broken `@if`
+- If the feature is in a modal, verify the trigger element (link/button) is visible and wired to open it
+- **BLOCKER if**: the feature has no visible UI path — a feature nobody can reach is not shipped
+
+### Step 4: Checklist verification (after attacks)
 Also verify these by code inspection (these can't be curl-tested):
 | # | Check | Severity |
 |---|-------|----------|
@@ -232,7 +252,7 @@ Also verify these by code inspection (these can't be curl-tested):
 | 7 | Error handling — no stack traces/internal paths leaked | MEDIUM |
 | 8 | Code conventions — service layer, no dd()/console.log() | MINOR |
 
-### Step 4: Report & Fix
+### Step 5: Report & Fix
 1. Report every attack attempted and result (PASS with evidence / FAIL with exploit details)
 2. Fix ALL BLOCKER and HIGH failures immediately
 3. **Re-run the failed attacks after fixing** to confirm the fix works
@@ -295,6 +315,12 @@ For each endpoint in the feature:
 - Trace the Blade `@include` chain: which parent page includes this partial?
 - Does that parent page have jQuery loaded? Does it have the `.loader` element? Does it have the CSS?
 - **PASS only if**: you can name the exact parent page and confirm its dependencies
+
+**UI Entry Point — Can a user actually reach this feature?**
+- Trace the full click path: Login → [page] → [menu/button] → [feature opens]
+- Read the actual Blade file and verify the link/button is NOT commented out (`<!-- -->`), NOT hidden by CSS (`display:none`), NOT behind a broken `@if` condition
+- If the feature opens via a modal, verify the trigger element exists and is wired (has the correct class/ID that the JS listens for)
+- **BLOCKER if**: no visible, working UI path exists to reach this feature — this is the #1 thing that was missed on Feature 4 (Handover link was commented out, entire feature was invisible)
 
 **Form/modal behavior (code inspection):**
 - After successful AJAX submit, does the JS clear form fields and close the modal?

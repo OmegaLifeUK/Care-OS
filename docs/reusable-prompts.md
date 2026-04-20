@@ -4,6 +4,7 @@ description: Template prompts for setting up logs.md and /workflow command on an
 type: reference
 originSessionId: 995b31df-2b05-47f1-9062-09b0e4af618b
 ---
+
 ## Prompt 1: Setting Up logs.md
 
 Copy this into your first Claude Code session on a new project. Replace the `[bracketed]` values.
@@ -136,7 +137,7 @@ system for Omega Life UK. You're starting Feature 4: Handover Notes (4h est).
 
 Features 1-3 (Incident Management, Staff Training, Body Maps) are DONE.
 
-## Step 1: Read these files (in this order)
+Step 1: Read these files (in this order)
 
 1. `CLAUDE.md` — project conventions, tech stack, security rules, multi-tenancy
    patterns, git conventions, dev process. Re-read "Security Rules" (10 items)
@@ -161,15 +162,14 @@ Features 1-3 (Incident Management, Staff Training, Body Maps) are DONE.
 
 6. `docs/security-checklist.md` — 15-item security gate enforced by /workflow.
 
-## Step 2: Check current state
+Step 2: Check current state
 
 Run these commands:
 - `git status` — any uncommitted changes?
 - `git log --oneline -5` — last commit?
 - `php artisan serve` — start dev server if not running (http://127.0.0.1:8000)
-- Log in with komal / 123456, house: Aries (Komal Gautam, Admin ID 194)
 
-## Step 3: Run /careos-workflow
+Step 3: Run /careos-workflow
 
 Execute the full pipeline for Feature 4: Handover Notes:
 PLAN → SCAFFOLD → BUILD → TEST → DEBUG → REVIEW → AUDIT → PROD-READY → PUSH
@@ -181,28 +181,28 @@ Feature 4 spec from phase1.md:
 - Routes: POST/GET /handover/daily/log, /handover/daily/log/edit, /handover/service/log
 - Missing: Model, Service layer, verify views render, staff-to-staff handover flow
 
-## Critical reminders
+Critical reminders
 
-- **checkUserAuth.php line 125**: strips ALL digits from URLs before permission
+- checkUserAuth.php line 125**: strips ALL digits from URLs before permission
   checking. Any new AJAX GET with a number in the URL will silently fail with
   "unauthorize" unless the digit-stripped form is whitelisted in $allowed_path.
   This burned us in session 12 — always check when adding routes.
 
-- **client_details.blade.php**: ~9000 lines, mostly static mockups. If Handover
+- client_details.blade.php**: ~9000 lines, mostly static mockups. If Handover
   Notes has a tab here, wire real buttons while building. Cross-reference
   docs/feature10-careroster-wireup.md.
 
-- **Multi-tenancy**: every DB query MUST filter by home_id. Admin users have
+- Multi-tenancy**: every DB query MUST filter by home_id. Admin users have
   comma-separated home_id (e.g. "8,104,18,12"). Use explode(',', $homeIds)[0].
 
-- **is_deleted flag**: use this, NOT Laravel SoftDeletes trait.
+- is_deleted flag**: use this, NOT Laravel SoftDeletes trait.
 
-- **user_type column**: it's `user_type`, NOT `type`. Admin = 'A'.
+- user_type column**: it's `user_type`, NOT `type`. Admin = 'A'.
 
-- **home_id on service_user**: verify the client belongs to the user's home
+- home_id on service_user**: verify the client belongs to the user's home
   before any data access (IDOR prevention).
 
-## Logging
+Logging
 
 - Log EVERY action to `docs/logs.md` with teaching notes
 - If conversation gets long, proactively save to sessions/session13.md BEFORE
@@ -210,7 +210,7 @@ Feature 4 spec from phase1.md:
 - At session end, run /save-session
 - Update pipeline status in phases/phase1.md when Feature 4 is complete
 
-## Before writing code, output a status report (under 150 words):
+Before writing code, output a status report (under 150 words):
 - What exists for Feature 4 already
 - What needs to be built
 - Any open questions for me
@@ -219,6 +219,7 @@ Feature 4 spec from phase1.md:
 ---
 
 **After Feature 4 is done**, update this prompt for the next feature by changing:
+
 - Feature number/name (4 → 5, Handover Notes → DoLS)
 - "Features 1-3 are DONE" → "Features 1-4 are DONE"
 - The spec section with the next feature's details from phase1.md

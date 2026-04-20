@@ -223,6 +223,33 @@ class HandoverController extends Controller
      * POST /handover/acknowledge
      * Mark a handover as acknowledged by the current user.
      */
+    public function createFromDailyLog(Request $request)
+    {
+        if (!$request->isMethod('post')) {
+            return response()->json(['success' => false], 405);
+        }
+
+        $request->validate([
+            'daily_log_id' => 'required|integer',
+            'staff_user_id' => 'required|integer',
+        ]);
+
+        $homeId = $this->getHomeId();
+
+        $result = $this->service->createFromDailyLog($homeId, [
+            'daily_log_id' => (int) $request->daily_log_id,
+            'staff_user_id' => (int) $request->staff_user_id,
+        ]);
+
+        if ($result['success']) {
+            return response()->json(['success' => true, 'message' => $result['message']]);
+        } elseif ($result['message'] === 'Already handed over to this staff member.') {
+            return response()->json(['success' => false, 'message' => $result['message'], 'duplicate' => true]);
+        } else {
+            return response()->json(['success' => false, 'message' => $result['message']]);
+        }
+    }
+
     public function acknowledge(Request $request)
     {
         if (!$request->isMethod('post')) {

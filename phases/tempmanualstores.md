@@ -1410,16 +1410,14 @@ Body Maps — loose ends from session 10 (all uncommitted)
 3. Standalone body_map.blade.php — PNG-background variant, no gender filter applied; unclear if it's reachable.
 4. Pre-existing broken migration 2025_11_20_111238_add_is_completed_to_staff_task_allocation_table — blocks bulk php artisan migrate, worked  
    around with --path.
-5. Katie's test gender set directly via SQL (UPDATE service_user SET gender='F' WHERE id=27) — not a bug, just a note.  
-
+5. Katie's test gender set directly via SQL (UPDATE service_user SET gender='F' WHERE id=27) — not a bug, just a note.
 
 Housekeeping
 
 - Session 10 changes (9 modified files + new migration) are uncommitted on komal.
 - phases/phase1.md pipeline table still says "1/9 done" — stale; CLAUDE.md says 3/9.
 - .claude/commands/workflow.md deleted, replaced by careos-workflow.md (not yet staged).
-- Sessions 7–10 untracked.  
-
+- Sessions 7–10 untracked.
 
 Recommended next moves
 
@@ -1699,18 +1697,19 @@ Read 1 file (ctrl+o to expand)
 
 ⏺ Update(routes/web.php)  
  ⎿ Added 1 line  
- 1190 Route::get('/service/body-map/injury/{id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@getInjury')-  
- >where('id', '[0-9]+');  
- 1191 Route::get('/service/body-map/history/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapControlle  
- r@history')->where('service_user_id', '[0-9]+');  
- 1192 Route::get('/service/body-map/list/{risk_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@listForRi  
- sk')->where('risk_id', '[0-9]+');  
- 1193 + Route::get('/service/body-map/service-user/{service_user_id}/list', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMa  
- +pController@listForServiceUser')->where('service_user_id', '[0-9]+');  
- 1194 Route::get('/service/body-map/{risk_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@index')->where  
- ('risk_id', '[0-9]+');  
- 1195  
- 1196 //calender paths
+ 1190 Route::get('/service/body-map/injury/{id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@getInjury')-
+
+> where('id', '[0-9]+');  
+>  1191 Route::get('/service/body-map/history/{service_user_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapControlle  
+>  r@history')->where('service_user_id', '[0-9]+');  
+>  1192 Route::get('/service/body-map/list/{risk_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@listForRi  
+>  sk')->where('risk_id', '[0-9]+');  
+>  1193 + Route::get('/service/body-map/service-user/{service_user_id}/list', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMa  
+>  +pController@listForServiceUser')->where('service_user_id', '[0-9]+');  
+>  1194 Route::get('/service/body-map/{risk_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\BodyMapController@index')->where  
+>  ('risk_id', '[0-9]+');  
+>  1195  
+>  1196 //calender paths
 
 ⏺ Now update the popup's shown.bs.modal handler to branch on aggregated mode, and the click handler to be read-only in that mode.
 
@@ -1904,13 +1903,11 @@ view:clear)
 
         INFO  Compiled views cleared successfully.
 
-
 ⏺ Bash(cd "/Users/vedangvaidya/Desktop/Omega Life/Care OS" && php -d error_reporting=0 artisan route:list --path=body-map 2>&1 | head -30)  
  ⎿ ReflectionException
 
        Class "OnboardingConfigurationController" does not exist
      … +22 lines (ctrl+o to expand)
-
 
 ⏺ Pre-existing broken route (unrelated). Let me do syntax checks on the modified PHP files directly:
 
@@ -1928,9 +1925,9 @@ view:clear)
 ⏺ All three tasks done. Here's what changed:
 
 1. Risk UI fix — RiskController@view no longer filters body map injuries by staff_id, and moved the home_id check before the query. Every staff  
-   member now sees every injury recorded on a risk, not just their own.  
+   member now sees every injury recorded on a risk, not just their own.
 
-2. Hover fix verified — paintInjuryPath still has .off('mouseenter …') and window.paintInjuryPath is still exposed. Code-side good.  
+2. Hover fix verified — paintInjuryPath still has .off('mouseenter …') and window.paintInjuryPath is still exposed. Code-side good.
 
 3. Profile page read-only body map —
 
@@ -1938,8 +1935,7 @@ view:clear)
   for the service user via BodyMapService::listForServiceUser).
 - Popup's shown.bs.modal now branches: bm_aggregated_su_id → aggregated mode, else su_rsk_id → risk mode. hidden.bs.modal resets state.
 - Click handler skips add/remove flow when .bm-readonly is set; info modal still opens but remove button is hidden.
-- profile.blade.php gets a new Body Map icon (fa-male) next to Calendar. Click sets the aggregated ID and opens the modal.  
-
+- profile.blade.php gets a new Body Map icon (fa-male) next to Calendar. Click sets the aggregated ID and opens the modal.
 
 Files modified (6):
 
@@ -1947,14 +1943,12 @@ Files modified (6):
 - app/Http/Controllers/frontEnd/ServiceUserManagement/BodyMapController.php
 - routes/web.php
 - resources/views/frontEnd/serviceUserManagement/elements/risk_change/body_map_popup.blade.php
-- resources/views/frontEnd/serviceUserManagement/profile.blade.php  
-
+- resources/views/frontEnd/serviceUserManagement/profile.blade.php
 
 All three PHP files lint clean. The server is still running — please test in the browser:
 
 1. Risk assessment page → open a risk with another staff's injuries → they should now render with the right colours.
-2. Profile page → new body-map icon next to Calendar → click → modal shows all active injuries across risks, read-only (no add, no remove).  
-
+2. Profile page → new body-map icon next to Calendar → click → modal shows all active injuries across risks, read-only (no add, no remove).
 
 ✻ Cooked for 4m 39s · 1 shell still running
 
@@ -1984,8 +1978,7 @@ Searched for 1 pattern (ctrl+o to expand)
 1. Profile page (new Body Map icon): http://127.0.0.1:8000/service/user-profile/27 — click the fa-male icon next to Calendar → modal opens in  
    aggregated read-only mode showing all active injuries.
 2. Risk assessment page (staff_id filter lifted): http://127.0.0.1:8000/service/risks/27 — click any risk row to open it → body map popup → should
-   now show injuries recorded by any staff, not just the logged-in user.  
-
+   now show injuries recorded by any staff, not just the logged-in user.
 
 The screenshot you shared is /roster/client-details/27, a different, half-built mockup that's not wired to the backend at all — its "eye" button  
  only flips between two hardcoded sections (line 8786 of client_details.blade.php), which is why nothing appears to happen.
@@ -2340,7 +2333,6 @@ error_reporting=0 artis…)
 
         INFO  Compiled views cleared successfully.
 
-
 ⏺ Bash(curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/roster/client-details/27)
 ⎿ 302
 
@@ -2365,15 +2357,13 @@ What's now wired:
    description, status badge from 1=historic / 2=live / 3=no risk, assessed date from created_at). Empty state: "No risk assessments recorded yet."
 3. Body map icon on each real risk card: click it → modal opens in risk mode scoped to that su_risk_id, where you can add/remove injuries against
    that specific risk.
-4. Security: client_details now does home_id scoping — 404s if you try to open a client from another home.  
-
+4. Security: client_details now does home_id scoping — 404s if you try to open a client from another home.
 
 Files changed this round:
 
 - app/Http/Controllers/frontEnd/Roster/Client/ClientController.php — home_id scoping, risks query, $patient + $service_user_id passed to view.
 - resources/views/frontEnd/roster/client/client_details.blade.php — Body Map button in header, @foreach over real risks, popup include, click  
-  handlers.  
-
+  handlers.
 
 Hard-refresh the page (Cmd-Shift-R) and give it a go — Alex Sheffield at client id 180 should now have a working Body Map button and any real
 risks he's got in su_risk will show up.
@@ -2389,3 +2379,535 @@ cards replaced, header Body Map button and per-risk buttons added. Next: hard-re
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 \~/Desktop/Omega Life/Care OS Opus 4.6 ctx: 86% used · 14% left
 ⏵⏵ accept edits on · 1 shell
+
+⏺ Here's your manual testing guide. Go through each step, note PASS/FAIL, and report back next session.
+
+---
+
+Feature 4: Handover Notes — Manual Testing Checklist
+
+Prerequisites
+
+- Server running: http://127.0.0.1:8000
+- Login: komal / 123456 / house Aries
+
+---
+
+Part 1: Finding the Handover Feature
+
+The handover logbook is accessed from the Logbook section of a service user. I need to first confirm where the modal gets included.
+
+Searched for 3 patterns, read 1 file (ctrl+o to expand)
+
+⏺ Good. Now I know how to navigate. The "Hand Over" link is in the top-right dropdown menu (the user menu alongside Add User, General Admin, Lock,
+Log Out). Let me also check the logbook flow for the "Add to Handover" button.
+
+Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+⏺ Now I have the full picture. Here's your testing guide:
+
+---
+
+Feature 4: Handover Notes — Manual Testing Guide
+
+Server: http://127.0.0.1:8000  
+ Login: komal / 123456 / house Aries
+
+There are two ways to access handover notes. Test both.
+
+---
+
+PATH A: View Handover Log Book (top menu)
+
+Step 1: Open the Handover Log Book
+
+1. Login and navigate to any page (e.g. Dashboard or Clients list)
+2. Click the dropdown menu in the top-right corner (your user avatar/name)
+3. You should see: Add User, Forms, General Admin, Lock, Hand Over, Log Out
+4. Click "Hand Over"
+
+What to check:
+
+- A modal titled "Hand Over Log Book" opens
+- It shows a "Logged" section with records grouped by date
+- Each record shows: title, time, expand (+) button
+- If no records exist, it should show "No Logs Found"
+
+Step 2: Expand a record
+
+1. Click the date header to expand records for that date
+2. Click the green + icon on any record
+
+What to check:
+
+- The record expands showing: Details (textarea), Notes (textarea), Staff created (read-only), Handover Staff Name (read-only), Submit button
+- An acknowledgment badge shows: either green "Acknowledged" or yellow "Pending" with a blue "Acknowledge" button
+
+Step 3: Edit a record
+
+1. Type something in the Details textarea
+2. Type something in the Notes textarea
+3. Click Submit
+
+What to check:
+
+- A green success message appears: "Record edited successfully"
+- The message fades after ~5 seconds
+- Close the modal, reopen Hand Over — your changes should persist
+
+Step 4: Acknowledge a handover
+
+1. Find a record with a yellow "Pending" badge
+2. Click the blue "Acknowledge" button
+
+What to check:
+
+- Button changes to "Acknowledging..." and disables
+- Badge changes from yellow "Pending" to green "Acknowledged"
+- The Acknowledge button disappears
+- Success message: "Handover acknowledged"
+- Close and reopen — the record should still show "Acknowledged"
+
+Step 5: Test search by title
+
+1. In the Hand Over Log Book modal, find the Search section (if visible — there may be Logged/Search tabs)
+2. Select type: Title
+3. Type part of a record's title
+4. Click Confirm
+
+What to check:
+
+- Results show only matching records
+- "No records found" if nothing matches
+
+Step 6: Test search by date
+
+1. Change type to Date
+2. Pick a date using the date picker
+3. Click Confirm
+
+What to check:
+
+- Results filtered to that date
+- Date picker opens and works correctly
+
+---
+
+PATH B: Handover from a Service User's Logbook
+
+This is the flow where staff hand over a specific logbook entry to another staff member.
+
+Step 7: Navigate to a service user's logbook
+
+1. Go to Clients (sidebar) → click View Details on any client
+2. On the client details page, find the Log Book section/tab
+3. You should see logbook entries for that client
+
+Step 8: Hand over a logbook entry
+
+1. On a logbook entry, look for an "Add to Handover" option (it may be in a dropdown/action menu on the entry)
+2. Click it
+
+What to check:
+
+- A modal titled "Handover to Staff User" opens
+- It shows a Select Staff User dropdown
+- The dropdown is populated with staff from Aries home only (not staff from other homes)
+
+Step 9: Complete the handover
+
+1. Select a staff member from the dropdown
+2. Click Submit
+
+What to check:
+
+- Success message: "Log has been handovered to staff member successfully"
+- If you try the same staff member again → "Log is already handovered to this staff member"
+
+---
+
+PATH C: Edge Cases & Security
+
+Step 10: Empty state
+
+1. If possible, find a home/context with no handover records
+2. Open Hand Over from the top menu
+
+What to check:
+
+- Shows "No Logs Found" — not a blank page or error
+
+Step 11: Special characters
+
+1. Edit a handover record
+2. In Details, type: <script>alert('test')</script> & "quotes" < > special chars
+3. Submit, then close and reopen
+
+What to check:
+
+- The text appears exactly as typed (no alert popup!)
+- Special characters display correctly, not as &amp; etc.
+
+---
+
+What to Report Back
+
+For each step, note:
+
+- PASS — works as described
+- FAIL — describe what you saw instead
+- BLOCKED — couldn't reach this step (describe why)
+- MISSING — the UI element/button/tab doesn't exist on the page
+
+The most critical things to verify:
+
+1. Can you even find and open the Hand Over modal? (Step 1)
+2. Do records load and display? (Step 2)
+3. Does edit save and persist? (Step 3)
+4. Does Acknowledge work? (Step 4)
+5. Does the Handover to Staff flow work from a logbook entry? (Steps 7-9)
+
+If Step 1 fails (modal doesn't open), everything else is blocked — report that immediately.
+
+New Updates in careos-workflow-
+so what are the attackiong vectors we will be covering
+
+⏺ Based on everything we've learned across 13 sessions and the vulnerabilities we actually caught, here's the complete attack surface the workflow  
+ now covers:
+
+---
+
+Attack Vectors Covered by /careos-workflow
+
+BLOCKER — Exploited via curl in REVIEW (Stage 6)
+
+┌─────┬────────────────────────┬────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────┐  
+ │ # │ Vector │ How we attack │ What we caught before │  
+ ├─────┼────────────────────────┼────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────┤  
+ │ 1 │ IDOR — cross-home │ curl every endpoint with a valid record ID from a different │ Body Maps: remove/update had no ownership │
+│ │ record access │ home_id │ check │
+├─────┼────────────────────────┼────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────┤  
+ │ │ IDOR — cross-home │ For every FK param (staff_user_id, logbook_id, │ Handover: staff_user_id from home 18 │
+│ 2 │ foreign key injection │ service_user_id), submit a valid ID belonging to a different │ accepted by home 8 │  
+ │ │ │ home │ │
+├─────┼────────────────────────┼────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────┤  
+ │ 3 │ IDOR — cross-home │ If record A is created FROM record B, verify B's home_id is │ Handover: createFromLogBook didn't verify │  
+ │ │ source record │ checked │ logbook's home_id │
+├─────┼────────────────────────┼────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────┤  
+ │ 4 │ SQL injection │ Submit ' OR 1=1 -- and '; DROP TABLE users; -- in every │ Never found one (Eloquent protects us), but │  
+ │ │ │ text/search field │ we verify every time │
+├─────┼────────────────────────┼────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────┤  
+ │ 5 │ XSS — server-side │ Submit <script>alert('xss')</script> in every text field, │ Handover: controller echoed raw user data │
+│ │ │ fetch it back, verify &lt;script&gt; in response │ without e() │  
+ ├─────┼────────────────────────┼────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────┤
+│ 6 │ XSS — client-side │ Trace every .html() / .innerHTML / .append() call back to its │ Body Maps: .html(resp) with unescaped API │  
+ │ │ │ data source, verify esc() or .text() used │ data; staffuserlist: raw user_name in HTML │
+└─────┴────────────────────────┴────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────┘
+
+HIGH — Exploited via curl + code inspection
+
+┌─────┬──────────────────────┬────────────────────────────────────────────────────────────────┬──────────────────────────────────────────────┐  
+ │ # │ Vector │ How we attack │ What we caught before │
+├─────┼──────────────────────┼────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤
+│ 7 │ CSRF bypass │ curl every POST endpoint WITHOUT \_token / X-CSRF-TOKEN, expect │ Handover: initial list AJAX POST had no CSRF │
+│ │ │ 419 │ token │
+├─────┼──────────────────────┼────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤  
+ │ 8 │ Mass assignment │ POST with extra fields: home_id=999, is_deleted=1, id=1 — │ Handover: $request->all() passed to model │  
+ │ │ │ verify they're ignored │ │  
+ ├─────┼──────────────────────┼────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤  
+ │ 9 │ Missing input │ POST with empty body, wrong types, strings in integer fields, │ Handover: no $request->validate() on any │
+│ │ validation │ 10,000-char strings │ endpoint │  
+ ├─────┼──────────────────────┼────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤
+│ 10 │ Rate limiting bypass │ Verify every POST route in web.php has throttle middleware │ Handover: all 3 POST routes had no rate │  
+ │ │ │ │ limiting │  
+ ├─────┼──────────────────────┼────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤
+│ 11 │ Auth bypass │ curl endpoints with no session cookie, verify redirect to │ Always passed — checkUserAuth middleware │  
+ │ │ │ login │ covers this │  
+ ├─────┼──────────────────────┼────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤
+│ 12 │ Role escalation │ Non-admin user attempts admin-only action, expect 403 │ Staff Training: admin-only write ops had no │  
+ │ │ │ │ role check │  
+ └─────┴──────────────────────┴────────────────────────────────────────────────────────────────┴──────────────────────────────────────────────┘
+
+MEDIUM — Code inspection in REVIEW + curl in PROD-READY
+
+┌─────┬─────────────────────┬──────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────┐  
+ │ # │ Vector │ How we verify │ What we caught before │
+├─────┼─────────────────────┼──────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────┤
+│ 13 │ Multi-tenancy leak │ Every query uses ->where('home_id', $homeId), home_id │ Body Maps: API controller used raw home_id without │
+│ │ │ parsed with explode() not raw │ explode; Handover: view query used raw │
+├─────┼─────────────────────┼──────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────┤  
+ │ 14 │ Route parameter │ All {id} params have ->where('id', '[0-9]+') — no │ Always enforced since Feature 1 │
+│ │ injection │ string/path traversal in route params │ │  
+ ├─────┼─────────────────────┼──────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────┤
+│ 15 │ Error information │ curl invalid requests, verify no stack traces, table │ Always checked │  
+ │ │ leak │ names, or internal paths in response │ │  
+ ├─────┼─────────────────────┼──────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────┤
+│ 16 │ Audit logging gaps │ Verify Log::info() on every create/update/delete with │ Body Maps: no audit logging at all initially │  
+ │ │ │ actor, home, record IDs │ │  
+ ├─────┼─────────────────────┼──────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────┤
+│ 17 │ Null reference │ curl endpoint where a related record (staff, service │ Not yet caught — new check │  
+ │ │ crash │ user) might be deleted/null │ │  
+ ├─────┼─────────────────────┼──────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────┤
+│ 18 │ Session timeout │ curl with expired session cookie, verify clean redirect │ Not yet caught — new check │  
+ │ │ handling │ not raw 419 │ │  
+ └─────┴─────────────────────┴──────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────┘
+
+Verified in TEST (Stage 4) via PHPUnit
+
+┌─────┬───────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────┐  
+ │ # │ Vector │ Test type │
+├─────┼───────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────┤  
+ │ 19 │ Cross-entity IDOR (automated) │ For every FK parameter, test with valid ID from different home → expect rejection │
+├─────┼───────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────┤
+│ 20 │ Multi-step flow integrity │ Create → appears in list → update → reflected → delete → gone │  
+ ├─────┼───────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────┤  
+ │ 21 │ XSS storage safety │ <script> stored raw in DB, rendered as &lt;script&gt; │  
+ ├─────┼───────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────┤  
+ │ 22 │ Validation boundary │ Oversized input, wrong types, missing required fields → 422 │
+├─────┼───────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────┤  
+ │ 23 │ CSRF enforcement │ POST without token → 419 │
+└─────┴───────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────┘
+
+Verified in PROD-READY (Stage 8) via curl + manual
+
+┌─────┬───────────────────────┬──────────────────────────────────────────────────────────────────────────────────┐  
+ │ # │ Vector │ How │
+├─────┼───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┤  
+ │ 24 │ Empty state rendering │ curl list endpoint with zero records → verify "no records" message │
+├─────┼───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┤
+│ 25 │ Validation UX │ curl POST with bad data → verify readable error messages, not raw JSON │  
+ ├─────┼───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┤  
+ │ 26 │ Blade include chain │ Trace @include to parent page → verify jQuery, CSS, .loader element exist │  
+ ├─────┼───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┤  
+ │ 27 │ Browser functionality │ Manual test checklist — user clicks through golden path + edge cases before PUSH │
+└─────┴───────────────────────┴──────────────────────────────────────────────────────────────────────────────────┘
+
+---
+
+Total: 27 attack vectors, tested across 4 stages (TEST, REVIEW, AUDIT, PROD-READY).
+
+The key shift: 14 of these are now verified by actually attacking via curl, not by reading code. The 3 vulnerabilities that slipped through in
+Feature 4 (items 2, 3, 7) would all be caught now because REVIEW requires a failed exploit as proof, not a code pattern match.
+
+✻ Crunched for 39s
+
+❯ and what are the measures we are gonna take to ensure everything is production ready?
+
+⏺ Based on what broke across 13 sessions and what the updated workflow now enforces:
+
+---
+
+Production Readiness Measures — Full List
+
+1. Code Quality (enforced during BUILD, Stage 3)
+
+┌───────────────────────┬─────────────────────────────────────────────────────────────┬────────────────────────────────────────────────┐
+│ Measure │ How it's enforced │ Why it matters │  
+ ├───────────────────────┼─────────────────────────────────────────────────────────────┼────────────────────────────────────────────────┤  
+ │ Service layer pattern │ Business logic in app/Services/, controllers are thin │ Prevents fat controllers, makes logic testable │  
+ ├───────────────────────┼─────────────────────────────────────────────────────────────┼────────────────────────────────────────────────┤  
+ │ Model conventions │ $fillable whitelist, app/Models/, scopes for common queries │ Prevents mass assignment, keeps code organized │  
+ ├───────────────────────┼─────────────────────────────────────────────────────────────┼────────────────────────────────────────────────┤  
+ │ No raw SQL │ Eloquent/query builder only, zero DB::raw() with user input │ SQL injection prevention │  
+ ├───────────────────────┼─────────────────────────────────────────────────────────────┼────────────────────────────────────────────────┤  
+ │ Blade escaping │ {{ }} only, never {!! !!} for user data │ XSS prevention │
+├───────────────────────┼─────────────────────────────────────────────────────────────┼────────────────────────────────────────────────┤  
+ │ URL hygiene │ {{ url('/path') }} everywhere, zero hardcoded domains │ Works across environments (dev/staging/prod) │
+├───────────────────────┼─────────────────────────────────────────────────────────────┼────────────────────────────────────────────────┤  
+ │ Multi-tenancy │ Every query filters home_id, parsed with explode() │ Data isolation between care homes │
+├───────────────────────┼─────────────────────────────────────────────────────────────┼────────────────────────────────────────────────┤  
+ │ Soft deletes │ is_deleted flag, active() scope on every query │ Backwards compatible with existing data │
+└───────────────────────┴─────────────────────────────────────────────────────────────┴────────────────────────────────────────────────┘
+
+2. Automated Testing (Stage 4 — 5 categories)
+
+┌───────────────────┬────────────────────────────────────────────────────────────────────┬────────────────────────────────────────────────────┐  
+ │ Category │ What's tested │ Catches │
+├───────────────────┼────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────┤  
+ │ 4a: Endpoint │ Happy path returns correct data, auth redirects, role checks │ Basic functionality and access control │
+│ tests │ │ │
+├───────────────────┼────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────┤  
+ │ 4b: Flow tests │ Create → appears in list → update → reflected → delete → gone │ Multi-step workflows that break in ways single │  
+ │ │ │ endpoint tests miss │  
+ ├───────────────────┼────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────┤  
+ │ 4c: IDOR tests │ Every record ID from different home → 404. Every FK param from │ The exact gap that let Feature 4's cross-home │
+│ │ different home → rejected │ staff bug through │  
+ ├───────────────────┼────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────┤
+│ 4d: Security │ XSS strings, SQLi strings, missing CSRF, oversized input, wrong │ Injection attacks, validation gaps │  
+ │ payloads │ types │ │  
+ ├───────────────────┼────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────┤
+│ 4e: Run all │ php artisan test --filter=[Feature] — zero failures │ No regressions │  
+ └───────────────────┴────────────────────────────────────────────────────────────────────┴────────────────────────────────────────────────────┘
+
+3. Runtime Verification (Stage 5 — DEBUG)
+
+┌────────────────┬─────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────┐  
+ │ Check │ How │ Catches │  
+ ├────────────────┼─────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────┤  
+ │ Error log │ Clear laravel.log → hit every route → check for new errors │ PHP warnings, deprecations, undefined vars │  
+ │ clean │ │ │  
+ ├────────────────┼─────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────┤  
+ │ N+1 queries │ List views with relationships must use ->with() eager loading │ Performance — a list of 50 records making 50 extra │  
+ │ │ │ queries │  
+ ├────────────────┼─────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────┤  
+ │ Dead code │ No empty methods, no 5+ line comment blocks, no unused use │ Code bloat, confusion for next developer │
+│ │ imports │ │  
+ └────────────────┴─────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────┘
+
+4. Adversarial Security (Stage 6 — REVIEW via curl)
+
+This is the stage that was broken before. Now requires actual exploitation attempts against the running dev server:
+
+┌──────────────────────────┬────────────────────────────────────────────────────┬─────────────────────────────────────────────────┐  
+ │ Attack │ Method │ Pass criteria │
+├──────────────────────────┼────────────────────────────────────────────────────┼─────────────────────────────────────────────────┤
+│ Cross-home record access │ curl with record ID from different home │ 404, not the data │
+├──────────────────────────┼────────────────────────────────────────────────────┼─────────────────────────────────────────────────┤
+│ Cross-home FK injection │ curl create/update with FK from different home │ Rejected, not created │  
+ ├──────────────────────────┼────────────────────────────────────────────────────┼─────────────────────────────────────────────────┤  
+ │ Cross-home source record │ curl create-from-X with source from different home │ Rejected │  
+ ├──────────────────────────┼────────────────────────────────────────────────────┼─────────────────────────────────────────────────┤  
+ │ CSRF bypass │ curl POST without \_token │ 419 │
+├──────────────────────────┼────────────────────────────────────────────────────┼─────────────────────────────────────────────────┤  
+ │ XSS injection │ Submit <script>alert(1)</script>, fetch back │ &lt;script&gt; in response │
+├──────────────────────────┼────────────────────────────────────────────────────┼─────────────────────────────────────────────────┤  
+ │ SQLi │ Submit ' OR 1=1 -- in search/text fields │ Empty results or validation error, not DB error │
+├──────────────────────────┼────────────────────────────────────────────────────┼─────────────────────────────────────────────────┤  
+ │ Mass assignment │ POST with home_id=999, is_deleted=1 │ Values ignored │
+├──────────────────────────┼────────────────────────────────────────────────────┼─────────────────────────────────────────────────┤  
+ │ Client-side XSS trace │ Every .html() call traced to data source │ esc() or e() on every path │
+└──────────────────────────┴────────────────────────────────────────────────────┴─────────────────────────────────────────────────┘
+
+5. Codebase Health (Stage 7 — AUDIT via grep)
+
+┌─────────────────────────┬─────────────────────────────────────────────────────┬───────────────────┐  
+ │ Pattern │ Grep command │ Expected │
+├─────────────────────────┼─────────────────────────────────────────────────────┼───────────────────┤  
+ │ Raw SQL │ DB::raw, whereRaw, selectRaw │ Zero in new files │
+├─────────────────────────┼─────────────────────────────────────────────────────┼───────────────────┤
+│ Unescaped Blade │ {!! │ Zero in new files │  
+ ├─────────────────────────┼─────────────────────────────────────────────────────┼───────────────────┤  
+ │ Unsafe JS DOM insertion │ .html(, .innerHTML without esc() │ Zero unescaped │  
+ ├─────────────────────────┼─────────────────────────────────────────────────────┼───────────────────┤  
+ │ Missing rate limiting │ Route::post without throttle │ Zero │
+├─────────────────────────┼─────────────────────────────────────────────────────┼───────────────────┤  
+ │ Open models │ $guarded = [] │ Zero │
+├─────────────────────────┼─────────────────────────────────────────────────────┼───────────────────┤  
+ │ Debug statements │ dd(, dump(, console.log( │ Zero │
+├─────────────────────────┼─────────────────────────────────────────────────────┼───────────────────┤  
+ │ Hardcoded URLs │ http://127, http://localhost, socialcareitsolutions │ Zero │
+├─────────────────────────┼─────────────────────────────────────────────────────┼───────────────────┤  
+ │ Hardcoded credentials │ API keys, passwords in code │ Zero │
+└─────────────────────────┴─────────────────────────────────────────────────────┴───────────────────┘
+
+6. Production Quality (Stage 8 — PROD-READY via curl + inspection)
+
+This is the stage that was self-grading before. Now requires actual verification:
+
+6a. Error & Edge Cases — verified via curl
+
+┌────────────────────┬─────────────────────────────────────────────────────────────────────────┬──────────────────────────────────────────────┐  
+ │ Check │ How it's verified │ What broke before │
+├────────────────────┼─────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤
+│ Empty state │ curl list endpoint with zero records → must show "No records found" │ Never tested — Feature 4 empty state │
+│ │ message │ unverified │
+├────────────────────┼─────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤  
+ │ Validation errors │ curl POST with missing fields → must return readable 422 errors │ Never tested with actual bad data │  
+ ├────────────────────┼─────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤  
+ │ Boundary values │ Submit 10,000-char string, & < > " ' chars → no 500, no layout break │ Never tested │  
+ ├────────────────────┼─────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤
+│ AJAX error │ Read every $.ajax call → must have error: callback with user-visible │ Never checked — silent failures possible │  
+ │ handling │ message │ │
+└────────────────────┴─────────────────────────────────────────────────────────────────────────┴──────────────────────────────────────────────┘
+
+6b. Performance — verified via code
+
+┌──────────────────────┬─────────────────────────────────────────────────────────────────────┐
+│ Check │ What │
+├──────────────────────┼─────────────────────────────────────────────────────────────────────┤
+│ Eager loading │ List views with relations use ->with() │
+├──────────────────────┼─────────────────────────────────────────────────────────────────────┤
+│ Database indexes │ WHERE/ORDER BY columns indexed, composites for multi-column queries │  
+ ├──────────────────────┼─────────────────────────────────────────────────────────────────────┤  
+ │ Payload size │ ->select(...) used, not SELECT \* │  
+ ├──────────────────────┼─────────────────────────────────────────────────────────────────────┤  
+ │ No duplicate queries │ Same data not fetched twice per request │
+└──────────────────────┴─────────────────────────────────────────────────────────────────────┘
+
+6c. UI Integration — verified by tracing includes
+
+┌─────────────────────┬────────────────────────────────────────────────────────────┬──────────────────────────────────────────────────────────┐  
+ │ Check │ How │ What broke before │
+├─────────────────────┼────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤
+│ Blade @include │ Trace partial → parent page → verify jQuery, CSS, .loader │ Feature 4: never checked if parent page has the │
+│ chain │ exist │ dependencies │
+├─────────────────────┼────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤  
+ │ Form/modal behavior │ After submit: fields clear, modal closes, success shown │ Feature 4: 3 chained modals never browser-tested │
+├─────────────────────┼────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤  
+ │ Destructive actions │ Delete has confirm() prompt │ Always checked │
+├─────────────────────┼────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤  
+ │ Links │ All use {{ url('/path') }} │ Always checked │
+└─────────────────────┴────────────────────────────────────────────────────────────┴──────────────────────────────────────────────────────────┘
+
+6d. Graceful Degradation — verified via curl
+
+┌───────────────────┬─────────────────────────────────────────────────────────────────────┬──────────────────────────┐  
+ │ Check │ How │ What broke before │
+├───────────────────┼─────────────────────────────────────────────────────────────────────┼──────────────────────────┤
+│ Null related data │ What if referenced staff member deleted? Controller has null check? │ New check — never caught │
+├───────────────────┼─────────────────────────────────────────────────────────────────────┼──────────────────────────┤
+│ Session timeout │ curl with expired session → clean redirect to login, not raw 419 │ New check — never caught │  
+ └───────────────────┴─────────────────────────────────────────────────────────────────────┴──────────────────────────┘
+
+6e. Manual Test Checklist — verified by user in browser
+
+This is the new hard gate. Before PUSH, the workflow prints:
+
+╔══════════════════════════════════════════════════════════════╗  
+ ║ MANUAL TEST CHECKLIST — [Feature Name] ║
+╠══════════════════════════════════════════════════════════════╣  
+ ║ □ Navigate to [exact page] ║
+║ □ Create a record → verify it appears ║  
+ ║ □ Edit the record → verify changes persist ║  
+ ║ □ Delete → verify it disappears ║  
+ ║ □ Search/filter → verify results ║  
+ ║ □ Empty state → verify message shows ║  
+ ║ □ Special characters in input → no break ║  
+ ║ □ Modal flow → all modals chain correctly ║  
+ ║ ║  
+ ║ Reply "tested" or report bugs. ║  
+ ╚══════════════════════════════════════════════════════════════╝
+
+PUSH is blocked until you confirm "tested". This catches the things I can't test — the Body Maps color persistence bug, the modal chaining, the  
+ date picker initialization, the Select2 dropdowns. Those are browser-only issues.
+
+---
+
+Summary — What Changed vs Before
+
+┌────────────────────────────────────────────────────────────┬──────────────────────────────────────────────────────────────────────────┐
+│ Before (Features 1-4) │ Now (Feature 5+) │  
+ ├────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+│ Tests hit single endpoints in isolation │ Tests verify multi-step flows + cross-entity IDOR │  
+ ├────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+│ REVIEW read code and checked boxes │ REVIEW curls every endpoint with attack payloads │  
+ ├────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤  
+ │ PROD-READY self-graded by reading code │ PROD-READY curls endpoints + traces @include chains │  
+ ├────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤  
+ │ Browser testing only happened when you manually found bugs │ Browser testing is a mandatory gate with a printed checklist │
+├────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤  
+ │ Security audit was a separate step you had to ask for │ Security is baked into REVIEW — no separate ask needed │
+├────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤  
+ │ "PASS" meant "the code looks right" │ "PASS" means "the attack failed" or "the curl returned what we expected" │
+└────────────────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────────────┘
+
+The workflow now produces production-ready code by default. You shouldn't need to ask "is this secure?" or "is this production ready?" again — if
+it passes the pipeline, it's been attacked, verified, and browser-tested.
+
+✻ Cooked for 56s
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯  
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+\~/Desktop/Omega Life/Care OS Opus 4.6 ctx: 33% used · 67% left  
+ ⏵⏵ accept edits on (shift+tab to cycle)

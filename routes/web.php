@@ -1313,6 +1313,8 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		->middleware('throttle:30,1');
 	Route::post('/handover/acknowledge', 'App\Http\Controllers\frontEnd\HandoverController@acknowledge')
 		->middleware('throttle:30,1');
+	Route::post('/handover/from-daily-log', 'App\Http\Controllers\frontEnd\HandoverController@createFromDailyLog')
+		->middleware('throttle:30,1');
 
 	//add to weekly
 	Route::match(['get', 'post'], '/weekly/report/{log_id}', 'App\Http\Controllers\frontEnd\ServiceUserManagement\LogBookController@weekly_report');

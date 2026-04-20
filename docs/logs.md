@@ -1088,3 +1088,71 @@ Updated `docs/security-checklist.md` vulnerability history with 8 new entries.
 **What:** Saved full session history to `sessions/session13.md`. Feature 4 complete. Phase 1: 4/10 features done.
 
 ---
+
+## Session: 2026-04-20 (Handover Feature Post-Mortem & Fix)
+
+### Log 53 — Handover Feature: 7 Issues Found & Fixed
+**Time:** 2026-04-20
+**What:** Manual testing of Feature 4 (Handover Notes) revealed 7 issues that passed all automated checks (tests, curl attacks, PROD-READY). Every one was fixed.
+
+**Issue 1: "Hand Over" link commented out in navbar**
+- **Problem:** `resources/views/frontEnd/common/header.blade.php` line 119 — the `<li>` for "Hand Over" was wrapped in `<!-- -->`. Feature was invisible.
+- **Fix:** Uncommented the link.
+- **Root cause:** We never checked if the UI entry point was visible. Tests and curl hit the endpoints directly.
+- **Prevention rule:** Every feature must verify its UI entry point exists and is not commented out, hidden by CSS, or behind a broken `@if`.
+
+**Issue 2: No handover data for Aries House (home_id 8)**
+- **Problem:** `handover_log_book` table only had records for home_id 1 (Station Road). Aries showed "No Logs Found".
+- **Fix:** Inserted 5 test records for home_id 8.
+- **Root cause:** Test data wasn't created for the home we actually log into (Aries).
+- **Prevention rule:** Always seed test data for home_id 8 (Aries) — that's the home we test with (komal / 123456).
+
+**Issue 3: "Add to Handover" button was on old unreachable page**
+- **Problem:** The `add_to_hndovr` button was in `serviceUserManagement/elements/log_book.blade.php` — the old service user profile page. The sidebar "Clients" link now routes to the roster client details page, making the old page a dead end.
+- **Fix:** Built new handover creation flow on the Daily Log page (`roster/daily_log/daily_log.blade.php`).
+- **Root cause:** Feature was built targeting old pages that are no longer navigable.
+- **Prevention rule:** ALL new features must target the new roster UI (`/roster/...`). Old `serviceUserManagement/` pages are dead ends.
+
+**Issue 4: Roster client details page has no Log Book tab**
+- **Problem:** The new roster client details page (`/roster/client-details/{id}`) has tabs for Details, Onboarding, Care Tasks, etc. but no Log Book tab. The old logbook + handover flow was never migrated.
+- **Fix:** Used the Daily Log page as the handover creation point instead.
+- **Prevention rule:** Before building, check which pages are reachable from the sidebar and verify the target page exists in the new UI.
+
+**Issue 5: Blank icon for "Add to Handover" button**
+- **Problem:** Used `bx bx-transfer-alt` (Boxicons) but the page's version didn't include that icon. Rendered as a blank/invisible button.
+- **Fix:** Switched to `fa fa-share-square-o` (Font Awesome), which is already loaded on all pages.
+- **Prevention rule:** Only use icons from Font Awesome 4.7 (`fa fa-*`) on Care OS pages — it's the one icon library guaranteed to be loaded everywhere. Don't assume Boxicons has every icon.
+
+**Issue 6: New route not whitelisted in `checkUserAuth` middleware**
+- **Problem:** `POST /handover/from-daily-log` returned "unauthorize" because the path wasn't in the `$allowed_path` array in `app/Http/Middleware/checkUserAuth.php`. AJAX returned an error the JS caught as generic "Error creating handover."
+- **Fix:** Added `'handover/from-daily-log'` to the `$allowed_path` array.
+- **Root cause:** The `checkUserAuth` middleware has a manual whitelist of paths that don't need access_rights checks. New routes must be added here.
+- **Prevention rule:** Every new route MUST be added to the `$allowed_path` array in `checkUserAuth.php`. This is a mandatory BUILD step — test the actual AJAX call, not just the endpoint via curl.
+
+**Issue 7: Staff dropdown showed all 200 staff, not just current home**
+- **Problem:** The `$accompanying_staff` variable passed to the Daily Log view is unfiltered (`User::where(['is_deleted'=>0,'status'=>1])->get()`). The handover modal dropdown listed staff from all homes. Selecting a staff from another home triggered the server-side home_id validation and returned an error.
+- **Fix:** Filtered the dropdown in Blade using `@if(in_array($currentHomeId, explode(',', $staff->home_id)))`.
+- **Root cause:** Reused an existing variable without checking its scope.
+- **Prevention rule:** Any dropdown that lists staff/clients/records MUST filter by `home_id`. Never assume an existing variable is already filtered.
+
+### Log 54 — Workflow Updated with 7 Prevention Rules
+**Time:** 2026-04-20
+**What:** Updated `/careos-workflow` (both copies) with new checks:
+- **PLAN stage:** Step 5 — "Target the new roster UI only"
+- **BUILD stage:** Step 8 — "UI Entry Point Check"
+- **REVIEW stage:** Step 3 — "UI Reachability Check" (BLOCKER severity)
+- **PROD-READY stage:** 8c — "Can a user actually reach this feature?" with explicit reference to this post-mortem
+
+### Log 55 — Files Modified This Session
+**Time:** 2026-04-20
+**Files changed:**
+- `resources/views/frontEnd/common/header.blade.php` — Uncommented Hand Over link
+- `app/Services/HandoverService.php` — Added `createFromDailyLog()` method
+- `app/Http/Controllers/frontEnd/HandoverController.php` — Added `createFromDailyLog()` endpoint
+- `routes/web.php` — Added `POST /handover/from-daily-log` route
+- `app/Http/Controllers/frontEnd/Roster/DailyLogController.php` — Added "Add to Handover" button to both timeline and list layouts
+- `resources/views/frontEnd/roster/daily_log/daily_log.blade.php` — Added handover staff selection modal and JS
+- `app/Http/Middleware/checkUserAuth.php` — Whitelisted new route
+- `.claude/commands/careos-workflow.md` + `docs/careos-workflow.md` — Added UI reachability checks
+
+---

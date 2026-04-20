@@ -328,9 +328,16 @@ class DailyLogController extends Controller
                                         <i class="bx bx-pencil"></i>
                                     </button>
 
-                                    <button class="danger delete_rosterDailyLog" 
+                                    <button class="danger delete_rosterDailyLog"
                                         type="button" data-id="' . $val->id . '">
                                         <i class="bx bx-trash"></i>
+                                    </button>
+
+                                    <button type="button" class="add_to_handover"
+                                        data-id="' . $val->id . '"
+                                        data-title="' . e($val->visitor_name ?? '') . '"
+                                        title="Add to Handover">
+                                        <i class="fa fa-share-square-o"></i>
                                     </button>
                                 </div>
                             </div>
@@ -437,6 +444,15 @@ class DailyLogController extends Controller
                                                     <div class="planActions">
                                                         <button class="danger delete_rosterDailyLog ms-0" type="button" data-id="' . $val->id . '">
                                                             <i class="bx bx-trash"></i>
+                                                        </button>
+                                                    </div>
+
+                                                    <div class="planActions">
+                                                        <button type="button" class="add_to_handover ms-0"
+                                                            data-id="' . $val->id . '"
+                                                            data-title="' . e($val->visitor_name ?? '') . '"
+                                                            title="Add to Handover">
+                                                            <i class="fa fa-share-square-o"></i>
                                                         </button>
                                                     </div>
                                                 </div>

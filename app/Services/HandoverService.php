@@ -144,6 +144,70 @@ class HandoverService
     }
 
     /**
+     * Create a handover record from a roster daily log entry.
+     */
+    public function createFromDailyLog(int $homeId, array $data): array
+    {
+        $dailyLogId = $data['daily_log_id'];
+        $staffUserId = $data['staff_user_id'];
+
+        $dailyLog = \App\Models\RosterDailyLog::where('id', $dailyLogId)
+            ->where('home_id', $homeId)
+            ->whereNull('deleted_at')
+            ->first();
+
+        if (!$dailyLog) {
+            return ['success' => false, 'message' => 'Daily log entry not found.'];
+        }
+
+        $staffUser = \App\User::where('id', $staffUserId)
+            ->where('is_deleted', '0')
+            ->first();
+
+        if (!$staffUser || !in_array($homeId, array_map('intval', explode(',', $staffUser->home_id)))) {
+            return ['success' => false, 'message' => 'Staff member not found.'];
+        }
+
+        $existing = HandoverLogBook::forHome($homeId)
+            ->active()
+            ->where('log_book_id', $dailyLogId)
+            ->where('assigned_staff_user_id', $staffUserId)
+            ->where('title', 'LIKE', '[DL]%')
+            ->first();
+
+        if ($existing) {
+            return ['success' => false, 'message' => 'Already handed over to this staff member.'];
+        }
+
+        $title = '[DL] ' . ($dailyLog->visitor_name ?? 'Daily Log Entry');
+        $details = $dailyLog->purpose_visit ?? '';
+        $notes = $dailyLog->notes ?? '';
+
+        $record = HandoverLogBook::create([
+            'log_book_id' => $dailyLogId,
+            'assigned_staff_user_id' => $staffUserId,
+            'service_user_id' => $dailyLog->client_id ?? 0,
+            'user_id' => Auth::id(),
+            'home_id' => $homeId,
+            'title' => $title,
+            'details' => $details,
+            'date' => $dailyLog->date ?? now(),
+            'notes' => $notes,
+        ]);
+
+        Log::info('Handover log created from daily log', [
+            'action' => 'handover_create_from_daily_log',
+            'record_id' => $record->id,
+            'home_id' => $homeId,
+            'user_id' => Auth::id(),
+            'assigned_staff_user_id' => $staffUserId,
+            'daily_log_id' => $dailyLogId,
+        ]);
+
+        return ['success' => true, 'message' => 'Handover created successfully.'];
+    }
+
+    /**
      * Mark a handover as acknowledged by incoming staff.
      */
     public function acknowledge(int $homeId, int $id, int $staffId): bool

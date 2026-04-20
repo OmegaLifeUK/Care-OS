@@ -968,6 +968,87 @@
             old_tab = design;
             loadDailyLogs(undefined, undefined, undefined, old_tab);
         });
+
+        // --- Handover functionality ---
+        var handoverDailyLogId = null;
+
+        $(document).on('click', '.add_to_handover', function() {
+            handoverDailyLogId = $(this).data('id');
+            var title = $(this).data('title') || 'Daily Log Entry';
+            $('#handoverEntryTitle').text(title);
+            $('#handoverStaffSelect').val('');
+            $('#handoverMsg').hide();
+            $('#HandoverStaffModal').modal('show');
+        });
+
+        $(document).on('click', '#submitHandover', function() {
+            var staffId = $('#handoverStaffSelect').val();
+            if (!staffId) {
+                $('#handoverMsg').text('Please select a staff member.').removeClass('alert-success alert-info').addClass('alert-danger').show();
+                return;
+            }
+
+            var btn = $(this);
+            btn.prop('disabled', true).text('Submitting...');
+
+            $.ajax({
+                url: '{{ url("/handover/from-daily-log") }}',
+                type: 'POST',
+                data: {
+                    daily_log_id: handoverDailyLogId,
+                    staff_user_id: staffId,
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(resp) {
+                    if (resp.success) {
+                        $('#handoverMsg').text('Handover created successfully!').removeClass('alert-danger alert-info').addClass('alert-success').show();
+                        setTimeout(function() { $('#HandoverStaffModal').modal('hide'); }, 1500);
+                    } else if (resp.duplicate) {
+                        $('#handoverMsg').text('Already handed over to this staff member.').removeClass('alert-success alert-danger').addClass('alert-info').show();
+                    } else {
+                        $('#handoverMsg').text(resp.message || 'Error creating handover.').removeClass('alert-success alert-info').addClass('alert-danger').show();
+                    }
+                    btn.prop('disabled', false).text('Submit');
+                },
+                error: function() {
+                    $('#handoverMsg').text('Error creating handover. Please try again.').removeClass('alert-success alert-info').addClass('alert-danger').show();
+                    btn.prop('disabled', false).text('Submit');
+                }
+            });
+        });
     </script>
+
+    <!-- Handover Staff Selection Modal -->
+    <div class="modal fade" id="HandoverStaffModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background:#474751; color:#fff;">
+                    <h5 class="modal-title">Add to Handover</h5>
+                    <button type="button" class="close" data-dismiss="modal" style="color:#fff;">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="handoverMsg" class="alert" style="display:none;"></div>
+                    <p>Handing over: <strong id="handoverEntryTitle"></strong></p>
+                    <div class="form-group">
+                        <label>Select Staff Member:</label>
+                        @php $currentHomeId = explode(',', Auth::user()->home_id)[0]; @endphp
+                        <select id="handoverStaffSelect" class="form-control">
+                            <option value="">-- Select Staff --</option>
+                            @foreach($accompanying_staff as $staff)
+                                @if(in_array($currentHomeId, explode(',', $staff->home_id)))
+                                    <option value="{{ $staff->id }}">{{ ucfirst($staff->name) }}</option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitHandover">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @endsection
 </main>

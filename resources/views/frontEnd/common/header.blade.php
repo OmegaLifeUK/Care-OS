@@ -116,7 +116,7 @@
                             <!--<li><a href="{{ url('/forms') }}" data-toggle="modal"> <i class="fa fa-bolt"></i> Forms </a></li>-->
                             <!--<li><a href="{{ url('/general-admin') }}"><i class="fa fa-cogs"></i> General Admin </a></li>-->
                             <li><a href="{{ url('/lock?path='.$current_path) }}"><i class="fa fa-lock"> </i> Lock</a></li>
-                            <!--<li><a href="#" class="hndovr_logbk"><i class="fa fa-address-book-o"></i> Hand Over </a></li>-->
+                            <li><a href="#" class="hndovr_logbk"><i class="fa fa-address-book-o"></i> Hand Over </a></li>
                             <li><a href="{{ url('/logout') }}"><i class="fa fa-key"></i> Log Out</a></li>
                             <!-- Code given By Ethan start -->
                             @if(Auth::user()->user_type == "A")
