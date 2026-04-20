@@ -4198,11 +4198,11 @@
                     <div class="careTaskstbbg sectionWhiteBgAllUse p-0">
                         <header class="panel-heading headingCapitilize aIInsightsheader">
                             <div class="clientHeadung">
-                                <div class="onlyheadingmain purpleiconclr"><i class='bx  bx-shield'></i> Deprivation of Liberty Safeguards (DoLS) </div>
+                                <div class="onlyheadingmain purpleiconclr"><i class="fa fa-shield"></i> Deprivation of Liberty Safeguards (DoLS) </div>
                                 <p>Manage DoLS authorisations and reviews</p>
                             </div>
                             <div class="actions mt-0">
-                                <button class="btn purpleBgBtn addDolsRecordBtn" data-formType="add"> <i class="bx  bx-plus"></i> New DoLS Record</button>
+                                <button class="btn purpleBgBtn addDolsRecordBtn" data-formType="add"> <i class="fa fa-plus"></i> New DoLS Record</button>
                             </div>
                         </header>
                         <div class="p-20">
@@ -7671,6 +7671,7 @@
         var increaseAllAcknowledgeUrl = "{{url('roster/client/alert-increase-all-acknowledge')}}";
         var saveDolsUrl = "{{url('roster/client/save-dols')}}";
         var dolsListUrl = "{{url('roster/client/dols-list')}}";
+        var deleteDolsUrl = "{{url('roster/client/dols-delete')}}";
     </script>
     <!-- end here -->
     <script src="{{ url('public/js/roster/client/client_details.js')}}" defer></script>

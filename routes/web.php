@@ -243,8 +243,9 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		// invoicemanagement
 		Route::get('invoice-management', [invoiceManagementController::class, 'index']);
 		// Client Dols
-		Route::post('client/save-dols',[DolsController::class,'save_dols']);
-		Route::post('client/dols-list',[DolsController::class,'index']);
+		Route::post('client/save-dols',[DolsController::class,'save_dols'])->middleware('throttle:30,1');
+		Route::post('client/dols-list',[DolsController::class,'index'])->middleware('throttle:30,1');
+		Route::post('client/dols-delete',[DolsController::class,'delete'])->middleware('throttle:20,1');
 		
 		 // Onboarding Configuration
         Route::get('onboarding-configuration', [OnboardingConfigurationController::class, 'index']);
