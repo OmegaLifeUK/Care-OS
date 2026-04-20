@@ -4,6 +4,42 @@
 
 ---
 
+## Session: 2026-04-20 (Feature 7 — SOS Alerts)
+
+### Log 1 — Feature 7: SOS Alerts — Full Build
+**Time:** Session start
+**Action:** Built SOS Alert feature end-to-end via /careos-workflow pipeline.
+
+**What was built:**
+- **Migration** (`2026_04_20_160000_add_columns_to_sos_alerts.php`): Added home_id, message, status, acknowledged_by/at, resolved_by/at, is_deleted columns + indexes
+- **Model** (`app/Models/staffManagement/sosAlert.php`): $fillable, casts, scopes (active, forHome), relationships (staff, acknowledgedByUser, resolvedByUser)
+- **Service** (`app/Services/Staff/SosAlertService.php`): trigger(), list(), acknowledge(), resolve() — all filter by home_id, with audit logging
+- **Controller** (`app/Http/Controllers/frontEnd/Roster/SosAlertController.php`): Validates input, role checks for ack/resolve, sets home_id server-side
+- **Routes**: 4 POST routes with rate limiting (trigger:5/min, list:30/min, ack/resolve:20/min)
+- **Middleware**: Whitelisted 4 SOS routes in checkUserAuth.php
+- **Dashboard UI**: Red SOS trigger button + alert history section with color-coded cards (red=Active, amber=Acknowledged, green=Resolved)
+- **Sticky Notification**: Added event_type_id 24 handling for SOS alerts with staff name
+- **JavaScript** (`public/js/roster/sos_alerts.js`): AJAX trigger/list/ack/resolve with esc() XSS protection
+- **API fix**: StaffManagementController no longer leaks exception messages
+- **Test data**: 3 seeded alerts for Aries (home_id 8)
+- **Tests**: 13 passing (4 happy path, 1 flow, 5 IDOR/access, 3 security payload)
+
+**Security hardening:**
+- IDOR: All endpoints verify home_id match — curl-verified against cross-home records
+- XSS: esc() on all JS .html() insertions, {{ }} only in Blade
+- CSRF: 419 without token — curl-verified
+- Mass assignment: home_id set server-side, injection attempt stored home_id=8 not 999
+- Rate limiting: throttle on all routes, trigger at 5/min (strictest)
+- Access control: Staff gets 403 on acknowledge/resolve — curl-verified
+- Error leaking: Fixed API controller generic error response
+
+**Teaching notes:**
+- **SOS vs Client Alerts**: SOS is a staff emergency system (triggered by any user, notifies managers). Client alerts are care-related (fall risk etc.). They're separate systems with different tables and workflows.
+- **Sticky notifications**: The existing Gritter notification system loads on page refresh, not real-time. SOS alerts appear next time a manager loads any page. For real-time push, a WebSocket system would be needed (Phase 2).
+- **whereRaw FIND_IN_SET**: Used for multi-home users where home_id is comma-separated (e.g., "8,18,1"). Parameterized with `?` binding so it's safe from SQL injection.
+
+---
+
 ## Session: 2026-04-11 (Security Hardening)
 
 ### Log 2 — Workflow Upgraded to 9-Stage Pipeline
@@ -1154,5 +1190,67 @@ Updated `docs/security-checklist.md` vulnerability history with 8 new entries.
 - `resources/views/frontEnd/roster/daily_log/daily_log.blade.php` — Added handover staff selection modal and JS
 - `app/Http/Middleware/checkUserAuth.php` — Whitelisted new route
 - `.claude/commands/careos-workflow.md` + `docs/careos-workflow.md` — Added UI reachability checks
+
+### Log 56 — Session 14 Saved
+**Time:** 2026-04-20
+**What:** Saved full session history to `sessions/session14.md`. Handover post-mortem & fix session. Phase 1: 4/10 features done.
+
+---
+
+## Session: 2026-04-20 (Feature 5: DoLS)
+
+### Log 57 — Feature 5: DoLS — Security Hardening & Full Pipeline
+**Time:** 2026-04-20
+**What:** Ran full /careos-workflow pipeline for Feature 5 (Deprivation of Liberty Safeguards). All files existed (~80% scaffolded) but had multiple security vulnerabilities and missing functionality. Fixed everything in one pass — no post-mortem needed.
+
+**Security fixes (BLOCKER):**
+1. **Mass assignment** — removed `deleted_at` from `Dol` model `$fillable` (allows attacker to un-delete records)
+2. **IDOR in details()** — `ClientDolsService::details($id)` had no `home_id` check. Added `where('home_id', $homeId)`.
+3. **IDOR in delete()** — same issue. Fixed.
+4. **IDOR in store() (update path)** — `updateOrCreate` with user-supplied `id` could modify another home's record. Added `home_id` verification before update.
+5. **Controller used `$request->all()`** — unfiltered data passed to service. Replaced with `$request->only([...])` (18 explicit fields).
+6. **Weak validation** — only checked `dols_status: required`. Now validates all 17 fields: enum for status (8 values), date types, max lengths (255/2000), boolean checkboxes.
+7. **XSS in JavaScript** — `client_dols.js` used template literals with `${val.dols_status}`, `${val.supervisory_body}`, etc. directly in `.html()`. Added `esc()` helper and escaped ALL user data before DOM insertion.
+8. **Syntax error** — controller line 30 had `'message','data'` (missing `=>` operator). Fixed.
+
+**Bugs fixed (HIGH):**
+9. **No delete endpoint** — users could create and edit but not delete. Added `DolsController::delete()` with full IDOR check + validation.
+10. **Boxicons rendering blank** — `bx bx-shield`, `bx bx-edit`, `bx bx-plus` icons not loading. Replaced with `fa fa-shield`, `fa fa-pencil`, `fa fa-plus`, `fa fa-trash` (Font Awesome).
+11. **`async: false` in AJAX** — blocks the UI thread. Removed.
+12. **`console.log` left in** — 2 instances. Removed.
+13. **moment() crashes on null dates** — `moment(null).format()` returns "Invalid date". Added null checks before formatting.
+14. **Empty state message** — showed raw "Data Not Found". Now shows styled "No DoLS records found. Click 'New DoLS Record' to add one."
+
+**Infrastructure:**
+15. **Rate limiting** — `throttle:30,1` on save/list, `throttle:20,1` on delete
+16. **Delete route** — `POST /roster/client/dols-delete` added to `web.php`
+17. **Middleware whitelist** — `roster/client/dols-delete` added to `checkUserAuth.php`
+18. **Delete URL variable** — `deleteDolsUrl` added to Blade script block
+
+**Tests:** 12 tests, 20 assertions — auth (3), validation (3), CRUD (2), IDOR (3), input sanitisation (1). All passing.
+
+**Review:** 15/15 security checks PASS, 0 blockers.
+
+**Commit:** `69348104` pushed to main.
+
+**Teaching notes:**
+- **`updateOrCreate` IDOR trap:** Laravel's `updateOrCreate(['id' => $id], $data)` will update ANY record matching that ID regardless of who owns it. Always verify ownership BEFORE calling updateOrCreate when the ID comes from user input.
+- **`$request->only()` vs `$request->all()`:** `only()` is the allowlist approach — explicitly name every field you accept. `all()` is the blocklist approach (rely on `$fillable` to filter). Allowlist is always safer because `$fillable` can be misconfigured.
+- **`esc()` helper pattern:** The same 4-line function appears in every Care OS JS file that renders API data. It creates a text node (which HTML-encodes the content) then reads `.innerHTML` (which gives you the escaped string). This is the standard client-side XSS prevention for jQuery `.html()` calls.
+- **Clean first-pass execution:** This is the first feature that needed zero post-mortem fixes. The plan identified all issues upfront, the build addressed them systematically, and the review confirmed everything. The workflow is maturing.
+
+**Files modified:**
+- `app/Models/Dol.php` — removed `deleted_at` from fillable
+- `app/Services/Client/ClientDolsService.php` — home_id checks on all methods
+- `app/Http/Controllers/frontEnd/Roster/Client/DolsController.php` — full rewrite with validation + IDOR + delete
+- `routes/web.php` — rate limiting + delete route
+- `public/js/roster/client/client_dols.js` — esc() helper, XSS escaping, delete, null date handling
+- `resources/views/frontEnd/roster/client/client_details.blade.php` — FA icons, deleteDolsUrl
+- `app/Http/Middleware/checkUserAuth.php` — whitelist delete route
+- `tests/Feature/DolsTest.php` — new, 12 tests
+
+### Log 58 — Session 15 Saved
+**Time:** 2026-04-20
+**What:** Saved full session history to `sessions/session15.md`. Feature 5 DoLS complete — first feature with zero post-mortem fixes. Phase 1: 5/10 features done. Session updated with post-push manual testing (pagination, XSS payload, console.log verification — all PASS) and Feature 6 MAR Sheets prompt generation.
 
 ---

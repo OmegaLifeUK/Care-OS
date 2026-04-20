@@ -64,6 +64,11 @@ PLAN → SCAFFOLD → BUILD → TEST → DEBUG → REVIEW → AUDIT → PROD-REA
 
 **User roles:** `user_type === 'A'` for admin. The column is `user_type`, NOT `type`.
 
+**Roster page mapping (URL ≠ file name):**
+- `/roster` → `RosterController@index` → `index.blade.php` ← **this is the main dashboard users see**
+- `/roster/dashboard` → `RosterController@dashboard` → `dashboard.blade.php` ← old/unused page
+- Always trace route → controller → `return view(...)` before adding UI. Don't guess from file names.
+
 **URLs in Blade:** Always use `{{ url('/path') }}`, never hardcoded domains.
 
 **Blade escaping:** Always `{{ }}`, never `{!! !!}` for user data.

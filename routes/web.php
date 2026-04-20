@@ -49,6 +49,7 @@ use App\Http\Controllers\frontEnd\Roster\Staff\invoiceManagementController;
 use App\Http\Controllers\backEnd\homeManage\SafeguardingTypeController;
 use App\Http\Controllers\backEnd\homeManage\StaffTaskTypeController;
 use App\Http\Controllers\frontEnd\Roster\Client\DolsController;
+use App\Http\Controllers\frontEnd\Roster\SosAlertController;
 // Backend Controllers
 use App\Http\Controllers\backEnd\superAdmin\HomeController;
 use App\Http\Controllers\backEnd\salesfinance\LeadController as BackendLeadController;
@@ -250,7 +251,13 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		
 		 // Onboarding Configuration
         Route::get('onboarding-configuration', [OnboardingConfigurationController::class, 'index']);
-		
+
+		// SOS Alerts
+		Route::post('/sos-alert/trigger', [SosAlertController::class, 'trigger'])->middleware('throttle:5,1');
+		Route::post('/sos-alert/list', [SosAlertController::class, 'list'])->middleware('throttle:30,1');
+		Route::post('/sos-alert/acknowledge', [SosAlertController::class, 'acknowledge'])->middleware('throttle:20,1');
+		Route::post('/sos-alert/resolve', [SosAlertController::class, 'resolve'])->middleware('throttle:20,1');
+
 	});
 
 

@@ -194,6 +194,15 @@ $notifications = App\Notification::getStickyNotifications();
                     } else {
                         $message = "Task all upto date";
                     }
+        }else if($event_type_id == '24'){ //SOS Alert
+            $sos_staff_name = \App\User::where('id', \App\Models\staffManagement\sosAlert::where('id', $event_id)->value('staff_id'))->value('name');
+            if(empty($sos_staff_name)){
+                $sos_staff_name = 'A staff member';
+            }
+            $title = "SOS Alert";
+            $message = " has triggered an SOS alert" . $created_at . ".";
+            $su_name = $sos_staff_name;
+            $type = 'SOS_ALERT';
         }else{
             continue;
         }

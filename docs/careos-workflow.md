@@ -25,8 +25,13 @@ When invoked, ask the user what feature or task they want to build, then execute
 5. **Target the new roster UI only** — All features MUST be built on the new roster pages (`/roster/...`), NOT the old service user management pages (`/service/...`, `frontEnd/serviceUserManagement/`). The old pages are dead ends — they are no longer reachable from the sidebar navigation. Key target pages:
    - Roster client details: `resources/views/frontEnd/roster/client/client_details.blade.php`
    - Daily Log: the roster daily log page
-   - Dashboard: `/roster`
+   - Dashboard: `/roster` → `index.blade.php` (NOT `/roster/dashboard` → `dashboard.blade.php`)
    - Verify your target page is reachable from the current sidebar before planning
+   
+   **CRITICAL — Verify which Blade file the target URL actually renders:**
+   - Trace the route in `routes/web.php` → find the controller method → find the `return view(...)` call → confirm the Blade file
+   - Do NOT assume from file names. Example: `/roster` renders `index.blade.php`, NOT `dashboard.blade.php`. Feature 7 (SOS Alerts) was built on the wrong page because of this assumption.
+   - Run `curl -s -b /tmp/cc.txt [target URL] | grep [unique-element]` to confirm your UI is on the page the user actually sees
 6. **Value mapping check** — if the feature has dropdown/enum fields (status, type, priority), verify that form `<option>` values, DB stored values, and JS display mapping keys ALL use the same numbers. Mismatch = every badge/label shows the wrong text (Feature 6: form sent 1-4, JS mapped 0-3, every status was wrong).
 7. **Security planning** — identify attack surfaces for this feature:
    - Which endpoints accept user input? (forms, AJAX, URL params)
@@ -111,6 +116,7 @@ When invoked, ask the user what feature or task they want to build, then execute
    - **Mass assignment**: Models MUST use `$fillable` whitelist — never include `id`, `home_id` (set server-side), or `is_deleted` in fillable unless explicitly needed for service layer
    - **IDOR prevention**: Every GET/POST that takes a record ID must verify the record's `home_id` matches the authenticated user's home before returning data or performing actions
 7. **Post-build checklist (from Handover post-mortem — all 7 are mandatory):**
+   - [ ] **UI on the CORRECT Blade file** — Trace the route → controller → `return view(...)` to confirm you added UI to the Blade file that the user's URL actually renders. Feature 7 added the SOS button to `dashboard.blade.php` but the user lands on `index.blade.php` at `/roster`. The file name is NOT the URL. Always verify: `curl -s -b /tmp/cc.txt [URL] | grep [your-element-id]`.
    - [ ] **UI entry point visible** — Is the link/button/menu item that opens this feature uncommented and visible? Not `<!-- -->`, not `display:none`, not behind a broken `@if`.
    - [ ] **Route whitelisted in checkUserAuth** — Every new route MUST be added to the `$allowed_path` array in `app/Http/Middleware/checkUserAuth.php`. Without this, AJAX calls return "unauthorize" silently.
    - [ ] **Test data exists for Aries (home_id 8)** — Seed data for the home we test with (komal / 123456 / Aries). Empty state is valid to test, but the feature must also work with data.
@@ -245,6 +251,12 @@ For every text/search input:
 - **PASS only if**: every new POST route has throttle
 
 ### Step 3: UI Reachability Check
+**Is the UI on the correct page?**
+- Identify the URL from the sidebar link (e.g., sidebar says "Dashboard" → href is `/roster`)
+- Trace: route → controller → `return view(...)` → Blade file
+- `curl` that URL and grep for a unique element from your feature
+- **BLOCKER if**: your element is not in the response — you built on the wrong Blade file
+
 **Can a user actually click something to open this feature?**
 - Trace the full navigation path from login to the feature (e.g., Dashboard → Menu → Link → Modal)
 - Verify the link/button exists in the rendered HTML — not commented out (`<!-- -->`), not hidden by CSS, not behind a broken `@if`
@@ -323,6 +335,14 @@ For each endpoint in the feature:
 - [ ] **No duplicate queries** — same data not fetched twice in one request
 
 ### 8c. UI/UX Quality — VERIFY BY TRACING THE INCLUDE CHAIN
+
+**MANDATORY FIRST CHECK — Is the UI on the correct Blade file?**
+- Identify the URL the user will visit (e.g., `/roster`)
+- Trace: route in `web.php` → controller method → `return view('...')` → actual Blade file
+- `curl` that URL and grep for a unique element ID from your new UI (e.g., `grep sos-trigger-btn`)
+- **BLOCKER if**: your element is NOT in the curl output. This means you built on the wrong Blade file.
+- **Why this exists:** Feature 7 (SOS Alerts) was built on `dashboard.blade.php` (rendered at `/roster/dashboard`) but users land on `index.blade.php` (rendered at `/roster`). The SOS button was invisible because it was on a page nobody visits. File names do not equal URL paths — always trace the route.
+
 **Where is this view rendered?**
 - Trace the Blade `@include` chain: which parent page includes this partial?
 - Does that parent page have jQuery loaded? Does it have the `.loader` element? Does it have the CSS?

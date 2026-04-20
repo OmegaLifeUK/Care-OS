@@ -73,10 +73,10 @@ class StaffManagementController extends Controller
             }
         }catch (\Exception $e) {
             DB::rollBack();
-            return [
+            return response()->json([
                 'success' => false,
-                'message' => 'Error saving SOS Alert: ' . $e->getMessage(),
-            ];
+                'message' => 'Something went wrong. Please try again.',
+            ], 500);
         }
     }
 }
