@@ -15,14 +15,14 @@
 | 2   | Staff Training      | 4h  | PLAN → BUILD → TEST → REVIEW → AUDIT → **PUSH** | **DONE** ✓ |
 | 3   | Body Maps           | 3h  | PLAN → BUILD → TEST → REVIEW → AUDIT → **PUSH** | **DONE** ✓ |
 | 4   | Handover Notes      | 4h  | PLAN → SCAFFOLD → BUILD → TEST → DEBUG → REVIEW → AUDIT → PROD-READY → **PUSH** | **DONE** ✓ |
-| 5   | DoLS                | 4h  | —                                               | Pending    |
-| 6   | MAR Sheets          | 8h  | —                                               | Pending    |
+| 5   | DoLS                | 4h  | PLAN → BUILD → TEST → DEBUG → REVIEW → AUDIT → **PUSH** | **DONE** ✓ |
+| 6   | MAR Sheets          | 8h  | PLAN → BUILD → TEST → DEBUG → REVIEW → AUDIT → PROD-READY → **PUSH** | **DONE** ✓ |
 | 7   | SOS Alerts          | 2h  | —                                               | Pending    |
 | 8   | Notifications       | 5h  | —                                               | Pending    |
 | 9   | Safeguarding        | 6h  | —                                               | Pending    |
 | 10  | Care Roster Wire-Up | 10h | —                                               | Pending    |
 
-**Completed:** 4/10 features | **Commit:** `ae08a858`
+**Completed:** 5/10 features | **Commit:** `69348104`
 **Feature 10 details:** [`docs/feature10-careroster-wireup.md`](../docs/feature10-careroster-wireup.md) — addendum covering ~60 unwired buttons in `client_details.blade.php` not already fixed by Features 1–9.
 
 ### Decisions & Scope Changes

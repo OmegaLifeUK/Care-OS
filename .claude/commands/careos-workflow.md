@@ -18,13 +18,17 @@ When invoked, ask the user what feature or task they want to build, then execute
 1. Read `docs/logs.md` for recent context
 2. Check the CareRoster reference (`/Users/vedangvaidya/Desktop/Omega Life/CareRoster/`) to understand how the feature works in the Base44 app
 3. Explore existing Care OS code for related features
-4. Check the database for existing tables
+4. Check the database for existing tables — run `DESCRIBE table_name` to verify actual columns vs. assumed columns. Key traps:
+   - Table may use Laravel `SoftDeletes` (`deleted_at`) instead of project convention (`is_deleted`) — if so, plan a migration to add `is_deleted` and remove the SoftDeletes trait
+   - Column names may have typos (e.g., `frequesncy` instead of `frequency`) — match the actual DB column, don't "fix" the spelling without a migration
+   - If `artisan migrate` fails due to older broken migrations, use direct SQL via tinker as fallback: `DB::statement('ALTER TABLE ...')`
 5. **Target the new roster UI only** — All features MUST be built on the new roster pages (`/roster/...`), NOT the old service user management pages (`/service/...`, `frontEnd/serviceUserManagement/`). The old pages are dead ends — they are no longer reachable from the sidebar navigation. Key target pages:
    - Roster client details: `resources/views/frontEnd/roster/client/client_details.blade.php`
    - Daily Log: the roster daily log page
    - Dashboard: `/roster`
    - Verify your target page is reachable from the current sidebar before planning
-6. **Security planning** — identify attack surfaces for this feature:
+6. **Value mapping check** — if the feature has dropdown/enum fields (status, type, priority), verify that form `<option>` values, DB stored values, and JS display mapping keys ALL use the same numbers. Mismatch = every badge/label shows the wrong text (Feature 6: form sent 1-4, JS mapped 0-3, every status was wrong).
+7. **Security planning** — identify attack surfaces for this feature:
    - Which endpoints accept user input? (forms, AJAX, URL params)
    - Which data is displayed back to users? (potential XSS targets)
    - Are there any admin-only actions? (role-based access needed)
@@ -184,8 +188,16 @@ This is where previous features had vulnerabilities caught late. Test **every** 
 ### Step 1: Start the server and authenticate
 ```bash
 php artisan serve &
-# Get a valid session cookie by logging in as komal
-curl -c cookies.txt -X POST http://127.0.0.1:8000/login -d "user_name=komal&password=123456&home=Aries&_token=..."
+# Step 1: Get CSRF token from login page
+curl -s -c /tmp/cc.txt http://127.0.0.1:8000/login > /tmp/lp.html
+TOKEN=$(cat /tmp/lp.html | sed -n 's/.*name="_token"[^>]*value="\([^"]*\)".*/\1/p' | head -1)
+# Step 2: Login (field names: username, password, home — NOT user_name, NOT home_id, home value is numeric ID not name)
+curl -s -c /tmp/cc.txt -b /tmp/cc.txt -L -X POST http://127.0.0.1:8000/login \
+  -d "_token=$TOKEN&username=komal&password=123456&home=8"
+# Step 3: Load a page to get a session CSRF for API calls
+PAGE=$(curl -s -b /tmp/cc.txt "http://127.0.0.1:8000/roster/client-details/27")
+CSRF=$(echo "$PAGE" | sed -n 's/.*<meta name="csrf-token" content="\([^"]*\)".*/\1/p' | head -1)
+# Now use: curl -b /tmp/cc.txt -X POST [url] -d "..._token=$CSRF"
 ```
 
 ### Step 2: Attack every endpoint (do ALL of these, not a subset)
@@ -337,8 +349,18 @@ For each endpoint in the feature:
 - `curl` a POST endpoint with an expired/invalid session cookie
 - **PASS only if**: response is a redirect to login, NOT a raw 419 error page
 
-### 8e. MANUAL TEST CHECKLIST — PRINTED FOR USER
-**This is mandatory.** Before PUSH, generate a step-by-step manual test checklist specific to this feature. Format:
+### 8e. MANUAL TEST CHECKLIST — VERIFIED THEN PRINTED FOR USER
+**This is mandatory.** Before printing the checklist, you MUST internally verify every step:
+
+**Pre-print verification (do NOT skip):**
+1. For each "navigate to X" step — grep the sidebar/header Blade for the link. Confirm it's NOT commented out.
+2. For each "click X button" step — grep the Blade/controller for the button's class/ID. Confirm it renders.
+3. For each "you should see X" step — trace the code path to confirm that text/element is actually generated.
+4. If ANY step references a UI element that doesn't exist or is commented out — **fix it first**, then print.
+
+**Why this rule exists:** The Handover feature checklist told the user to "click Hand Over in the dropdown" (commented out) and "click Add to Handover on a logbook entry" (page unreachable). Every step led nowhere. Never print a checklist you haven't verified against the actual code.
+
+Format:
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
