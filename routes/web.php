@@ -206,8 +206,9 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		Route::post('/care-task-save', [ClientController::class, 'care_task_save']);
 		Route::post('/care-task-delete', [ClientController::class, 'care_task_delete']);
 		Route::post('/client/care-task-list', [ClientController::class, 'care_task_list']);
-		Route::post('/client/medication-log-save', [ClientController::class, 'medication_log_save']);
-		Route::post('/client/medication-log-list', [ClientController::class, 'medication_log_list']);
+		Route::post('/client/medication-log-save', [ClientController::class, 'medication_log_save'])->middleware('throttle:30,1');
+		Route::post('/client/medication-log-list', [ClientController::class, 'medication_log_list'])->middleware('throttle:30,1');
+		Route::post('/client/medication-log-delete', [ClientController::class, 'medication_log_delete'])->middleware('throttle:20,1');
 		Route::post('/client-alert-save', [ClientController::class, 'client_alert_save']);
 		Route::post('/client/alert-type', [ClientController::class, 'client_alert_type']);
 		Route::post('/client/alert-increase-acknowledge', [ClientController::class, 'alert_increase_acknowledge']);

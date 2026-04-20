@@ -330,60 +330,72 @@ class ClientController extends Controller
         }
     }
     public function medication_log_save(Request $request){
-        // echo "<pre>";print_r($request->all());die;
-        if(!empty($request->id)){
-            $validator = Validator::make($request->all(), [
-                'id'=>'required|exists:medication_logs,id',
-                'medication_name'=>'required',
-                'dosage'=>'required',
-                'administrator_date'=>'required',
-                'status'=>'required',
-            ]);
-        }else{
-            $validator = Validator::make($request->all(), [
-                'medication_name'=>'required',
-                'dosage'=>'required',
-                'administrator_date'=>'required',
-                'status'=>'required',
-            ]);
+        $rules = [
+            'medication_name' => 'required|string|max:255',
+            'dosage' => 'required|string|max:255',
+            'administrator_date' => 'required|date',
+            'status' => 'required|in:1,2,3,4',
+            'frequesncy' => 'nullable|string|max:255',
+            'witnessed_by' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:2000',
+            'side_effect' => 'nullable|string|max:2000',
+            'client_id' => 'required|integer',
+        ];
+        if (!empty($request->id)) {
+            $rules['id'] = 'required|integer|exists:medication_logs,id';
         }
-        
+
+        $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
-            return [
+            return response()->json([
                 'success' => false,
                 'errors' => $validator->errors()->first()
-            ];
+            ]);
         }
         try {
-            $home_ids = Auth::user()->home_id;
-            $ex_home_ids = explode(',', $home_ids);
-            $home_id = $ex_home_ids[0];
-            $requestData = $request->all();
-            $requestData['home_id'] = $home_id;
-            $requestData['user_id'] = Auth::user()->id;
-            // echo "<pre>";print_r($requestData);die;
-            $clientMediLog = $this->clientService->store($requestData);
-            return response()->json(['success'=>true,'message'=>"Medication Log saved successfully",'data'=>$clientMediLog]);
-
-        } catch (Exception $e) {
-            return response()->json(['success'=>false,'message'=>"Something went wrong",'data'=>$e->getMessage()]);
+            $homeId = (int) explode(',', Auth::user()->home_id)[0];
+            $data = $request->only([
+                'id', 'medication_name', 'dosage', 'frequesncy',
+                'administrator_date', 'witnessed_by', 'notes',
+                'side_effect', 'status', 'client_id'
+            ]);
+            $data['user_id'] = Auth::user()->id;
+            $clientMediLog = $this->clientService->store($data, $homeId);
+            return response()->json(['success' => true, 'message' => 'Medication Log saved successfully', 'data' => $clientMediLog]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Something went wrong']);
         }
     }
+
     public function medication_log_list(Request $request){
-        // echo "<pre>";print_r($request->all());die;
-        $requestData = $request->all();
-        $requestData['user_id'] = Auth::user()->id;
-        $medicationLogs = $this->clientService->list($requestData);
+        $homeId = (int) explode(',', Auth::user()->home_id)[0];
+        $clientId = $request->input('client_id') ? (int) $request->input('client_id') : null;
+        $medicationLogs = $this->clientService->list($homeId, $clientId);
         return response()->json([
-            'success'=>true,
-            'message'=>'Medication Log List',
-            'data'=>$medicationLogs->items(),
-            'total'=>$medicationLogs->total(),
+            'success' => true,
+            'message' => 'Medication Log List',
+            'data' => $medicationLogs->items(),
+            'total' => $medicationLogs->total(),
             'pagination' => [
-                    'next_page_url' => $medicationLogs->nextPageUrl(),
-                    'prev_page_url' => $medicationLogs->previousPageUrl(),
-                ]
+                'next_page_url' => $medicationLogs->nextPageUrl(),
+                'prev_page_url' => $medicationLogs->previousPageUrl(),
+            ]
         ]);
+    }
+
+    public function medication_log_delete(Request $request){
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|exists:medication_logs,id',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()]);
+        }
+        $homeId = (int) explode(',', Auth::user()->home_id)[0];
+        $deleted = $this->clientService->delete((int) $request->id, $homeId);
+        if (!$deleted) {
+            return response()->json(['success' => false, 'message' => 'Record not found or access denied']);
+        }
+        return response()->json(['success' => true, 'message' => 'Medication log deleted successfully']);
     }
     public function client_alert_save(Request $request){
         // echo "<pre>";print_r($request->all());die;

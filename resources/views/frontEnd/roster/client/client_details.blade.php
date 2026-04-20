@@ -3364,7 +3364,7 @@
                     <div class="careTaskstbbg sectionWhiteBgAllUse p-0 medicationSectionFirst" style="display:;">
                         <header class="panel-heading headingCapitilize medicationManagementHeader">
                             <div class="clientHeadung">
-                                <div class="onlyheadingmain purpleiconclr"><i class='bx  bx-link'></i> Medication Management </div>
+                                <div class="onlyheadingmain purpleiconclr"><i class='fa fa-medkit'></i> Medication Management </div>
                                 <p>Track medication administration and MAR sheets</p>
                             </div>
                         </header>
@@ -3381,55 +3381,11 @@
                                             <div class="carePlanTabCont" style="">
                                                 <div class="workHoursHeader">
                                                     <div class="title"> MAR Sheets</div>
-                                                    <div class="actions">
-                                                        <button class="purpleBgBtn"> <i class='bx  bx-plus'></i> Add MAR Sheet</button>
-                                                    </div>
                                                 </div>
-
-                                                <div class="carePlanWrapper">
-                                                    <div class="planCard borderleftPurple">
-                                                        <div class="planTop">
-                                                            <div class="planTitle">
-                                                                Norethisterone
-                                                            </div>
-                                                            <div class="planActions">
-                                                                <button class="marSheetDetails"><i class="bx  bx-eye"></i> </button>
-                                                                <button class="danger"><i class="bx  bx-trash"></i> </button>
-                                                            </div>
-                                                        </div>
-                                                        <div class="planMeta">
-                                                            <div><strong>Dose: </strong> N/A</div>
-                                                            <div><strong>Route: </strong> oral</div>
-                                                            <div><strong>Frequency: </strong> N/A</div>
-                                                            <div><strong>Period: </strong> December 2025</div>
-                                                        </div>
-                                                        <div class="planFooter">
-                                                            <span><strong> Reason: </strong> Taken for one week during August to delay period whilst on holiday.</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="carePlanWrapper">
-                                                    <div class="planCard borderleftPurple">
-                                                        <div class="planTop">
-                                                            <div class="planTitle">
-                                                                Zolmitriptan
-                                                                <span class="roundTag yellow">PRN</span>
-                                                            </div>
-                                                            <div class="planActions">
-                                                                <button class="marSheetDetails"><i class="bx  bx-eye"></i> </button>
-                                                                <button class="danger"><i class="bx  bx-trash"></i> </button>
-                                                            </div>
-                                                        </div>
-                                                        <div class="planMeta">
-                                                            <div><strong>Dose: </strong> N/A</div>
-                                                            <div><strong>Route: </strong> oral</div>
-                                                            <div><strong>Frequency: </strong> N/A</div>
-                                                            <div><strong>Period: </strong> December 2025</div>
-                                                        </div>
-                                                        <div class="planFooter">
-                                                            <span><strong> Reason: </strong> One to be taken at the onset of a migraine.</span>
-                                                        </div>
-                                                    </div>
+                                                <div class="text-center" style="padding:40px 20px;color:#888;">
+                                                    <i class="fa fa-calendar-check-o" style="font-size:48px;margin-bottom:15px;display:block;color:#b8b8d4;"></i>
+                                                    <h4 style="color:#555;margin-bottom:8px;">MAR Sheets &mdash; Coming in Phase 2</h4>
+                                                    <p style="max-width:400px;margin:0 auto;">Full prescription management, time-slot administration grids, and stock tracking will be available in a future update.</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -3439,16 +3395,18 @@
                                                 <div class="workHoursHeader">
                                                     <div class="title"> Medication Logs</div>
                                                     <div class="actions">
-                                                        <button class="purpleBgBtn" id="logMedicationBtn"><i class='bx bx-plus'></i> Log Medication</button>
+                                                        <button class="purpleBgBtn" id="logMedicationBtn"><i class='fa fa-plus'></i> Log Medication</button>
                                                     </div>
                                                 </div>
 
                                                 <div class="">
                                                     <div class="clientFilterform greanHeaderbgClr medicationLogsForm " style="display:none">
 
-                                                        <div class="createNewAlert"><i class='bx  bx-link'></i> Add Medication Administration Log </div>
+                                                        <div class="createNewAlert"><i class='fa fa-medkit'></i> Add Medication Administration Log </div>
 
                                                         <form id="medication_logsForm" class="addAlertForm">
+                                                            @csrf
+                                                            <input type="hidden" name="id" id="medication_log_id" value="">
                                                             <div class="row">
                                                                 <div class="col-md-6">
                                                                     <div class="form-group">
@@ -7656,6 +7614,7 @@
     <script>
         var saveMedicationLogUrl = "{{url('roster/client/medication-log-save')}}";
         var listMedicationLogUrl = "{{url('roster/client/medication-log-list')}}";
+        var deleteMedicationLogUrl = "{{url('roster/client/medication-log-delete')}}";
         var token = "{{csrf_token()}}";
         var listClientCareTaskUrl = "{{url('roster/client/care-task-list')}}";
         var clientCareTaskEditUrl = "{{url('/roster/care-task-edit')}}";
@@ -8610,8 +8569,15 @@
             $('.riskAssessmentSectionFirst').show();
         });
         $(document).on('click', '#logMedicationBtn', function() {
+            $("#medication_logsForm")[0].reset();
+            $("#medication_log_id").val('');
             setDateTimeFormat();
             $(".medicationLogsForm").toggle();
+        });
+        $(document).on('click', '.cancelMedicationLogBtn', function() {
+            $("#medication_logsForm")[0].reset();
+            $("#medication_log_id").val('');
+            $(".medicationLogsForm").hide();
         });
         $(document).on('click', '.marSheetDetails', function() {
             $(".medicationSectionFirst").hide();
