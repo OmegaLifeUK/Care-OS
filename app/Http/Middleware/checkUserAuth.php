@@ -139,6 +139,26 @@ class checkUserAuth
                     'roster/sos-alert/resolve'
                 );
 
+                // Notification Centre endpoints
+                array_push($allowed_path,
+                    'roster/notifications',
+                    'roster/notifications/list',
+                    'roster/notifications/mark-read',
+                    'roster/notifications/mark-all-read',
+                    'roster/notifications/unread-count'
+                );
+
+                // Safeguarding Referral endpoints
+                array_push($allowed_path,
+                    'roster/safeguarding',
+                    'roster/safeguarding/list',
+                    'roster/safeguarding/save',
+                    'roster/safeguarding/update',
+                    'roster/safeguarding/details',
+                    'roster/safeguarding/delete',
+                    'roster/safeguarding/status-change'
+                );
+
                 // Body map read endpoints — digit-stripping above turns /service/body-map/service-user/180/list
                 // into service/body-map/service-user//list (double slash), which matches nothing in the
                 // access rights table. Whitelist the stripped forms so the reload-on-open fetch succeeds.

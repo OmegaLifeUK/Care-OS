@@ -38,6 +38,22 @@
 - **Sticky notifications**: The existing Gritter notification system loads on page refresh, not real-time. SOS alerts appear next time a manager loads any page. For real-time push, a WebSocket system would be needed (Phase 2).
 - **whereRaw FIND_IN_SET**: Used for multi-home users where home_id is comma-separated (e.g., "8,18,1"). Parameterized with `?` binding so it's safe from SQL injection.
 
+### Log 2 — Wrong Blade File Bug + Workflow Hardening
+**Time:** Mid-session
+**Action:** Discovered SOS button was built on `dashboard.blade.php` but user lands on `index.blade.php` at `/roster`. Fixed by adding SOS elements to correct file. Updated workflow with 4 checkpoints to prevent recurrence.
+
+**Workflow changes:** Added mandatory "trace route→controller→view()" verification at PLAN, BUILD, REVIEW, and PROD-READY stages.
+
+**Teaching notes:**
+- **File names ≠ URL paths**: `/roster` renders `index.blade.php`, NOT `dashboard.blade.php`. Always trace the route chain before adding UI.
+- **This is the third time** a feature was invisible due to wrong-page/commented-out issues (F4 Handover, F7 SOS). The fix is systemic: verify at 4 pipeline stages independently.
+
+### Log 3 — Feature 8 Prompt Created + Session Saved
+**Time:** Session end
+**Action:** Wrote Feature 8 (Notification Centre) prompt with all 8 past mistakes documented as prevention steps. Saved session to `sessions/session16.md`.
+
+**Commit:** `6fb53ad1` pushed to main.
+
 ---
 
 ## Session: 2026-04-11 (Security Hardening)

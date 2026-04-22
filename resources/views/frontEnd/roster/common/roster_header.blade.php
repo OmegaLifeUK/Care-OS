@@ -518,11 +518,12 @@
                 Supervisions</span> </a></li>
           <li> <a href="{{ url('/roster/incident-management') }}"><i class='bx  bx-shield'></i> <span>Incident
                 Management</span> </a></li>
+          <li> <a href="{{ url('/roster/safeguarding') }}"><i class='bx bx-shield-alt-2'></i> <span>Safeguarding</span> </a></li>
           <?php $encodedUser = base64_encode(Auth::user()->user_name);
             $url = "http://thunderingslap.com/Learner/Learner-Dashboard/?key=" . $encodedUser;
           ?>
           <li> <a href="{{ $url }}"><i class='bx  bx-education'></i> <span>Training</span> </a></li>
-          <li> <a href="#!"><i class='bx  bx-bell'></i> <span>Notifications</span> </a></li>
+          <li style="position:relative;"> <a href="{{ url('/roster/notifications') }}"><i class='bx  bx-bell'></i> <span>Notifications</span> <span id="notification-badge" class="badge" style="background:#d9534f;color:#fff;position:absolute;top:5px;right:10px;font-size:10px;border-radius:50%;min-width:18px;text-align:center;display:none;"></span></a></li>
           <li> <a href="{{ url('/roster/leave-request') }}"><i class='bx  bx-clipboard-detail'></i> <span>Leave
                 Requests</span> </a></li>
           <li> <a href="{{ url('/roster/payroll-finance') }}"><i class='bx bx-file-detail'></i> <span>Payroll &
@@ -592,6 +593,23 @@
           $(this).addClass("active");
         }
       });
+
+      // Load notification unread count badge
+      var csrfToken = $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').first().val();
+      if (csrfToken) {
+        $.ajax({
+          url: '{{ url("/roster/notifications/unread-count") }}',
+          type: 'POST',
+          headers: {'X-CSRF-TOKEN': csrfToken},
+          success: function(res) {
+            if (res.success && res.count > 0) {
+              $('#notification-badge').text(res.count > 99 ? '99+' : res.count).show();
+            } else {
+              $('#notification-badge').hide();
+            }
+          }
+        });
+      }
     });
 
   </script>

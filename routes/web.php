@@ -50,6 +50,8 @@ use App\Http\Controllers\backEnd\homeManage\SafeguardingTypeController;
 use App\Http\Controllers\backEnd\homeManage\StaffTaskTypeController;
 use App\Http\Controllers\frontEnd\Roster\Client\DolsController;
 use App\Http\Controllers\frontEnd\Roster\SosAlertController;
+use App\Http\Controllers\frontEnd\Roster\NotificationController;
+use App\Http\Controllers\frontEnd\Roster\SafeguardingController;
 // Backend Controllers
 use App\Http\Controllers\backEnd\superAdmin\HomeController;
 use App\Http\Controllers\backEnd\salesfinance\LeadController as BackendLeadController;
@@ -257,6 +259,22 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		Route::post('/sos-alert/list', [SosAlertController::class, 'list'])->middleware('throttle:30,1');
 		Route::post('/sos-alert/acknowledge', [SosAlertController::class, 'acknowledge'])->middleware('throttle:20,1');
 		Route::post('/sos-alert/resolve', [SosAlertController::class, 'resolve'])->middleware('throttle:20,1');
+
+		// Notification Centre
+		Route::get('/notifications', [NotificationController::class, 'index']);
+		Route::post('/notifications/list', [NotificationController::class, 'list'])->middleware('throttle:30,1');
+		Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->middleware('throttle:30,1');
+		Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->middleware('throttle:20,1');
+		Route::post('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->middleware('throttle:30,1');
+
+		// Safeguarding Referrals
+		Route::get('/safeguarding', [SafeguardingController::class, 'index']);
+		Route::post('/safeguarding/list', [SafeguardingController::class, 'list'])->middleware('throttle:30,1');
+		Route::post('/safeguarding/save', [SafeguardingController::class, 'save'])->middleware('throttle:20,1');
+		Route::post('/safeguarding/update', [SafeguardingController::class, 'update'])->middleware('throttle:20,1');
+		Route::post('/safeguarding/details', [SafeguardingController::class, 'details'])->middleware('throttle:30,1');
+		Route::post('/safeguarding/delete', [SafeguardingController::class, 'delete'])->middleware('throttle:20,1');
+		Route::post('/safeguarding/status-change', [SafeguardingController::class, 'statusChange'])->middleware('throttle:20,1');
 
 	});
 
