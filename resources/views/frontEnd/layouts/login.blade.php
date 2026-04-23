@@ -30,7 +30,7 @@
 
     <div class="container">
     
-    <div align="center" style="padding-top:35px; margin-bottom:-75px;"><img src="{{ asset('public/images/scits1.png') }}" width="150" alt=""/></div>
+    <div align="center" style="padding-top:35px; margin-bottom:-75px;"><img src="{{ asset('public/images/care-one-os-logo.png') }}" width="200" alt="Care One OS"/></div>
 
       @yield('content')
 

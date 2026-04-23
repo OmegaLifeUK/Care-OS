@@ -4,6 +4,47 @@
 
 ---
 
+## Session: 2026-04-22 (Feature 9 — Safeguarding Referrals)
+
+### Log 1 — Feature 9: Safeguarding Referrals — Full Build
+**Time:** Session start
+**Action:** Built Safeguarding Referral system end-to-end via /careos-workflow pipeline.
+
+**What was built:**
+- **Migration** (`2026_04_22_100000_create_safeguarding_referrals_table.php`): 30-column table with JSON fields (witnesses, alleged_perpetrator, strategy_meeting, safeguarding_plan), 5 indexes. Seeded 10 safeguarding types for home 8 + 4 sample referrals across all statuses.
+- **Model** (`app/Models/SafeguardingReferral.php`): $fillable whitelist, array/boolean/datetime casts, forHome/active scopes, auto-generated reference numbers (SAFE-YYYY-MM-NNNN).
+- **Service** (`app/Services/Staff/SafeguardingService.php`): store, update, list (paginated + filterable), details, delete (soft), statusChange with valid transition enforcement. All home_id scoped. Log::info on all mutations.
+- **Controller** (`app/Http/Controllers/frontEnd/Roster/SafeguardingController.php`): 7 endpoints with full $request->validate(), admin-only delete, generic error messages.
+- **Routes**: 1 GET + 6 POST routes with throttle middleware (30/1 for reads, 20/1 for writes).
+- **Middleware**: Whitelisted 7 safeguarding routes in checkUserAuth.php.
+- **Sidebar**: Added "Safeguarding" link in roster_header.blade.php under General section.
+- **Blade View** (`safeguarding.blade.php`): List with filter bar, create/edit modal (4 sections), detail modal with all fields.
+- **JavaScript** (`safeguarding.js`): Full AJAX CRUD with esc() XSS protection on all .html() calls.
+- **Tests**: 16 passing (4 auth, 3 validation, 1 lifecycle flow, 4 IDOR, 4 security payload).
+
+**Security hardening:**
+- IDOR: forHome() scope on every query, cross-home access curl-verified blocked on all 4 endpoints.
+- XSS: esc() helper on all JS .html() user data, {{ }} only in Blade, zero {!! !!}.
+- CSRF: 419 without token on all POST endpoints.
+- Mass assignment: home_id/created_by/is_deleted set server-side, injection attempt ignored.
+- Rate limiting: throttle on all 6 POST routes.
+- Access control: admin-only delete returns 403 for non-admin users.
+- Status workflow: Linear progression only (reported→under_investigation→safeguarding_plan→closed), no skipping.
+- Error leaking: Generic "Something went wrong" messages only, no $e->getMessage() to client.
+
+**Bug fixed during build:**
+- User table has `name` column, not `first_name`/`last_name`. Fixed eager loading selects and JS rendering.
+- Double-escaping in detail view notification section (esc() inside detailRow which also esc()'s). Removed inner esc() calls.
+
+**Teaching notes:**
+- **JSON columns in MySQL**: Store complex nested data (witnesses array, perpetrator object, plan with arrays) as JSON. Eloquent `$casts = ['field' => 'array']` handles serialization automatically.
+- **Status workflow enforcement**: Server-side transition validation prevents clients from skipping steps. Map valid transitions as `['current' => 'next']` and reject anything not in the map.
+- **Migration fallback**: When `artisan migrate` fails due to older broken migrations, use `DB::statement()` via tinker as fallback for table creation.
+
+**Commit:** `fab7dcfa` pushed to main.
+
+---
+
 ## Session: 2026-04-20 (Feature 7 — SOS Alerts)
 
 ### Log 1 — Feature 7: SOS Alerts — Full Build

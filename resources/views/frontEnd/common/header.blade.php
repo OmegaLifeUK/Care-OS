@@ -56,9 +56,9 @@
             <span class="fa fa-bars"></span>
         </button>
         <!--logo start-->
-        <div class="brand ">
+        <div class="brand" style="background:#fff;padding:8px 12px;">
             <a href="{{ url('/roster') }}" class="logo">
-                <span style="color: white;">SCITS </span>
+                <img src="{{ url('public/images/care-one-os-logo.png') }}" alt="Care One OS" style="height:30px;">
             </a>
         </div>
         <!--logo end-->

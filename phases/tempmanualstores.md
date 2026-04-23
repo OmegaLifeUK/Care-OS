@@ -2911,3 +2911,115 @@ it passes the pipeline, it's been attacked, verified, and browser-tested.
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 \~/Desktop/Omega Life/Care OS Opus 4.6 ctx: 33% used · 67% left  
  ⏵⏵ accept edits on (shift+tab to cycle)
+
+                                                                                                                                                                                            For Feature 5 : DoLS
+
+1. Login as komal/123456, select Aries
+2. Go to Roster → click a client → click "DoLS" tab
+3. Verify shield icon and "New DoLS Record" button render correctly (Font Awesome, not blank)
+4. Click "New DoLS Record" → fill out form → save → verify record appears in list
+5. Click edit (pencil icon) on a record → modify → save → verify update
+6. Click delete (trash icon) → confirm → verify record removed
+7. Verify pagination works if >10 records
+
+Security Edge Cases:  
+ 8. Open browser DevTools Network tab → verify no console.log output  
+ 9. Verify XSS payload in text fields gets stored safely and rendered escaped
+
+Go to http://127.0.0.1:8000, login as komal/123456, select Aries
+
+- Navigate to a client → Medication tab
+- Verify "MAR Sheets" sub-tab shows Phase 2 placeholder
+- Click "Medication Logs" sub-tab
+- Click "Log Medication" → fill form → Save → verify card appears
+- Verify status badge shows correct label (Administered = green)
+- Click edit (pencil icon) → modify → Save → verify update
+- Click delete (trash icon) → confirm → verify removed
+- Verify icons render (Font Awesome, not blank boxes)
+
+Feature 6 -
+
+Manual test checklist (for you in browser):
+
+- Go to http://127.0.0.1:8000, login as komal/123456, select Aries
+- Navigate to a client → Medication tab
+- Verify "MAR Sheets" sub-tab shows Phase 2 placeholder
+- Click "Medication Logs" sub-tab
+- Click "Log Medication" → fill form → Save → verify card appears
+- Verify status badge shows correct label (Administered = green)
+- Click edit (pencil icon) → modify → Save → verify update
+- Click delete (trash icon) → confirm → verify removed
+- Verify icons render (Font Awesome, not blank boxes)
+
+Feature 7-
+
+╔══════════════════════════════════════════════════════════════╗
+║ MANUAL TEST CHECKLIST — Feature 7: SOS Alerts ║
+╠══════════════════════════════════════════════════════════════╣
+║ ║
+║ Login: komal / 123456, house: Aries ║
+║ URL: http://127.0.0.1:8000/roster ║
+║ ║
+║ □ Step 1: Refresh /roster ║
+║ → RED "SOS ALERT" button below stat cards ║
+║ → "SOS Alert History" with color-coded test alerts ║
+║ ║
+║ □ Step 2: Click "SOS ALERT" → modal → type message → SEND ║
+║ → Success alert, new red card appears in history ║
+║ ║
+║ □ Step 3: Click "Acknowledge" on a red alert → turns amber ║
+║ ║
+║ □ Step 4: Click "Resolve" on amber alert → notes → green ║
+║ ║
+║ □ Edge: Trigger SOS with empty message (should work) ║
+║ □ Edge: Type <script>alert(1)</script> as message ║
+║ → Displayed as text, not executed ║
+║ ║
+║ Reply "tested" or report bugs. ║
+╚══════════════════════════════════════════════════════════════╝
+
+Feature 8-
+║
+║ □ Step 1: Go to http://127.0.0.1:8000/roster ║  
+ ║ → Look at sidebar: "Notifications" bell icon should ║  
+ ║ show a red badge with unread count (577) ║  
+ ║ ║  
+ ║ □ Step 2: Click the "Notifications" link in the sidebar ║  
+ ║ → Should navigate to /roster/notifications ║  
+ ║ → Page title: "Notification Centre" ║
+║ → Should see notification cards loading with: ║  
+ ║ type icon, type label, action, message, time ago ║  
+ ║ → Unread cards have blue left border + blue background ║  
+ ║ ║  
+ ║ □ Step 3: Click "Mark Read" on one notification card ║  
+ ║ → Card should turn grey/faded (read state) ║  
+ ║ → "Mark Read" button disappears from that card ║  
+ ║ → Badge count in sidebar decreases by 1 ║  
+ ║ ║  
+ ║ □ Step 4: Click "Mark All as Read" button (top right) ║
+║ → Confirm dialog appears ║  
+ ║ → All cards turn to read state ║  
+ ║ → Badge disappears from sidebar ║  
+ ║ ║  
+ ║ □ Step 5: Use the Event Type filter dropdown ║
+║ → Select "SOS_ALERT" and click "Filter" ║  
+ ║ → Only SOS Alert notifications should show ║  
+ ║ → Click "Clear" to reset filter ║  
+ ║ ║  
+ ║ □ Step 6: Use the date range filter ║  
+ ║ → Set From: 2025-01-01, To: 2025-06-30 ║  
+ ║ → Click "Filter" → should show fewer/different results ║  
+ ║ ║  
+ ║ □ Step 7: Test pagination ║  
+ ║ → Clear filters, scroll to bottom ║  
+ ║ → If >20 notifications, "Load More" button should appear ║  
+ ║ → Click it → more cards load below existing ones ║  
+ ║ ║  
+ ║ □ Edge: Filter with no results (e.g., type "Top Profile") ║  
+ ║ → Should show "No notifications found" with bell icon ║  
+ ║ ║
+║ □ Edge: Check badge on OTHER roster pages ║  
+ ║ → Go to /roster or /roster/client ║  
+ ║ → Badge should still show in sidebar ║  
+ ║ ║  
+ ║ Reply "tested" or report bugs.

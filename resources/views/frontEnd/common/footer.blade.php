@@ -5,10 +5,9 @@
 <!--footer start-->
 <footer class="footer-section">
   <div class="text-center">
-    {{ date('Y')}} &copy; SCITS
+    {{ date('Y')}} &copy; Care One OS
     <a href="#" class="go-top">
-      <!-- <i class="fa fa-angle-up"></i> -->
-      <img src="{{  asset('public/images/scits_hand.png')}}" alt="system_guide" class="system_guide" height="25" width="auto" />
+      <img src="{{ asset('public/images/care-one-os-logo.png') }}" alt="Care One OS" class="system_guide" height="25" width="auto" />
     </a>
   </div>
 
