@@ -21,7 +21,7 @@ class MARAdministration extends Model
     ];
 
     protected $casts = [
-        'date' => 'date',
+        'date' => 'date:Y-m-d',
         'given' => 'boolean',
         'mar_sheet_id' => 'integer',
         'home_id' => 'integer',
