@@ -3381,12 +3381,161 @@
                                             <div class="carePlanTabCont" style="">
                                                 <div class="workHoursHeader">
                                                     <div class="title"> MAR Sheets</div>
+                                                    <div class="actions">
+                                                        <button class="purpleBgBtn" id="addPrescriptionBtn"><i class="fa fa-plus"></i> Add Prescription</button>
+                                                    </div>
                                                 </div>
-                                                <div class="text-center" style="padding:40px 20px;color:#888;">
-                                                    <i class="fa fa-calendar-check-o" style="font-size:48px;margin-bottom:15px;display:block;color:#b8b8d4;"></i>
-                                                    <h4 style="color:#555;margin-bottom:8px;">MAR Sheets &mdash; Coming in Phase 2</h4>
-                                                    <p style="max-width:400px;margin:0 auto;">Full prescription management, time-slot administration grids, and stock tracking will be available in a future update.</p>
+
+                                                <div class="m-b-10" style="display:flex;gap:5px;">
+                                                    <button class="btn btn-sm btn-default mar-status-filter active" data-status="all">All</button>
+                                                    <button class="btn btn-sm btn-default mar-status-filter" data-status="active">Active</button>
+                                                    <button class="btn btn-sm btn-default mar-status-filter" data-status="discontinued">Discontinued</button>
                                                 </div>
+
+                                                <div class="marPrescriptionFormWrapper" style="display:none;">
+                                                    <div class="clientFilterform greanHeaderbgClr">
+                                                        <div class="createNewAlert"><i class="fa fa-medkit"></i> Prescription Details</div>
+                                                        <form id="marPrescriptionForm">
+                                                            @csrf
+                                                            <input type="hidden" id="mar_sheet_id" value="">
+                                                            <div class="row">
+                                                                <div class="col-md-6">
+                                                                    <div class="form-group">
+                                                                        <label>Medication Name *</label>
+                                                                        <input type="text" class="form-control" id="mar_medication_name" placeholder="e.g., Metformin">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <div class="form-group">
+                                                                        <label>Dosage</label>
+                                                                        <input type="text" class="form-control" id="mar_dosage" placeholder="e.g., 500mg">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <div class="form-group">
+                                                                        <label>Dose</label>
+                                                                        <input type="text" class="form-control" id="mar_dose" placeholder="e.g., 2 tablets">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <div class="form-group">
+                                                                        <label>Route</label>
+                                                                        <select class="form-control" id="mar_route">
+                                                                            <option value="">Select route</option>
+                                                                            <option value="Oral">Oral</option>
+                                                                            <option value="Topical">Topical</option>
+                                                                            <option value="Inhaled">Inhaled</option>
+                                                                            <option value="Injection">Injection</option>
+                                                                            <option value="Sublingual">Sublingual</option>
+                                                                            <option value="Rectal">Rectal</option>
+                                                                            <option value="Other">Other</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <div class="form-group">
+                                                                        <label>Frequency</label>
+                                                                        <input type="text" class="form-control" id="mar_frequency" placeholder="e.g., Twice daily">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <div class="form-group">
+                                                                        <label>Time Slots</label>
+                                                                        <div id="mar-time-slots-container">
+                                                                            <div class="input-group m-b-5 time-slot-row">
+                                                                                <input type="time" class="form-control mar-time-slot-input" name="time_slots[]" value="08:00">
+                                                                                <span class="input-group-btn"><button type="button" class="btn btn-danger remove-time-slot"><i class="fa fa-times"></i></button></span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <button type="button" class="btn btn-xs btn-default" id="addTimeSlotBtn"><i class="fa fa-plus"></i> Add Time</button>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-12">
+                                                                    <div class="form-group">
+                                                                        <label><input type="checkbox" id="mar_as_required"> PRN (as required)</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div id="mar-prn-fields" style="display:none;">
+                                                                    <div class="col-md-12">
+                                                                        <div class="form-group">
+                                                                            <label>PRN Details</label>
+                                                                            <textarea class="form-control" id="mar_prn_details" rows="2" placeholder="When and why to give this PRN medication"></textarea>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-12">
+                                                                    <div class="form-group">
+                                                                        <label>Reason for Medication</label>
+                                                                        <textarea class="form-control" id="mar_reason_for_medication" rows="2" placeholder="Why this medication is prescribed"></textarea>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <div class="form-group">
+                                                                        <label>Prescribed By</label>
+                                                                        <input type="text" class="form-control" id="mar_prescribed_by" placeholder="e.g., Dr. Smith">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <div class="form-group">
+                                                                        <label>Prescriber / Specialist</label>
+                                                                        <input type="text" class="form-control" id="mar_prescriber" placeholder="GP / specialist name">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <div class="form-group">
+                                                                        <label>Pharmacy</label>
+                                                                        <input type="text" class="form-control" id="mar_pharmacy" placeholder="Dispensing pharmacy">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <div class="form-group">
+                                                                        <label>Start Date</label>
+                                                                        <input type="date" class="form-control" id="mar_start_date">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <div class="form-group">
+                                                                        <label>End Date</label>
+                                                                        <input type="date" class="form-control" id="mar_end_date">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <div class="form-group">
+                                                                        <label>Stock Level</label>
+                                                                        <input type="number" class="form-control" id="mar_stock_level" min="0" placeholder="0">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <div class="form-group">
+                                                                        <label>Reorder Level</label>
+                                                                        <input type="number" class="form-control" id="mar_reorder_level" min="0" placeholder="0">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <div class="form-group">
+                                                                        <label>Storage Requirements</label>
+                                                                        <input type="text" class="form-control" id="mar_storage_requirements" placeholder="e.g., Room temperature, away from light">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <div class="form-group">
+                                                                        <label>Allergies / Warnings</label>
+                                                                        <input type="text" class="form-control" id="mar_allergies_warnings" placeholder="e.g., Penicillin allergy">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-12">
+                                                                    <div class="header-actions">
+                                                                        <button class="btn allbuttonDarkClr" type="button" id="saveMarPrescriptionBtn">Save Prescription</button>
+                                                                        <button class="btn borderBtn" type="button" id="cancelMarPrescriptionBtn">Cancel</button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+
+                                                <div class="carePlanWrapper m-t-15" id="mar-sheet-list"></div>
+                                                <div id="mar-sheet-pagination"></div>
                                             </div>
                                         </div>
 
@@ -3484,253 +3633,75 @@
                         </div>
                     </div>
                     <div class="careTaskstbbg sectionWhiteBgAllUse p-0 medicationSectionSecond" style="display:none">
-                        <div class="medicationManagement" id="availabilityTab">
-                            <div class="availabilityTabs">
-                                <header class="panel-heading headingCapitilize medicationManagementHeader">
-                                    <div class="clientHeadung">
-                                        <button class="btn borderBtn backBtn" id="medicationBackBtn"><i class="bx  bx-arrow-left-stroke"></i> Back to MAR Sheets </button>
-                                        <div class="onlyheadingmain purpleiconclr m-t-10"><i class='bx  bx-link'></i> Medication Management </div>
-                                        <p>Track medication administration and MAR sheets</p>
+                        <div class="medicationManagement">
+                            <header class="panel-heading headingCapitilize medicationManagementHeader">
+                                <div class="clientHeadung">
+                                    <button class="btn borderBtn backBtn" id="medicationBackBtn"><i class="fa fa-arrow-left"></i> Back to MAR Sheets</button>
+                                </div>
+                            </header>
+
+                            <div class="p-20">
+                                <div id="mar-detail-header"></div>
+
+                                <div style="margin-bottom:15px;">
+                                    <label style="font-weight:600;margin-right:10px;">Date:</label>
+                                    <input type="date" id="mar-grid-date" class="form-control" style="display:inline-block;width:200px;">
+                                </div>
+
+                                <div id="mar-grid-container"></div>
+
+                                <div id="mar-detail-info" style="margin-top:20px;"></div>
+
+                                <div style="margin-top:20px;">
+                                    <h4 style="margin-bottom:10px;"><i class="fa fa-history"></i> Administration History</h4>
+                                    <div id="mar-admin-history"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MAR Administer Modal -->
+                    <div class="modal fade" id="marAdministerModal" tabindex="-1" role="dialog">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                                    <h4 class="modal-title"><i class="fa fa-medkit"></i> Record Administration</h4>
+                                </div>
+                                <div class="modal-body">
+                                    <p><strong>Medication:</strong> <span id="admin-modal-med-name"></span></p>
+                                    <p><strong>Time Slot:</strong> <span id="admin-modal-slot"></span> | <strong>Date:</strong> <span id="admin-modal-date"></span></p>
+                                    <hr>
+                                    <input type="hidden" id="admin_mar_sheet_id">
+                                    <input type="hidden" id="admin_time_slot">
+                                    <input type="hidden" id="admin_date">
+                                    <div class="form-group">
+                                        <label>Status *</label>
+                                        <select class="form-control" id="admin_code">
+                                            <option value="A">A - Administered</option>
+                                            <option value="S">S - Self-administered</option>
+                                            <option value="R">R - Refused</option>
+                                            <option value="W">W - Withheld</option>
+                                            <option value="N">N - Not Available</option>
+                                            <option value="O">O - Other</option>
+                                        </select>
                                     </div>
-
-                                    <div class="availabilityTabs__nav m-b-0">
-                                        <button class="availabilityTabs__tab borderBtn active" data-target="MARSheetsPanel"> <i class='bx  bx-list-ul'></i> List </button>
-                                        <button class="availabilityTabs__tab borderBtn" data-target="medicationLogsPanel"> <i class='bx  bx-table-cells'></i> Table</button>
+                                    <div class="form-group">
+                                        <label>Dose Given</label>
+                                        <input type="text" class="form-control" id="admin_dose_given" placeholder="e.g., 500mg">
                                     </div>
-                                </header>
-
-                                <div class="availabilityTabs__content p-20">
-                                    <div class="availabilityTabs__panel active" id="MARSheetsPanel">
-                                        <div class="carePlanTabCont" style="">
-                                            <div class="space-y-4">
-                                                <div class="borderB">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">month year</h4>
-                                                    <div class="text-gray-900">
-                                                        <p>December 2025</p>
-                                                    </div>
-                                                </div>
-                                                <div class="borderB pt-3 pb-3">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">medication name</h4>
-                                                    <div class="text-gray-900">
-                                                        <p>Norethisterone</p>
-                                                    </div>
-                                                </div>
-                                                <div class="borderB pt-3 pb-3">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">dose</h4>
-                                                    <div class="text-gray-900">
-                                                        <p>N/A</p>
-                                                    </div>
-                                                </div>
-                                                <div class="borderB pt-3 pb-3">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">route</h4>
-                                                    <div class="text-gray-900">
-                                                        <p>oral</p>
-                                                    </div>
-                                                </div>
-                                                <div class="borderB pt-3 pb-3">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">frequency</h4>
-                                                    <div class="text-gray-900">
-                                                        <p>N/A</p>
-                                                    </div>
-                                                </div>
-                                                <div class="borderB pt-3 pb-3">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">time slots</h4>
-                                                    <div class="text-gray-900">
-                                                        <p>N/A</p>
-                                                    </div>
-                                                </div>
-                                                <div class="borderB pt-3 pb-3">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">reason for medication</h4>
-                                                    <div class="text-gray-900">
-                                                        <p>Taken for one week during August to delay period whilst on holiday.</p>
-                                                    </div>
-                                                </div>
-                                                <div class="borderB pt-3 pb-3">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">start date</h4>
-                                                    <div class="text-gray-900">
-                                                        <p>August</p>
-                                                    </div>
-                                                </div>
-                                                <div class="borderB pt-3 pb-3">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">administration records</h4>
-                                                </div>
-                                                <div class="borderB pt-3 pb-3">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">created date</h4>
-                                                    <div class="text-gray-900">
-                                                        <p>December 16th, 2025</p>
-                                                    </div>
-                                                </div>
-                                                <div class="borderB pt-3 pb-3">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">updated date</h4>
-                                                    <div class="text-gray-900">
-                                                        <p>December 16th, 2025</p>
-                                                    </div>
-                                                </div>
-                                                <div class="borderB pt-3 pb-3">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">created by id</h4>
-                                                    <div class="text-gray-900">
-                                                        <p>6909e61b89f26ef7fa768434</p>
-                                                    </div>
-                                                </div>
-                                                <div class="borderB pt-3 pb-3">
-                                                    <h4 class="fontSemibold textSm text-gray-600 uppercase mb-3">created by</h4>
-                                                    <div class="text-gray-900">
-                                                        <p>p.holt@omegalife.uk</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div class="form-group">
+                                        <label>Witnessed By</label>
+                                        <input type="text" class="form-control" id="admin_witnessed_by" placeholder="Witness name">
                                     </div>
-
-                                    <div class="availabilityTabs__panel" id="medicationLogsPanel">
-                                        <div class="carePlanTabCont" style="">
-                                            <div class="medicationSheet">
-                                                <!-- Patient Header -->
-                                                <div class="patientInfo">
-                                                    <div>
-                                                        <p><strong>Name:</strong> Logan Jones</p>
-                                                        <p><strong>Date of Birth:</strong> 29.10.2009</p>
-                                                        <p><strong>Address:</strong> N/A</p>
-                                                    </div>
-                                                    <div>
-                                                        <p><strong>Period:</strong> December 2025</p>
-                                                        <p><strong>Prescriber:</strong> N/A</p>
-                                                        <p><strong>Pharmacy:</strong> N/A</p>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Medication Card -->
-                                                <div class="medicationCard">
-                                                    <div class="medGrid">
-                                                        <div>
-                                                            <span class="label">Medication:</span>
-                                                            <p class="medName">Norethisterone</p>
-                                                        </div>
-                                                        <div>
-                                                            <span class="label">Dose:</span>
-                                                            <p>N/A</p>
-                                                        </div>
-                                                        <div>
-                                                            <span class="label">Route:</span>
-                                                            <p>Oral</p>
-                                                        </div>
-                                                        <div>
-                                                            <span class="label">Frequency:</span>
-                                                            <p>N/A</p>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="reasonBox">
-                                                        <strong>Reason:</strong>
-                                                        Taken for one week during August to delay period whilst on holiday.
-                                                    </div>
-                                                </div>
-
-                                                <!-- Legend -->
-                                                <div class="legend">
-                                                    <span class="tag a">A</span> Administered
-                                                    <span class="tag r">R</span> Refused
-                                                    <span class="tag s">S</span> Self-administered
-                                                    <span class="tag h">H</span> Hospital
-                                                    <span class="tag nd">ND</span> Not in home
-                                                </div>
-
-                                                <!-- Week 1 -->
-                                                <div class="weekBlock">
-                                                    <h4>Week 1</h4>
-                                                    <table>
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Time</th>
-                                                                <th>Mon<br>01</th>
-                                                                <th>Tue<br>02</th>
-                                                                <th>Wed<br>03</th>
-                                                                <th>Thu<br>04</th>
-                                                                <th>Fri<br>05</th>
-                                                                <th>Sat<br>06</th>
-                                                                <th>Sun<br>07</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            <tr>
-                                                                <td>N/A</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-
-                                                <!-- Week 2 -->
-                                                <div class="weekBlock">
-                                                    <h4>Week 2</h4>
-                                                    <table>
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Time</th>
-                                                                <th>Mon<br>08</th>
-                                                                <th>Tue<br>09</th>
-                                                                <th>Wed<br>10</th>
-                                                                <th>Thu<br>11</th>
-                                                                <th>Fri<br>12</th>
-                                                                <th>Sat<br>13</th>
-                                                                <th>Sun<br>14</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            <tr>
-                                                                <td>N/A</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                                <!-- Week 3 -->
-                                                <div class="weekBlock">
-                                                    <h4>Week 3</h4>
-                                                    <table>
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Time</th>
-                                                                <th>Mon<br>08</th>
-                                                                <th>Tue<br>09</th>
-                                                                <th>Wed<br>10</th>
-                                                                <th>Thu<br>11</th>
-                                                                <th>Fri<br>12</th>
-                                                                <th>Sat<br>13</th>
-                                                                <th>Sun<br>14</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            <tr>
-                                                                <td>N/A</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                                <td>-</td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-
-                                            </div>
-
-                                        </div>
+                                    <div class="form-group">
+                                        <label>Notes</label>
+                                        <textarea class="form-control" id="admin_notes" rows="2" placeholder="Additional notes"></textarea>
                                     </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn borderBtn" data-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn allbuttonDarkClr" id="saveAdministrationBtn">Save</button>
                                 </div>
                             </div>
                         </div>
@@ -7636,6 +7607,7 @@
     <script src="{{ url('public/js/roster/client/client_details.js')}}" defer></script>
     <script src="{{ url('public/js/roster/client/client_alert.js')}}" defer></script>
     <script src="{{ url('public/js/roster/client/client_dols.js')}}" defer></script>
+    <script src="{{ url('public/js/roster/client/mar_sheets.js')}}" defer></script>
     <script>
         const tabs = document.querySelectorAll(".tab");
         const contents = document.querySelectorAll(".content");

@@ -52,6 +52,7 @@ use App\Http\Controllers\frontEnd\Roster\Client\DolsController;
 use App\Http\Controllers\frontEnd\Roster\SosAlertController;
 use App\Http\Controllers\frontEnd\Roster\NotificationController;
 use App\Http\Controllers\frontEnd\Roster\SafeguardingController;
+use App\Http\Controllers\frontEnd\Roster\Client\MARSheetController;
 // Backend Controllers
 use App\Http\Controllers\backEnd\superAdmin\HomeController;
 use App\Http\Controllers\backEnd\salesfinance\LeadController as BackendLeadController;
@@ -212,6 +213,16 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		Route::post('/client/medication-log-save', [ClientController::class, 'medication_log_save'])->middleware('throttle:30,1');
 		Route::post('/client/medication-log-list', [ClientController::class, 'medication_log_list'])->middleware('throttle:30,1');
 		Route::post('/client/medication-log-delete', [ClientController::class, 'medication_log_delete'])->middleware('throttle:20,1');
+
+		// MAR Sheets — Prescription Management & Administration
+		Route::post('/client/mar-sheet-list', [MARSheetController::class, 'list'])->middleware('throttle:30,1');
+		Route::post('/client/mar-sheet-save', [MARSheetController::class, 'save'])->middleware('throttle:20,1');
+		Route::post('/client/mar-sheet-update', [MARSheetController::class, 'update'])->middleware('throttle:20,1');
+		Route::post('/client/mar-sheet-details', [MARSheetController::class, 'details'])->middleware('throttle:30,1');
+		Route::post('/client/mar-sheet-delete', [MARSheetController::class, 'delete'])->middleware('throttle:20,1');
+		Route::post('/client/mar-sheet-discontinue', [MARSheetController::class, 'discontinue'])->middleware('throttle:20,1');
+		Route::post('/client/mar-administer', [MARSheetController::class, 'administer'])->middleware('throttle:30,1');
+		Route::post('/client/mar-administration-grid', [MARSheetController::class, 'administrationGrid'])->middleware('throttle:30,1');
 		Route::post('/client-alert-save', [ClientController::class, 'client_alert_save']);
 		Route::post('/client/alert-type', [ClientController::class, 'client_alert_type']);
 		Route::post('/client/alert-increase-acknowledge', [ClientController::class, 'alert_increase_acknowledge']);

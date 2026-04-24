@@ -178,6 +178,18 @@ class checkUserAuth
                     'handover/acknowledge',
                     'handover/from-daily-log'
                 );
+
+                // MAR Sheets — prescription management & administration
+                array_push($allowed_path,
+                    'roster/client/mar-sheet-list',
+                    'roster/client/mar-sheet-save',
+                    'roster/client/mar-sheet-update',
+                    'roster/client/mar-sheet-details',
+                    'roster/client/mar-sheet-delete',
+                    'roster/client/mar-sheet-discontinue',
+                    'roster/client/mar-administer',
+                    'roster/client/mar-administration-grid'
+                );
                 // echo "<pre>";print_r($allowed_path);die;
                 // end here
                 if(!in_array($path, $allowed_path)) {
