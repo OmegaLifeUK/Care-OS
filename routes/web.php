@@ -290,8 +290,21 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		Route::post('/safeguarding/delete', [SafeguardingController::class, 'delete'])->middleware('throttle:20,1');
 		Route::post('/safeguarding/status-change', [SafeguardingController::class, 'statusChange'])->middleware('throttle:20,1');
 
+		// Admin portal user management
+		Route::post('/client/portal-access-list', [\App\Http\Controllers\frontEnd\Roster\PortalAccessController::class, 'list'])->middleware('throttle:30,1');
+		Route::post('/client/portal-access-save', [\App\Http\Controllers\frontEnd\Roster\PortalAccessController::class, 'save'])->middleware('throttle:20,1');
+		Route::post('/client/portal-access-revoke', [\App\Http\Controllers\frontEnd\Roster\PortalAccessController::class, 'revoke'])->middleware('throttle:20,1');
+		Route::post('/client/portal-access-delete', [\App\Http\Controllers\frontEnd\Roster\PortalAccessController::class, 'delete'])->middleware('throttle:20,1');
 	});
 
+	// Portal routes (family/portal users)
+	Route::prefix('portal')->middleware(['portal.access'])->group(function () {
+		Route::get('/', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'index'])->name('portal.dashboard');
+		Route::get('/schedule', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'comingSoon'])->name('portal.schedule');
+		Route::get('/messages', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'comingSoon'])->name('portal.messages');
+		Route::get('/feedback', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'comingSoon'])->name('portal.feedback');
+		Route::post('/logout', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'logout'])->middleware('throttle:10,1')->name('portal.logout');
+	});
 
 	// Report Section
 	Route::post('user/record', 'App\Http\Controllers\frontEnd\StaffManagementController@record')->name('staff.record');

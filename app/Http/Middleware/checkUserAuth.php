@@ -179,6 +179,23 @@ class checkUserAuth
                     'handover/from-daily-log'
                 );
 
+                // Portal routes — family portal access
+                array_push($allowed_path,
+                    'portal',
+                    'portal/schedule',
+                    'portal/messages',
+                    'portal/feedback',
+                    'portal/logout'
+                );
+
+                // Admin portal user management
+                array_push($allowed_path,
+                    'roster/client/portal-access-list',
+                    'roster/client/portal-access-save',
+                    'roster/client/portal-access-revoke',
+                    'roster/client/portal-access-delete'
+                );
+
                 // MAR Sheets — prescription management & administration
                 array_push($allowed_path,
                     'roster/client/mar-sheet-list',

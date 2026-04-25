@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use DB;
 use App\User, App\ServiceUser, App\Admin, App\Home, App\LogBook;
+use App\Models\ClientPortalAccess;
 use Hash, Session;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +14,24 @@ use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
+	private function redirectAfterLogin()
+	{
+		$user = Auth::user();
+		$portalAccess = ClientPortalAccess::where('user_email', $user->email)
+			->where('is_active', 1)
+			->where('is_deleted', 0)
+			->first();
+
+		if ($portalAccess) {
+			Session::put('portal_access_id', $portalAccess->id);
+			Session::put('portal_client_id', $portalAccess->client_id);
+			$portalAccess->update(['last_login' => now()]);
+			return redirect('/portal')->with('success', 'Welcome ' . $portalAccess->full_name);
+		}
+
+		return redirect('/roster')->with('success', 'Welcome back ' . $user->user_name);
+	}
+
 
 	public function login(Request $request)
 	{
@@ -95,7 +114,7 @@ class UserController extends Controller
 									User::setUserLogInStatus(1);
 									//echo csrf_token(); die;
 									//echo "222"; die;
-									return redirect('/roster')->with('success', 'Welcome back ' . Auth::user()->user_name);
+									return $this->redirectAfterLogin();
 									// return redirect('/roster/')->with('success', 'Welcome back ' . Auth::user()->user_name);
 								} else {
 									return redirect()->back()->with('error', 'Incorrect email or password combination.');
@@ -152,8 +171,7 @@ class UserController extends Controller
 									$session_id_update->save();
 									User::setUserLogInStatus(1);
 									//echo csrf_token(); die;
-									// return redirect('/roster/')->with('success', 'Welcome back ' . Auth::user()->user_name);
-									return redirect('/roster')->with('success', 'Welcome back ' . Auth::user()->user_name);
+									return $this->redirectAfterLogin();
 								} else {  //echo "string3"; die;
 									return redirect()->back()->with('error', 'Incorrect email or password combination.');
 								}
@@ -198,13 +216,12 @@ class UserController extends Controller
 								$session_id_update->save();
 								User::setUserLogInStatus(1);
 								//echo csrf_token(); die;
-								// return redirect('/roster/')->with('success', 'Welcome back ' . Auth::user()->user_name);
-								return redirect('/roster')->with('success', 'Welcome back ' . Auth::user()->user_name);
+								return $this->redirectAfterLogin();
 							} else {
 								return redirect()->back()->with('error', 'Incorrect email or password combination.');
 							}
 						}/*else{
-							$home_id = substr($user_info->home_id,2); 
+							$home_id = substr($user_info->home_id,2);
 							$update  = User::where('id',$user_info->id)->update(['home_id'=>$home_id]);
 						}*/ //echo "string12345"; die;
 					}
@@ -260,8 +277,7 @@ class UserController extends Controller
 						$session_id_update->save();
 						User::setUserLogInStatus(1);
 						//echo csrf_token(); die;
-						return redirect('/roster')->with('success', 'Welcome back ' . Auth::user()->user_name);
-						// return redirect('/')->with('success', 'Welcome back ' . Auth::user()->user_name);
+						return $this->redirectAfterLogin();
 					} else {
 						return redirect()->back()->with('error', 'Incorrect email or password combination.');
 					}

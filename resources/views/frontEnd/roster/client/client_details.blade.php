@@ -285,6 +285,7 @@
                     <button class="tab" data-tab="clientEmergencyTab"> Emergency </button>
                     <button class="tab" data-tab="clientDocumentsTab"> Documents </button>
                     <button class="tab" data-tab="clientProgressReportTab"> Progress Report </button>
+                    <button class="tab" data-tab="clientPortalAccessTab" onclick="loadPortalAccess()"> Portal Access </button>
                 </div>
             </div>
 
@@ -5433,6 +5434,102 @@
                         </div>
                     </div>
                 </div>
+                <!-- Portal Access Tab -->
+                <div class="content" id="clientPortalAccessTab">
+                    <div class="careTaskstbbg sectionWhiteBgAllUse p-0">
+                        <header class="panel-heading headingCapitilize aIInsightsheader">
+                            <div class="clientHeadung">
+                                <div class="onlyheadingmain purpleiconclr"><i class="fa fa-users"></i> Portal Access</div>
+                                <p>Manage family and guardian portal access for this client</p>
+                            </div>
+                            <div class="actions mt-0">
+                                <button class="btn purpleBgBtn" id="btnAddPortalAccess"><i class="fa fa-plus"></i> Grant Access</button>
+                            </div>
+                        </header>
+                        <div class="p-20">
+                            <div class="carer-form" id="portalAccessFormContainer" style="display:none">
+                                <form id="portalAccessForm">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label>Full Name <span class="radStar">*</span></label>
+                                            <input type="text" class="form-control" id="pa_full_name" maxlength="255" placeholder="e.g. Jane Smith">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label>Email (must have user account) <span class="radStar">*</span></label>
+                                            <input type="email" class="form-control" id="pa_user_email" maxlength="255" placeholder="e.g. jane@example.com">
+                                        </div>
+                                        <div class="col-md-6 m-t-10">
+                                            <label>Relationship <span class="radStar">*</span></label>
+                                            <select class="form-control" id="pa_relationship">
+                                                <option value="">Select...</option>
+                                                <option value="parent">Parent</option>
+                                                <option value="child">Child</option>
+                                                <option value="spouse">Spouse</option>
+                                                <option value="sibling">Sibling</option>
+                                                <option value="guardian">Guardian</option>
+                                                <option value="advocate">Advocate</option>
+                                                <option value="social_worker">Social Worker</option>
+                                                <option value="self">Self</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 m-t-10">
+                                            <label>Access Level</label>
+                                            <select class="form-control" id="pa_access_level">
+                                                <option value="view_and_message">View & Message</option>
+                                                <option value="view_only">View Only</option>
+                                                <option value="full_access">Full Access</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 m-t-10">
+                                            <label>Phone</label>
+                                            <input type="text" class="form-control" id="pa_phone" maxlength="50" placeholder="Optional">
+                                        </div>
+                                        <div class="col-md-6 m-t-10">
+                                            <label>Notes</label>
+                                            <input type="text" class="form-control" id="pa_notes" maxlength="1000" placeholder="Optional notes">
+                                        </div>
+                                        <div class="col-md-12 m-t-10">
+                                            <div class="DoLSCheckList">
+                                                <label><input type="checkbox" id="pa_is_primary_contact"> Primary Contact</label>
+                                                <label><input type="checkbox" id="pa_can_view_schedule" checked> Can View Schedule</label>
+                                                <label><input type="checkbox" id="pa_can_view_care_notes" checked> Can View Care Notes</label>
+                                                <label><input type="checkbox" id="pa_can_send_messages" checked> Can Send Messages</label>
+                                                <label><input type="checkbox" id="pa_can_request_bookings"> Can Request Bookings</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12 m-t-10">
+                                            <div class="header-actions addnewicons">
+                                                <button class="btn allbuttonDarkClr" id="btnSavePortalAccess" type="button"><i class="fa fa-save"></i> Save</button>
+                                                <button class="btn borderBtn" id="btnCancelPortalAccess" type="button">Cancel</button>
+                                            </div>
+                                            <div id="portalAccessFormError" class="text-danger" style="margin-top:10px;"></div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div id="portalAccessListContainer">
+                                <table class="table table-striped" id="portalAccessTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Relationship</th>
+                                            <th>Access Level</th>
+                                            <th>Status</th>
+                                            <th>Last Login</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="portalAccessTableBody">
+                                        <tr><td colspan="7" class="text-center text-muted">Click the tab to load portal access list.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <!-- END TAB CONTENT -->
         </div>
@@ -8779,6 +8876,10 @@
             $('#bodyMapModal').modal('show');
         });
     </script>
+
+    <!-- Portal Access Tab Content -->
+    <script>var portalClientId = {{ $clientDetails['id'] }};</script>
+    <script src="{{ url('public/js/roster/portal_access.js') }}"></script>
 
     @include('frontEnd.serviceUserManagement.elements.risk_change.body_map_popup')
     @endsection

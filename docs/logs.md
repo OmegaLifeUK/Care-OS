@@ -4,6 +4,131 @@
 
 ---
 
+## Session: 2026-04-25 (Phase 2 Feature 1 — Client Portal Login & Dashboard)
+
+### Log 4 — SCAFFOLD: Portal infrastructure created
+
+**What was built:**
+- `client_portal_accesses` table created (13 columns + indexes)
+- `ClientPortalAccess` model with $fillable, $casts, 4 scopes, 2 relationships
+- `CheckPortalAccess` middleware — checks session portal_access_id, validates record is still active
+- Portal Blade layout (`frontEnd.portal.layouts.master`) — clean nav with Dashboard/Schedule/Messages/Feedback
+- `PortalDashboardController` — dashboard + coming-soon placeholder + logout
+- `PortalAccessController` — admin CRUD for portal access records (list, save, revoke, delete)
+- `ClientPortalService` — business logic layer
+- Portal dashboard view with welcome banner, resident card, stat cards (all 0/Coming soon), quick actions
+- Coming-soon placeholder view for Schedule/Messages/Feedback
+- Portal Access tab added to client_details.blade.php with inline form + AJAX table
+- JS files for portal dashboard and admin management
+- Routes: portal prefix group + admin management routes inside roster group
+- Test user seeded: `portal_test` / `123456` / home 8 → linked to Katie (client 27)
+
+**Files modified:**
+- `UserController.php` — added `redirectAfterLogin()` helper, replaced all 4 redirect points
+- `Kernel.php` — registered `portal.access` middleware alias
+- `checkUserAuth.php` — whitelisted portal routes + admin management routes
+- `routes/web.php` — added portal route group + admin management routes
+- `client_details.blade.php` — added Portal Access tab button + content div + JS include
+
+**Teaching notes:**
+- The login method had 4 separate `return redirect('/roster')` statements because of the complex multi-home/multi-type/duplicate-session logic. A helper method `redirectAfterLogin()` centralizes the portal check so it runs at every exit point.
+- Portal middleware uses session-based detection (portal_access_id set at login) rather than checking the DB on every request — a performance tradeoff. The middleware does verify the record still exists and is active, but only the `id` lookup not a full email match.
+- The `checkUserAuth` middleware strips digits from paths before checking permissions. Portal routes like `/portal/schedule` have no digits so they work fine in the allowed_path array.
+- Test data: user id=394 (portal_test), ClientPortalAccess id=1 linking to Katie (client 27) in home 8.
+
+**Verified working:**
+- Portal login → redirects to /portal (not /roster)
+- Admin login → still redirects to /roster
+- Portal dashboard shows "Welcome, Jane Smith", "Parent of Katie", stat cards, quick actions
+- Schedule/Messages/Feedback → Coming Soon pages
+- Portal logout → redirects to /login
+- Admin portal-access-list → returns portal users for home 8
+
+### Log 5 — BUG FIX: Portal Access tab used wrong CSS classes
+
+**Problem:** The Portal Access tab content in `client_details.blade.php` used invented CSS classes (`topHeaderCont`, `bgBtn`, `header-subtitle`, `form-group`, `btn-primary`, `btn-default`) that don't exist in the page's design system. The result looked completely out of place — no styling, wrong colours, wrong spacing.
+
+**Root cause:** When building the Portal Access tab, I wrote HTML from generic Bootstrap patterns instead of copying the exact CSS class structure from an existing tab on the same page (e.g., DoLS, DNACPR, Consent). Every other tab on client_details.blade.php uses: `careTaskstbbg sectionWhiteBgAllUse p-0` → `panel-heading headingCapitilize aIInsightsheader` → `clientHeadung` → `onlyheadingmain purpleiconclr` for titles, `purpleBgBtn` for action buttons, `carer-form` for form wrappers, `allbuttonDarkClr`/`borderBtn` for save/cancel, `radStar` for required markers, `DoLSCheckList` for checkbox rows.
+
+**Fix:** Rewrote the entire Portal Access tab HTML to match the DoLS tab pattern exactly — same wrapper classes, same header structure, same form layout with `col-md-6` + `m-t-10`, same button classes, same checkbox wrapper.
+
+**Teaching note:** NEVER write new tab content from memory or generic Bootstrap. ALWAYS read an adjacent tab on the same page first and copy its exact CSS class structure. The Care OS codebase uses highly custom CSS classes that look nothing like standard Bootstrap — you cannot guess them.
+
+### Log 6 — BUG FIX: Portal Access tab placed outside tab container
+
+**Problem:** Even after fixing the CSS classes (Log 5), the Portal Access tab content was still always visible at the bottom of the page. It was showing underneath the client details card regardless of which tab was selected.
+
+**Root cause:** The `<div class="content" id="clientPortalAccessTab">` was placed at line ~7686, OUTSIDE the `<div class="tab-content carertabcontent">` container that closes at line 5437 with `<!-- END TAB CONTENT -->`. The page's CSS hides `.content` elements inside `.tab-content` by default and shows them when `.active` is added. Since our div was outside the container, the CSS hiding rule never applied — it was always visible.
+
+**Fix:** Moved the entire Portal Access tab content from its wrong position (after the `<script>` tags, outside the container) to inside the `tab-content carertabcontent` container, right after the Progress Report tab and before `<!-- END TAB CONTENT -->`. Also matched the indentation (16-space indent for `<div class="content">`, 20+ spaces for inner elements).
+
+**Teaching note:** When adding a new tab to `client_details.blade.php`, the content div MUST go inside the `<div class="tab-content carertabcontent">` container (which closes at `<!-- END TAB CONTENT -->`). The tab button goes in the tab bar near line 288, and the content div goes before line 5437. NEVER place tab content after the scripts section — it will render outside the tab system and be permanently visible.
+
+---
+
+## Session: 2026-04-25 (Phase 1 Complete, Phase 2 Workflow Design)
+
+### Log 1 — Phase 1 PUSH: MAR Monthly Grid committed and pushed
+
+**Commit:** `4d5272ce` — MAR Monthly Grid, Print View & Stock Tracking: CIS-standard monthly calendar, A4 print, balance computation, 5 tests
+**Push:** `git push origin komal:main` — 15 files, 1683 insertions
+
+### Log 2 — Phase 1 Complete: Feature 10 investigation & decision
+
+**Investigation:** Ran backend investigation for Feature 10 (Care Roster Wire-Up) — checked all orphan tabs in client_details.blade.php for existing tables, models, controllers, services, and routes.
+
+**Findings:**
+- Care Tasks: full backend exists (table + model + service + controller + 5 routes) — but 0 data for home 8
+- Behavior Chart: backend exists (table + model + controller on old `/service/` routes) — but 0 data for home 8
+- Documents: table exists, controller is a stub
+- Care Plan, PEEP, Mental Capacity, Progress Report: NO backend at all (no tables, no models, nothing)
+
+**Decision:** Skip Feature 10 entirely. The orphan tabs will get fixed naturally as future phases build those features (Care Plans in Phase 2/4, PEEP/Mental Capacity in Phase 4, etc.). No "Coming soon" tooltips needed since the product isn't being sold yet.
+
+**Phase 1 final status:** 9/10 features shipped. Feature 10 deferred.
+
+### Log 3 — Phase 2 Workflow Command Written
+
+Created `.claude/commands/careos-workflow-phase2.md` (~39KB) — comprehensive Phase 2 workflow command.
+
+**Key content embedded in the command:**
+- All 5 Base44 entity schemas (ClientPortalAccess 17 fields, ClientPortalMessage 19 fields, SessionBookingRequest 20 fields, ScheduledReport 16 fields, ClientFeedback 23 fields)
+- Portal auth model (same user table, email-matching to ClientPortalAccess)
+- GDPR data scoping rules (portal users see only their linked client's data)
+- Messaging data flow (bidirectional, threading, shared inbox for staff)
+- 8 workflow trigger templates with trigger types (scheduled/event/condition) and action types (send_email/send_notification)
+- Report builder query structure (6 entities, filter operators, SQL aggregation)
+- CareRoster feature classification system (Port / Build for real / Finish)
+
+**Pipeline changes from Phase 1:**
+- PLAN: classify feature against CareRoster (real/half-real/UI-only)
+- BUILD: portal data isolation by `client_id`, workflow loop prevention, report SQL aggregation
+- TEST: 8 sub-categories (endpoint, multi-role, cross-client, workflow triggers, report accuracy, scheduled jobs, security payloads, run & report)
+- DEBUG: query EXPLAIN profiling, queue job verification, workflow execution tracing, multi-session testing
+- REVIEW: dual-session attacks (admin + portal user), 17 attack vectors
+- AUDIT: GDPR check, queue config, email template security, workflow loop guards
+- PROD-READY: three user journeys (portal, report, workflow)
+
+**Run with:** `/careos-workflow-phase2`
+
+### Log 4 — Phase 2 Feature 1 Prompt Written
+
+Created `phases/phase2-feature1-portal-login-prompt.md` (~33KB) — pre-built prompt for the next session to build the Client Portal Login & Dashboard.
+
+**Contents:**
+- Pre-built PLAN with "What Exists" audit table (everything MISSING except login redirect logic, user table, service_user table, existing layout)
+- Base44 ClientPortalAccess schema → Laravel migration design (22 columns with indexes)
+- Portal auth flow: login → check ClientPortalAccess → redirect to `/portal` or `/roster`
+- 12 step-by-step implementation plan (migration, model, middleware, layout, dashboard, portal service, login redirect, routes, admin management, seed data, whitelist, tests)
+- Security checklist (10 attack surfaces: cross-home IDOR, cross-client IDOR, portal↔admin boundary, CSRF, XSS, session fixation, mass assignment, rate limiting, URL manipulation, information disclosure)
+- 6 key design decisions (same user table, no separate guard, permission flags on ClientPortalAccess, GDPR scoping, staff name-only exposure)
+- 10-step browser verification checklist
+- Instructions: paste into next session → run `/careos-workflow-phase2`
+
+**How to use:** Copy-paste the full file content into a new Claude Code session. It contains everything needed to build the feature without additional context.
+
+---
+
 ## Session: 2026-04-25 (MAR Monthly Grid, Print View & Stock Tracking)
 
 ### Log 1 — MAR Enhancement: Monthly Grid View, Print View & Balance Tracking

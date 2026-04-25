@@ -68,5 +68,6 @@ class Kernel extends HttpKernel
         'CheckAdminAuth' => \App\Http\Middleware\CheckAdminAuth::class,
         'lock' => \App\Http\Middleware\LockAccount::class,
         'PreventBack' => \App\Http\Middleware\PreventBack::class,
+        'portal.access' => \App\Http\Middleware\CheckPortalAccess::class,
     ];
 }
