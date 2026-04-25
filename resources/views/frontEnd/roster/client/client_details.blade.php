@@ -1,4 +1,37 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+/* MAR Monthly Grid Styles */
+.mar-grid-scroll { overflow-x: auto; border: 1px solid #ddd; border-radius: 4px; }
+.mar-grid-table { border-collapse: collapse; width: 100%; font-size: 11px; }
+.mar-grid-table th, .mar-grid-table td { border: 1px solid #ccc; padding: 2px 3px; text-align: center; white-space: nowrap; }
+.mar-grid-table thead th { background: #1e3a5f; color: #fff; font-weight: 600; position: sticky; top: 0; z-index: 10; }
+.mar-grid-med-col { text-align: left !important; min-width: 160px; max-width: 200px; white-space: normal !important; word-break: break-word; font-size: 11px; }
+.mar-grid-time-col { min-width: 45px; font-weight: 600; background: #f0f4ff; }
+.mar-grid-day-col { min-width: 24px; font-size: 10px; }
+.mar-grid-bal-col { min-width: 35px; font-weight: 600; background: #f9f9f9; }
+.mar-grid-sunday { color: #f87171; }
+.mar-grid-week-sep { border-left: 2px solid #1e3a5f !important; }
+.mar-grid-med-first > td { border-top: 2px solid #555 !important; }
+.mar-grid-cell { width: 24px; height: 24px; cursor: pointer; transition: background 0.15s; font-weight: 600; }
+.mar-grid-cell:hover { background: #dbeafe !important; }
+.mar-code-a, .mar-code-s { background: #dcfce7; color: #166534; }
+.mar-code-r { background: #fee2e2; color: #991b1b; }
+.mar-code-w { background: #fef3c7; color: #92400e; }
+.mar-code-n { background: #f1f5f9; color: #475569; }
+.mar-code-o { background: #f3e8ff; color: #6b21a8; }
+.mar-grid-dosage { color: #888; font-weight: normal; }
+.mar-grid-route { color: #888; font-weight: normal; font-size: 10px; }
+.mar-grid-freq { color: #666; font-size: 10px; }
+.mar-grid-prn { display: inline-block; background: #f0ad4e; color: #fff; font-size: 9px; padding: 1px 4px; border-radius: 3px; font-weight: 600; }
+.mar-grid-stock-row td { background: #f5f5f5; border-top: 1px solid #999; }
+.mar-grid-stock-cell { text-align: left !important; }
+.mar-grid-stock-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 3px 0; }
+.mar-grid-stock-field { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; }
+.mar-grid-stock-field label { margin: 0; font-weight: 600; color: #555; font-size: 10px; }
+.mar-stock-input { width: 55px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 11px; text-align: center; }
+.mar-grid-legend { margin-top: 10px; font-size: 12px; color: #555; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.mar-grid-legend-item { padding: 2px 6px; border-radius: 3px; font-weight: 600; font-size: 11px; }
+</style>
 @extends('frontEnd.layouts.master')
 @section('title','Client')
 @section('content')
@@ -3382,6 +3415,7 @@
                                                 <div class="workHoursHeader">
                                                     <div class="title"> MAR Sheets</div>
                                                     <div class="actions">
+                                                        <button class="btn borderBtn" id="viewMonthlyGridBtn" style="margin-right:5px;"><i class="fa fa-calendar"></i> Monthly MAR Grid</button>
                                                         <button class="purpleBgBtn" id="addPrescriptionBtn"><i class="fa fa-plus"></i> Add Prescription</button>
                                                     </div>
                                                 </div>
@@ -3656,6 +3690,46 @@
                                     <h4 style="margin-bottom:10px;"><i class="fa fa-history"></i> Administration History</h4>
                                     <div id="mar-admin-history"></div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="careTaskstbbg sectionWhiteBgAllUse p-0 medicationSectionGrid" style="display:none">
+                        <div class="medicationManagement">
+                            <header class="panel-heading headingCapitilize medicationManagementHeader">
+                                <div class="clientHeadung">
+                                    <button class="btn borderBtn backBtn" id="gridBackBtn"><i class="fa fa-arrow-left"></i> Back to MAR Sheets</button>
+                                    <div class="onlyheadingmain purpleiconclr" style="display:inline-block;margin-left:15px;"><i class="fa fa-calendar"></i> Monthly MAR Grid</div>
+                                </div>
+                            </header>
+
+                            <div class="p-20">
+                                <div style="display:flex;align-items:center;gap:10px;margin-bottom:15px;flex-wrap:wrap;">
+                                    <button class="btn btn-sm btn-default" id="mar-grid-prev-month"><i class="fa fa-chevron-left"></i></button>
+                                    <select class="form-control" id="mar-grid-month" style="width:130px;display:inline-block;">
+                                        <option value="1">January</option>
+                                        <option value="2">February</option>
+                                        <option value="3">March</option>
+                                        <option value="4">April</option>
+                                        <option value="5">May</option>
+                                        <option value="6">June</option>
+                                        <option value="7">July</option>
+                                        <option value="8">August</option>
+                                        <option value="9">September</option>
+                                        <option value="10">October</option>
+                                        <option value="11">November</option>
+                                        <option value="12">December</option>
+                                    </select>
+                                    <select class="form-control" id="mar-grid-year" style="width:90px;display:inline-block;">
+                                        @for($y = date('Y') - 1; $y <= date('Y') + 1; $y++)
+                                            <option value="{{ $y }}">{{ $y }}</option>
+                                        @endfor
+                                    </select>
+                                    <button class="btn btn-sm btn-default" id="mar-grid-next-month"><i class="fa fa-chevron-right"></i></button>
+                                    <button class="btn btn-sm btn-default" id="mar-grid-print-btn" style="margin-left:auto;"><i class="fa fa-print"></i> Print MAR</button>
+                                </div>
+
+                                <div id="mar-monthly-grid-container"></div>
                             </div>
                         </div>
                     </div>
@@ -7608,6 +7682,7 @@
     <script src="{{ url('public/js/roster/client/client_alert.js')}}" defer></script>
     <script src="{{ url('public/js/roster/client/client_dols.js')}}" defer></script>
     <script src="{{ url('public/js/roster/client/mar_sheets.js')}}" defer></script>
+    <script src="{{ url('public/js/roster/client/mar_grid.js')}}" defer></script>
     <script>
         const tabs = document.querySelectorAll(".tab");
         const contents = document.querySelectorAll(".content");

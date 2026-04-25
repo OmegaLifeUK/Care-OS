@@ -4,6 +4,76 @@
 
 ---
 
+## Session: 2026-04-25 (MAR Monthly Grid, Print View & Stock Tracking)
+
+### Log 1 — MAR Enhancement: Monthly Grid View, Print View & Balance Tracking
+
+**Context:** Phil Holt (client stakeholder) confirmed current MAR implementation "looks really good" and shared:
+1. CIS reference MAR document (industry standard printed form)
+2. Claude-generated Laravel code as design reference
+Phil's key ask: "a quick reference to the meds during the month on a daily/hourly basis" — a spreadsheet-style monthly grid.
+
+**What was built:**
+- **Migration** (`2026_04_25_100000_add_stock_tracking_to_mar_sheets.php`): Added `quantity_received`, `quantity_carried_forward`, `quantity_returned` columns to `mar_sheets` table
+- **Monthly Grid endpoint** (`POST /roster/client/mar-monthly-grid`): Returns all active prescriptions with all administrations for a given year/month, plus days-in-month metadata
+- **Stock Update endpoint** (`POST /roster/client/mar-stock-update`): Updates stock quantities per prescription (received, carried forward, returned)
+- **Print View** (`GET /roster/mar-print/{client_id}/{year}/{month}`): Standalone A4 landscape HTML page with no navigation, printable via Ctrl+P. Shows resident details header, status code key, full 31-day grid per medication with time slots, stock summary row, and week separators.
+- **Monthly Grid UI**: New "Monthly MAR Grid" button in MAR Sheets panel header → opens a third section with month/year navigation (prev/next), scrollable calendar grid showing all medications × all days, color-coded status cells, click-to-administer (reuses existing modal), inline stock editing per medication, balance computation (received + carried forward - given doses - returned), and print button
+- **JavaScript** (`mar_grid.js`): 220 lines — AJAX grid loading, month/year navigation, cell click to administer, stock save with feedback, print button
+- **5 new tests**: monthly grid returns data, rejects invalid month, rejects unauthenticated, stock update saves, stock update rejects cross-home
+
+**Key decisions:**
+- Did NOT adopt Phil's Claude-generated code — different tech stack (Tailwind), different auth (Laravel `auth`), different schema (separate `residents` table). Used as design reference only.
+- Kept our existing status codes (A/S/R/W/N/O) rather than switching to CIS codes — ours include Self-administered (S) and Withheld (W) which CIS doesn't have.
+- Balance is computed dynamically: `(quantity_received + quantity_carried_forward) - given_doses - quantity_returned`. No "Bal" sub-columns per time slot (paper-form artifact, impractical on screen).
+- Print view uses inline CSS (no Tailwind, no Bootstrap) for reliable browser printing.
+- Auth middleware path whitelist includes digit-stripped form `roster/mar-print///` since middleware does `preg_replace('/\d/', '', $path)`.
+
+**Teaching notes:**
+1. **checkUserAuth digit stripping** — The middleware strips ALL digits from the path before checking the whitelist. So `roster/mar-print/27/2026/4` becomes `roster/mar-print///`. Always whitelist the stripped form.
+2. **Balance tracking approaches** — The CIS paper form has "Bal" columns after every time slot per day (8+ columns per day × 31 days = 248+ columns). For digital, compute balance dynamically from administration count instead.
+3. **Print views should be standalone HTML** — No `@extends('layouts.master')`, no Bootstrap/Tailwind. Use inline `<style>` with `@page` CSS for paper size. Include a "Print" button visible on screen only (`@media print { .no-print { display: none } }`).
+4. **Phil's Claude-generated code as reference, not production** — Stakeholders may run prompts through AI and share results. Evaluate against your existing architecture — don't adopt blindly, but do extract the good design ideas.
+
+**Files created:** `2026_04_25_100000_add_stock_tracking_to_mar_sheets.php`, `mar_print.blade.php`, `mar_grid.js`
+**Files modified:** `MARSheet.php` (+3 fillable/casts), `MARSheetService.php` (+2 methods), `MARSheetController.php` (+3 methods), `web.php` (+3 routes), `checkUserAuth.php` (+3 whitelist), `client_details.blade.php` (CSS, grid section, JS include), `MARSheetTest.php` (+5 tests)
+
+**Test results:** 20 tests, 64 assertions, all passing (155/156 suite-wide, 1 pre-existing ExampleTest failure)
+
+---
+
+## Session: 2026-04-24 (Feature 10 — MAR Sheets)
+
+### Log 1 — Feature 10: MAR Sheets — Prescription Management & Administration Grid
+
+**Commit:** `fd5a7dea` — Feature 10 MAR Sheets: prescription CRUD, administration grid, PRN support, 14 tests
+
+**What was built:**
+- Two new tables: `mar_sheets` (prescriptions) + `mar_administrations` (dose records)
+- Independent of existing `medication_logs` — different purpose, no foreign keys between them
+- 8 POST endpoints: list, save, update, details, delete, discontinue, administer, administrationGrid
+- Full prescription CRUD with time-slot grid, PRN support, stock tracking, discontinue workflow
+- Replaced "Coming in Phase 2" placeholder and hardcoded Norethisterone detail view with dynamic UI
+- Administer modal for recording doses at each time slot
+- 14 tests (auth, validation, flow, IDOR, XSS, mass assignment, admin-only delete, duplicate prevention)
+
+**Key decisions:**
+- Two tables (relational) vs CareRoster's JSON-embedded administration_records — better for queries and audit
+- PRN medications show the time-slot grid (if they have time slots) PLUS a "Record PRN Dose" button for ad-hoc doses — user feedback corrected the original design that hid the grid for PRN meds
+- Duplicate administration prevention via find-or-create pattern (not updateOrCreate — home_id not fillable)
+- Service_user table uses `name` column, not `first_name`/`last_name`
+
+**Teaching notes:**
+1. **home_id not in $fillable by design** — when using `updateOrCreate`, home_id must be set manually after creation since it's not mass-assignable. Use find + fill + save pattern instead.
+2. **artisan migrate still fails** due to old `2025_11_20_111238` migration — used `DB::statement()` via tinker as fallback. This is a known workaround.
+3. **PRN medications should still show the time-slot grid** — PRN means "give when needed" but the time slots define WHEN it can be given. Don't hide the grid just because it's PRN.
+4. **Client table is `service_user`** with `name` column (not `clients`, not `first_name`/`last_name`).
+
+**Files created:** MARSheetController.php, MARSheet.php, MARAdministration.php, MARSheetService.php, migration, mar_sheets.js, MARSheetTest.php
+**Files modified:** web.php (8 routes), checkUserAuth.php (8 whitelisted), client_details.blade.php (placeholder + detail section replaced)
+
+---
+
 ## Session: 2026-04-22 (Feature 9 — Safeguarding Referrals)
 
 ### Log 1 — Feature 9: Safeguarding Referrals — Full Build

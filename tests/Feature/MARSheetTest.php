@@ -402,4 +402,101 @@ class MARSheetTest extends TestCase
         MARAdministration::where('mar_sheet_id', $sheet->id)->forceDelete();
         $sheet->forceDelete();
     }
+
+    // ==================== MONTHLY GRID TESTS (5) ====================
+
+    public function test_monthly_grid_returns_prescriptions_for_month()
+    {
+        $sheet = $this->createTestSheet();
+
+        $admin = new MARAdministration();
+        $admin->fill([
+            'mar_sheet_id' => $sheet->id,
+            'date' => now()->toDateString(),
+            'time_slot' => '08:00',
+            'given' => true,
+            'code' => 'A',
+            'administered_by' => 194,
+        ]);
+        $admin->home_id = 8;
+        $admin->save();
+
+        $response = $this->actingAsUser()
+            ->postJson('/roster/client/mar-monthly-grid', [
+                'client_id' => 27,
+                'year' => now()->year,
+                'month' => now()->month,
+            ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('success', true);
+        $response->assertJsonStructure(['data' => ['sheets', 'year', 'month', 'days_in_month']]);
+
+        $data = $response->json('data');
+        $this->assertGreaterThan(0, count($data['sheets']));
+        $this->assertEquals(now()->year, $data['year']);
+        $this->assertEquals(now()->month, $data['month']);
+
+        MARAdministration::where('id', $admin->id)->forceDelete();
+        $sheet->forceDelete();
+    }
+
+    public function test_monthly_grid_rejects_invalid_month()
+    {
+        $response = $this->actingAsUser()
+            ->postJson('/roster/client/mar-monthly-grid', [
+                'client_id' => 27,
+                'year' => 2026,
+                'month' => 13,
+            ]);
+        $response->assertStatus(422);
+    }
+
+    public function test_monthly_grid_rejects_unauthenticated()
+    {
+        $response = $this->post('/roster/client/mar-monthly-grid', [
+            'client_id' => 27,
+            'year' => 2026,
+            'month' => 4,
+        ]);
+        $response->assertStatus(302);
+    }
+
+    public function test_stock_update_saves_quantities()
+    {
+        $sheet = $this->createTestSheet();
+
+        $response = $this->actingAsUser()
+            ->postJson('/roster/client/mar-stock-update', [
+                'id' => $sheet->id,
+                'quantity_received' => 60,
+                'quantity_carried_forward' => 5,
+                'quantity_returned' => 2,
+            ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('success', true);
+
+        $updated = MARSheet::find($sheet->id);
+        $this->assertEquals(60, $updated->quantity_received);
+        $this->assertEquals(5, $updated->quantity_carried_forward);
+        $this->assertEquals(2, $updated->quantity_returned);
+
+        $sheet->forceDelete();
+    }
+
+    public function test_stock_update_rejects_cross_home()
+    {
+        $otherSheet = $this->createOtherHomeSheet();
+
+        $response = $this->actingAsUser()
+            ->postJson('/roster/client/mar-stock-update', [
+                'id' => $otherSheet->id,
+                'quantity_received' => 100,
+            ]);
+
+        $response->assertStatus(404);
+
+        $otherSheet->forceDelete();
+    }
 }

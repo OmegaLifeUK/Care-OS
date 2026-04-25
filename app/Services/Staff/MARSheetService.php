@@ -199,6 +199,59 @@ class MARSheetService
         }
     }
 
+    public function updateStock(int $id, array $data, int $homeId): ?MARSheet
+    {
+        $sheet = MARSheet::forHome($homeId)->active()->find($id);
+        if (!$sheet) {
+            return null;
+        }
+
+        $sheet->fill([
+            'quantity_received' => $data['quantity_received'] ?? $sheet->quantity_received,
+            'quantity_carried_forward' => $data['quantity_carried_forward'] ?? $sheet->quantity_carried_forward,
+            'quantity_returned' => $data['quantity_returned'] ?? $sheet->quantity_returned,
+        ]);
+        $sheet->save();
+
+        Log::info('MAR sheet stock updated', [
+            'action' => 'stock_update',
+            'record_id' => $id,
+            'home_id' => $homeId,
+        ]);
+
+        return $sheet;
+    }
+
+    public function getMonthlyGrid(int $clientId, int $homeId, int $year, int $month)
+    {
+        $startDate = sprintf('%04d-%02d-01', $year, $month);
+        $endDate = date('Y-m-t', strtotime($startDate));
+
+        $sheets = MARSheet::forHome($homeId)
+            ->active()
+            ->where('client_id', $clientId)
+            ->currentlyActive()
+            ->with(['administrations' => function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('date', [$startDate, $endDate])
+                  ->with('administeredByUser:id,name')
+                  ->orderBy('date')
+                  ->orderBy('time_slot');
+            }])
+            ->orderBy('medication_name', 'asc')
+            ->get();
+
+        $daysInMonth = (int) date('t', strtotime($startDate));
+
+        return [
+            'sheets' => $sheets,
+            'year' => $year,
+            'month' => $month,
+            'days_in_month' => $daysInMonth,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+        ];
+    }
+
     public function getAdministrationsForDate(int $clientId, int $homeId, string $date)
     {
         $sheets = MARSheet::forHome($homeId)

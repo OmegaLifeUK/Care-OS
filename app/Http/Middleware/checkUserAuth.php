@@ -188,7 +188,10 @@ class checkUserAuth
                     'roster/client/mar-sheet-delete',
                     'roster/client/mar-sheet-discontinue',
                     'roster/client/mar-administer',
-                    'roster/client/mar-administration-grid'
+                    'roster/client/mar-administration-grid',
+                    'roster/client/mar-monthly-grid',
+                    'roster/client/mar-stock-update',
+                    'roster/mar-print///'
                 );
                 // echo "<pre>";print_r($allowed_path);die;
                 // end here

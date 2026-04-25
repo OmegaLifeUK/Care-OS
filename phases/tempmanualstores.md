@@ -3023,3 +3023,164 @@ Feature 8-
  ║ → Badge should still show in sidebar ║  
  ║ ║  
  ║ Reply "tested" or report bugs.
+
+Feature 9 -
+
+══════════════════════════════════════════════════════════════════╗
+║ MANUAL TEST CHECKLIST — Feature 9: Safeguarding Referrals ║  
+ ║ Test these in the browser before I push. ║
+╠══════════════════════════════════════════════════════════════════╣  
+ ║ ║  
+ ║ Login: komal / 123456, house: Aries ║
+║ URL: http://127.0.0.1:8000 ║  
+ ║ ║
+║ □ 1. Navigate to the sidebar → click "Safeguarding" ║
+║ (under General section, next to Incident Management) ║  
+ ║ → You should see the Safeguarding Referrals page ║  
+ ║ with 4-5 sample referrals listed as cards ║  
+ ║ ║  
+ ║ □ 2. Check the referral cards show: ║  
+ ║ - Reference numbers (SAFE-2026-...) ║  
+ ║ - Risk level badges (green/amber/orange/red) ║  
+ ║ - Status badges (blue/amber/purple/grey) ║  
+ ║ - Type tags, reported by name, date ║  
+ ║ - "Ongoing Risk" red badge on critical one ║  
+ ║ ║  
+ ║ □ 3. Click the "Status" dropdown → select "Closed" ║  
+ ║ → click Filter → only 1 referral should show ║  
+ ║ Click "Clear" → all referrals return ║  
+ ║ ║  
+ ║ □ 4. Click "Raise Concern" button (red, top right) ║  
+ ║ → Modal opens with form sections: ║  
+ ║ Concern Details / Classification / People / Notifications ║  
+ ║ ║  
+ ║ □ 5. Fill in the form: ║  
+ ║ - Date: today, Details: "Test concern from browser" ║  
+ ║ - Check "Physical Abuse" type ║  
+ ║ - Risk: High, Ongoing: Yes ║  
+ ║ - Add a witness (click "+ Add Witness") ║  
+ ║ - Check "Police Notified" → ref/date fields appear ║  
+ ║ → Click "Save Referral" ║  
+ ║ → Modal closes, new referral appears in the list ║  
+ ║ ║  
+ ║ □ 6. Click the new referral card ║  
+ ║ → Detail modal opens showing all sections: ║  
+ ║ Concern, Classification, People, Notifications ║  
+ ║ → Witness you added should be visible ║  
+ ║ ║  
+ ║ □ 7. Click "Edit" in detail modal ║  
+ ║ → Edit form opens pre-filled with existing data ║  
+ ║ → Change the location, save → changes persist ║  
+ ║ ║  
+ ║ □ 8. Click referral card again → click "Start Investigation" ║
+║ → Confirm dialog → status changes to ║  
+ ║ "Under Investigation" (amber badge) ║  
+ ║ ║  
+ ║ □ 9. Click card → click "Create Safeguarding Plan" ║  
+ ║ → Status changes to "Safeguarding Plan" (purple) ║  
+ ║ ║  
+ ║ □ 10. Click card → click "Close Case" ║  
+ ║ → Status changes to "Closed" (grey) ║  
+ ║ → No more status change button shown ║  
+ ║ ║  
+ ║ □ 11. Click card → click "Delete" ║  
+ ║ → Confirm → referral disappears from list ║  
+ ║ ║  
+ ║ □ 12. Edge: Try saving with no fields filled ║  
+ ║ → Should get validation alert ║  
+ ║ ║  
+ ║ □ 13. Edge: Check the closed referral (SAFE-2026-03-0001) ║
+║ → Detail shows outcome, lessons learned, closed date ║  
+ ║ → No Edit or status change buttons ║
+║ ║  
+ ║ □ 14. Edge: Check the safeguarding_plan referral ║  
+ ║ (SAFE-2026-04-0002) → Detail shows strategy meeting ║
+║ and safeguarding plan with agreed actions list ║  
+ ║ ║  
+ ║ Reply "tested" or report bugs. ║  
+ ╚══════════════════════════════════════════════════════════════════╝
+
+⏺ WORKFLOW: Feature 9 — Safeguarding Referrals
+
+MAR SHEETS-
+╔══════════════════════════════════════════════════════════════╗  
+ ║ MANUAL TEST CHECKLIST — MAR Sheets ║  
+ ║ Test these in the browser before I push. ║  
+ ╠══════════════════════════════════════════════════════════════╣  
+ ║ ║  
+ ║ Login: komal / 123456, house: Aries ║  
+ ║ URL: http://127.0.0.1:8000 ║  
+ ║ ║  
+ ║ GOLDEN PATH ║  
+ ║ □ 1. Go to /roster/client → click "Katie" → opens ║  
+ ║ client details page ║  
+ ║ □ 2. Click "Medication" tab → MAR Sheets sub-tab is ║  
+ ║ active by default ║  
+ ║ □ 3. You should see 5 prescription cards: ║  
+ ║ - Metformin 500mg (active, green border) ║  
+ ║ - Paracetamol 1g (active, PRN badge) ║  
+ ║ - Amlodipine 5mg (active) ║  
+ ║ - Gabapentin 300mg (active) ║  
+ ║ - Folic Acid 5mg (discontinued, grey) ║  
+ ║ □ 4. Click "Active" filter → only 4 cards shown ║  
+ ║ □ 5. Click "Discontinued" → only Folic Acid shown ║  
+ ║ □ 6. Click "All" → back to 5 ║  
+ ║ ║  
+ ║ ADD PRESCRIPTION ║  
+ ║ □ 7. Click "Add Prescription" → form slides open ║  
+ ║ □ 8. Fill: medication=Ibuprofen, dosage=400mg, ║  
+ ║ route=Oral, frequency=Three times daily ║  
+ ║ □ 9. Add 3 time slots: 08:00, 14:00, 22:00 ║  
+ ║ □ 10. Click Save → form closes, new card appears ║  
+ ║ ║  
+ ║ EDIT PRESCRIPTION ║  
+ ║ □ 11. Click pencil icon on Ibuprofen → form re-opens ║  
+ ║ pre-filled ║  
+ ║ □ 12. Change dosage to 600mg → Save → card updates ║  
+ ║ ║  
+ ║ VIEW MAR / ADMINISTRATION GRID ║
+║ □ 13. Click "View MAR" on Metformin → detail view opens ║  
+ ║ □ 14. You see: medication header, date picker, grid ║  
+ ║ with 08:00 and 18:00 time slots ║  
+ ║ □ 15. Today's 08:00 should show green "Administered" ║  
+ ║ (we seeded this) ║  
+ ║ □ 16. Click "Record" on an empty slot → modal opens ║  
+ ║ □ 17. Select "A - Administered", fill dose → Save ║  
+ ║ □ 18. Grid cell updates to show green checkmark ║  
+ ║ □ 19. Change date picker to yesterday → grid shows ║  
+ ║ seeded data ║  
+ ║ □ 20. Click "Back to MAR Sheets" → returns to list ║  
+ ║ ║  
+ ║ PRN MEDICATION ║  
+ ║ □ 21. Click "View MAR" on Paracetamol (PRN) → ║  
+ ║ shows "Record PRN Dose" button, not time grid ║  
+ ║ □ 22. Click "Record PRN Dose" → modal opens with ║  
+ ║ current time pre-filled ║  
+ ║ ║  
+ ║ DISCONTINUE ║  
+ ║ □ 23. Click ban icon on Ibuprofen → prompt asks ║  
+ ║ for reason ║  
+ ║ □ 24. Enter reason → card changes to grey/discontinued ║
+║ ║  
+ ║ DELETE (admin only) ║
+║ □ 25. Click trash icon on discontinued Ibuprofen → ║  
+ ║ confirm prompt → card disappears ║  
+ ║ ║  
+ ║ DETAIL PANEL ║  
+ ║ □ 26. On Metformin detail view, click "Prescription ║  
+ ║ Details" → collapsible panel shows prescriber, ║  
+ ║ pharmacy, stock level, storage, allergies ║  
+ ║ ║  
+ ║ MEDICATION LOGS (regression) ║  
+ ║ □ 27. Click "Medication Logs" sub-tab → existing logs ║  
+ ║ still work (list, add, edit, delete) ║  
+ ║ ║  
+ ║ EDGE CASES ║  
+ ║ □ 28. Try saving with empty medication name → alert ║  
+ ║ shows "Medication name is required" ║  
+ ║ □ 29. Enter special chars in medication name ║
+║ (e.g., "Test & <b>Med</b>") → renders as text, ║  
+ ║ not HTML ║  
+ ║ ║  
+ ║ Reply "tested" or report bugs. ║  
+ ╚══════════════════════════════════════════════════════════════╝

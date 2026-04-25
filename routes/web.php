@@ -223,6 +223,9 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		Route::post('/client/mar-sheet-discontinue', [MARSheetController::class, 'discontinue'])->middleware('throttle:20,1');
 		Route::post('/client/mar-administer', [MARSheetController::class, 'administer'])->middleware('throttle:30,1');
 		Route::post('/client/mar-administration-grid', [MARSheetController::class, 'administrationGrid'])->middleware('throttle:30,1');
+		Route::post('/client/mar-monthly-grid', [MARSheetController::class, 'monthlyGrid'])->middleware('throttle:30,1');
+		Route::post('/client/mar-stock-update', [MARSheetController::class, 'updateStock'])->middleware('throttle:20,1');
+		Route::get('/mar-print/{client_id}/{year}/{month}', [MARSheetController::class, 'printGrid'])->where(['client_id' => '[0-9]+', 'year' => '[0-9]+', 'month' => '[0-9]+'])->middleware('throttle:30,1');
 		Route::post('/client-alert-save', [ClientController::class, 'client_alert_save']);
 		Route::post('/client/alert-type', [ClientController::class, 'client_alert_type']);
 		Route::post('/client/alert-increase-acknowledge', [ClientController::class, 'alert_increase_acknowledge']);
