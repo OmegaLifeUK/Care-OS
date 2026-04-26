@@ -300,7 +300,7 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	// Portal routes (family/portal users)
 	Route::prefix('portal')->middleware(['portal.access'])->group(function () {
 		Route::get('/', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'index'])->name('portal.dashboard');
-		Route::get('/schedule', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'comingSoon'])->name('portal.schedule');
+		Route::get('/schedule', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'schedule'])->name('portal.schedule');
 		Route::get('/messages', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'comingSoon'])->name('portal.messages');
 		Route::get('/feedback', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'comingSoon'])->name('portal.feedback');
 		Route::post('/logout', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'logout'])->middleware('throttle:10,1')->name('portal.logout');

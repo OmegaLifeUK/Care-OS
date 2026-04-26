@@ -12,7 +12,26 @@ class ScheduledShift extends Model
 
     protected $table = 'scheduled_shifts';
 
-    protected $guarded = [];
+    protected $fillable = [
+        'home_id',
+        'care_type_id',
+        'assignment',
+        'service_user_id',
+        'property_id',
+        'home_area_id',
+        'staff_id',
+        'location_name',
+        'location_address',
+        'start_date',
+        'start_time',
+        'end_time',
+        'status',
+        'shift_type',
+        'tasks',
+        'notes',
+        'is_recurring',
+        'acknowledge',
+    ];
 
     public function client()
     {

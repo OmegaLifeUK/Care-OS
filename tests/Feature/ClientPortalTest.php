@@ -354,11 +354,128 @@ class ClientPortalTest extends TestCase
         $this->cleanupTestUser($testEmail);
     }
 
-    public function test_portal_schedule_returns_coming_soon()
+    // ==================== SCHEDULE TESTS ====================
+
+    public function test_sched_01_shows_weekly_grid()
     {
         $response = $this->actingAsPortal()->get('/portal/schedule');
         $response->assertStatus(200);
-        $response->assertSee('Coming Soon');
+        $response->assertSee('My Schedule');
+        $content = $response->getContent();
+        $this->assertStringContainsString('class="calendar-grid"', $content);
+        $this->assertStringNotContainsString('Access Denied', $content);
+    }
+
+    public function test_sched_02_shows_shifts_for_linked_client()
+    {
+        $response = $this->actingAsPortal()->get('/portal/schedule?week=2026-04-27');
+        $response->assertStatus(200);
+        $content = $response->getContent();
+        $this->assertStringContainsString('shift-card status', $content);
+    }
+
+    public function test_sched_03_gdpr_staff_first_name_only()
+    {
+        $response = $this->actingAsPortal()->get('/portal/schedule?week=2026-04-27');
+        $content = $response->getContent();
+        $this->assertStringContainsString('Allan', $content);
+        $this->assertStringNotContainsString('Allan Smith', $content);
+    }
+
+    public function test_sched_04_shows_unfilled_shifts()
+    {
+        $response = $this->actingAsPortal()->get('/portal/schedule?week=2026-04-27');
+        $content = $response->getContent();
+        $this->assertStringContainsString('Unfilled', $content);
+        $this->assertStringContainsString('status-unfilled', $content);
+    }
+
+    public function test_sched_05_week_navigation()
+    {
+        $response = $this->actingAsPortal()->get('/portal/schedule?week=2026-05-04');
+        $response->assertStatus(200);
+        $content = $response->getContent();
+        $this->assertStringContainsString('May 04', $content);
+    }
+
+    public function test_sched_06_empty_state_future_week()
+    {
+        $response = $this->actingAsPortal()->get('/portal/schedule?week=2026-09-01');
+        $response->assertStatus(200);
+        $content = $response->getContent();
+        $this->assertStringContainsString('No scheduled items this week', $content);
+    }
+
+    public function test_sched_07_rejects_unauthenticated()
+    {
+        $response = $this->get('/portal/schedule');
+        $response->assertStatus(302);
+    }
+
+    public function test_sched_08_cross_client_isolation()
+    {
+        $otherClient = DB::table('service_user')
+            ->where('home_id', 8)
+            ->where('id', '!=', $this->portalAccess->client_id)
+            ->first();
+        if (!$otherClient) {
+            $this->markTestSkipped('No other client in home 8');
+        }
+
+        $otherShiftId = DB::table('scheduled_shifts')
+            ->where('service_user_id', $otherClient->id)
+            ->where('home_id', '8')
+            ->value('id');
+        if (!$otherShiftId) {
+            DB::table('scheduled_shifts')->insert([
+                'home_id' => '8',
+                'service_user_id' => $otherClient->id,
+                'care_type_id' => '1',
+                'assignment' => 'Client',
+                'staff_id' => 44,
+                'start_date' => '2026-04-28',
+                'start_time' => '09:00:00',
+                'end_time' => '17:00:00',
+                'shift_type' => 'morning',
+                'status' => 'assigned',
+                'tasks' => 'IDOR test shift',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $response = $this->actingAsPortal()->get('/portal/schedule?week=2026-04-27');
+        $content = $response->getContent();
+        $this->assertStringNotContainsString('IDOR test shift', $content);
+    }
+
+    public function test_sched_09_dashboard_real_count()
+    {
+        $response = $this->actingAsPortal()->get('/portal');
+        $response->assertStatus(200);
+        $content = $response->getContent();
+        preg_match('/stat-schedule.*?stat-value">(\\d+)/s', $content, $matches);
+        $this->assertNotEmpty($matches);
+        $this->assertGreaterThan(0, (int)$matches[1]);
+    }
+
+    public function test_sched_10_denied_when_permission_off()
+    {
+        DB::table('client_portal_accesses')
+            ->where('id', $this->portalAccess->id)
+            ->update(['can_view_schedule' => 0]);
+
+        try {
+            $response = $this->actingAsPortal()->get('/portal/schedule');
+            $response->assertStatus(200);
+            $content = $response->getContent();
+            $this->assertStringContainsString('Access Denied', $content);
+            $this->assertStringNotContainsString('class="calendar-grid"', $content);
+        } finally {
+            DB::table('client_portal_accesses')
+                ->where('id', $this->portalAccess->id)
+                ->update(['can_view_schedule' => 1]);
+        }
     }
 
     public function test_portal_messages_returns_coming_soon()

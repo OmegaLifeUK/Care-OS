@@ -132,7 +132,6 @@
             <div class="stat-icon"><i class="fa fa-calendar"></i></div>
             <div class="stat-value">{{ $stats['upcoming_schedule'] }}</div>
             <div class="stat-label">Upcoming Schedule</div>
-            <div class="coming-soon">Coming soon</div>
         </div>
     </div>
     <div class="col-md-3 col-sm-6">

@@ -3,7 +3,9 @@
 namespace App\Services\Portal;
 
 use App\Models\ClientPortalAccess;
+use App\Models\ScheduledShift;
 use App\ServiceUser;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class ClientPortalService
@@ -18,12 +20,58 @@ class ClientPortalService
             'portal_access' => $access,
             'client' => $client,
             'stats' => [
-                'upcoming_schedule' => 0,
+                'upcoming_schedule' => $access->can_view_schedule
+                    ? $this->getUpcomingScheduleCount($access)
+                    : 0,
                 'unread_messages' => 0,
                 'pending_requests' => 0,
                 'notifications' => 0,
             ],
         ];
+    }
+
+    public function getScheduleData(ClientPortalAccess $access, ?string $weekStart = null): array
+    {
+        $start = Carbon::now()->startOfWeek(Carbon::MONDAY);
+        if ($weekStart) {
+            try {
+                $start = Carbon::parse($weekStart)->startOfWeek(Carbon::MONDAY);
+            } catch (\Exception $e) {
+                $start = Carbon::now()->startOfWeek(Carbon::MONDAY);
+            }
+        }
+        $end = $start->copy()->endOfWeek(Carbon::SUNDAY);
+
+        $shifts = ScheduledShift::where('home_id', (string) $access->home_id)
+            ->where('service_user_id', $access->client_id)
+            ->whereBetween('start_date', [$start->toDateString(), $end->toDateString()])
+            ->whereNotIn('status', ['cancelled'])
+            ->with('staff:id,name')
+            ->orderBy('start_date')
+            ->orderBy('start_time')
+            ->get();
+
+        $shifts->each(function ($shift) {
+            if ($shift->staff) {
+                $shift->staff->name = explode(' ', $shift->staff->name)[0];
+            }
+        });
+
+        return [
+            'shifts' => $shifts,
+            'week_start' => $start,
+            'week_end' => $end,
+            'week_days' => collect(range(0, 6))->map(fn($i) => $start->copy()->addDays($i)),
+        ];
+    }
+
+    public function getUpcomingScheduleCount(ClientPortalAccess $access): int
+    {
+        return ScheduledShift::where('home_id', (string) $access->home_id)
+            ->where('service_user_id', $access->client_id)
+            ->where('start_date', '>=', Carbon::today()->toDateString())
+            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->count();
     }
 
     public function listPortalUsers(int $homeId, ?int $clientId = null): \Illuminate\Database\Eloquent\Collection

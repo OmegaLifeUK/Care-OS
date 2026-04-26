@@ -25,6 +25,26 @@ class PortalDashboardController extends Controller
         return view('frontEnd.portal.dashboard', $data);
     }
 
+    public function schedule(Request $request)
+    {
+        $portalAccess = $request->attributes->get('portal_access');
+
+        if (!$portalAccess->can_view_schedule) {
+            return view('frontEnd.portal.schedule', [
+                'portal_access' => $portalAccess,
+                'access_denied' => true,
+            ]);
+        }
+
+        $weekStart = $request->query('week');
+        $data = $this->portalService->getScheduleData($portalAccess, $weekStart);
+
+        return view('frontEnd.portal.schedule', array_merge($data, [
+            'portal_access' => $portalAccess,
+            'access_denied' => false,
+        ]));
+    }
+
     public function comingSoon(Request $request)
     {
         $portalAccess = $request->attributes->get('portal_access');
