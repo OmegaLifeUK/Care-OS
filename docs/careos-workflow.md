@@ -124,6 +124,9 @@ When invoked, ask the user what feature or task they want to build, then execute
    - [ ] **Icons use Font Awesome 4.7** — Only use `fa fa-*` icons. Don't assume Boxicons (`bx bx-*`) has every icon — some render blank.
    - [ ] **Built on new roster UI** — Target pages under `/roster/...`. Old `serviceUserManagement/` pages are unreachable dead ends.
    - [ ] **AJAX error messages are specific** — If the server returns a validation error, show the actual message, not a generic "Error". Wire up the `error:` callback on every `$.ajax`.
+   - [ ] **Roster pages include roster_header + page-content wrapper** — Every admin/roster Blade view MUST have `@include('frontEnd.roster.common.roster_header')` and wrap content in `<main class="page-content">`. Without this, content hides behind the fixed header. Copy the pattern from `safeguarding.blade.php`.
+   - [ ] **JS/CSS inline in @section('content')** — The admin master layout (`frontEnd.layouts.master`) has NO `@yield('scripts')` or `@yield('styles')`. Any `@section('scripts')` or `@section('styles')` is silently ignored. Put `<style>` and `<script src>` directly inside `@section('content')`. Verify via curl: `grep -c 'your_script.js' response.html`.
+   - [ ] **checkUserAuth digit-stripping** — The middleware strips ALL digits from paths (`preg_replace('/\d/', '', $path)`). Routes like `/portal/messages/read/1` become `portal/messages/read/`. Add BOTH versions (with and without trailing slash) to `$allowed_path`.
 8. Log actions in `docs/logs.md` with teaching notes
 9. **Show the user what was built**
 

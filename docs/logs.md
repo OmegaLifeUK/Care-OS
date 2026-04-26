@@ -4,6 +4,93 @@
 
 ---
 
+## Session: 2026-04-26 (Phase 2 Feature 3 — Client Portal Messaging)
+
+### Log 9 — BUILD: Messaging feature built, tested, and bug fixed
+
+**What was built:**
+- Two-way messaging between family portal users and care team
+- Portal side: inbox with stat cards, compose form (AJAX), message list with expand/collapse, mark-as-read, reply, permission gating
+- Admin side: Client Comms Hub 3-panel layout (client list sidebar, chat thread with bubbles, stats panel)
+- `client_portal_messages` table (19 columns + 4 indexes), `ClientPortalMessage` model, `PortalMessageService`
+- Dashboard unread count now live (was hardcoded 0), "Coming soon" removed from messages stat card
+- "Client Comms Hub" admin nav link wired to `/roster/messaging-center`
+- 6 seeded test messages for Katie (client 27)
+- 13 new tests: permission, send, mark-read, cross-client isolation, IDOR, GDPR, admin thread, admin reply, auth, dashboard
+- Full security review: CSRF, XSS, cross-client IDOR, mass assignment, SQLi, permission bypass — all PASS
+
+**Bug found and fixed:**
+- Admin messaging center JS didn't load — `@section('scripts')` was silently ignored because admin master layout has NO `@yield('scripts')`. Moved `<script src>` inside `@section('content')`.
+- Height calculation wrong — `calc(100vh - 140px)` didn't account for admin header. Fixed to `calc(100vh - 80px)` with negative margin.
+- Saved feedback memory to prevent recurrence: admin layout only yields 'content' and 'title'.
+
+**Bug #2 found and fixed (search bar hidden behind header):**
+- The messaging center blade didn't include `@include('frontEnd.roster.common.roster_header')` or wrap content in `<main class="page-content">`. All roster admin pages must do this — the roster_header provides the sidebar nav, and `page-content` adds `margin-top: 60px` to clear the fixed admin header. Without it, the content sits behind the header.
+- Fixed by adding `@include('frontEnd.roster.common.roster_header')` and `<main class="page-content">` wrapper, matching safeguarding.blade.php pattern.
+- Also overrode `page-content > div` padding (default `20px 6rem`) with `padding: 0` for the comms-container.
+
+**Teaching notes:**
+- The admin master layout (`frontEnd.layouts.master`) ONLY has `@yield('content')` and `@yield('title')`. Any `@section('scripts')` or `@section('styles')` blocks are silently discarded. Always inline `<style>` and `<script src>` inside `@section('content')` for admin views.
+- The portal master layout DOES have `@yield('scripts')` and `@yield('styles')` — so the asymmetry is easy to miss.
+- ALL roster admin pages must include `@include('frontEnd.roster.common.roster_header')` and wrap content in `<main class="page-content">`. This provides: (1) the sidebar nav, (2) `margin-top: 60px` to clear the fixed header. Always read an existing roster page (e.g., safeguarding.blade.php) to copy the exact wrapper pattern.
+- `checkUserAuth` middleware strips ALL digits from paths via `preg_replace('/\d/', '', $path)`. Route `portal/messages/read/1` becomes `portal/messages/read/` — need BOTH `portal/messages/read` AND `portal/messages/read/` in the allowed list.
+- When building AJAX-heavy pages, always verify the JS file appears in the rendered HTML via curl before reporting it works.
+
+---
+
+## Session: 2026-04-26 (Phase 2 Feature 2 Build + Feature 3 Prompt)
+
+### Log 8 — Session saved + Feature 3 prompt written
+
+**Session saved:** `sessions/session22.md` — Full pipeline for Feature 2 (schedule view) + Feature 3 (messaging) prompt research and writing.
+
+**Feature 3 prompt:** `phases/phase2-feature3-messaging-prompt.md` — Comprehensive plan for client portal messaging with care team. Portal inbox/compose/reply + admin Client Comms Hub (3-panel chat UI). Single `client_portal_messages` table, 13 tests planned, GDPR + IDOR + XSS protections.
+
+**Research done:** Read CareRoster `ClientPortalMessages.jsx` (portal side), `ClientCommunicationHub.jsx` (admin side), and Base44 AI answers about admin reply flow and attachment status.
+
+---
+
+## Session: 2026-04-26 (Phase 2 Feature 2 — Client Portal Schedule View)
+
+### Log 7 — PUSH: Portal schedule view committed and pushed
+
+**Commit:** `790e5e76` — Phase 2 Feature 2: Client Portal Schedule View with weekly grid, GDPR staff masking, 10 tests
+**Push:** `git push origin komal:main` — 8 files, 640 insertions
+
+**What was built:**
+- Weekly calendar grid (Mon–Sun) with shift cards showing time, shift type badge, staff first name
+- List view below grid with date, time, staff, status badges, "Today" badges
+- Week navigation (prev/next arrows + "Today" button) via `?week=` query parameter
+- Permission gating: `can_view_schedule` flag checked in controller → "Access Denied" card if disabled
+- GDPR: staff names truncated to first name only in service layer (e.g., "Allan" not "Allan Smith")
+- Unfilled shifts shown with orange border + "Unfilled" text
+- Empty state: "No scheduled items this week" with calendar icon
+- Dashboard stat card now shows real upcoming shift count (was hardcoded 0)
+- Fixed `ScheduledShift` model `$guarded = []` → `$fillable` whitelist (security fix)
+- 15 test shifts seeded for Katie (client 27) across 3 weeks
+- 10 new tests: grid render, permission denied, GDPR, unfilled, week nav, empty state, auth, IDOR, dashboard count, cross-client isolation
+
+**Files created:**
+- `resources/views/frontEnd/portal/schedule.blade.php` — weekly grid + list view
+- `public/js/portal/schedule.js` — keyboard week navigation
+
+**Files modified:**
+- `PortalDashboardController.php` — added `schedule()` method
+- `ClientPortalService.php` — added `getScheduleData()` + `getUpcomingScheduleCount()`
+- `routes/web.php` — pointed `/portal/schedule` to `schedule()` instead of `comingSoon()`
+- `ScheduledShift.php` — `$guarded = []` → `$fillable` whitelist
+- `dashboard.blade.php` — removed "Coming soon" from schedule stat card
+- `ClientPortalTest.php` — 10 new schedule tests, updated old schedule test
+
+**Teaching notes:**
+- `home_id` in `scheduled_shifts` is VARCHAR, not INT. Always cast: `(string) $access->home_id` when querying.
+- Carbon's `parse()` handles invalid dates by throwing an exception, so wrap in try/catch for user-supplied `?week=` parameter — fall back to current week on failure.
+- PHPUnit runs test methods alphabetically, NOT in definition order. If a test mutates shared DB state and fails before cleanup, all subsequent tests that depend on that state will also fail. Use try/finally for DB state changes, or prefix test names to control execution order.
+- `assertSee()` HTML-escapes by default. For checking raw HTML attributes like `class="calendar-grid"`, use `getContent()` + `assertStringContainsString()` instead.
+- `assertDontSee('shift-card')` will match CSS `<style>` blocks too. Always check for something specific like `class="shift-card"` to distinguish HTML elements from CSS rules.
+
+---
+
 ## Session: 2026-04-25 (Phase 2 Feature 1 — Client Portal Login & Dashboard)
 
 ### Log 4 — SCAFFOLD: Portal infrastructure created

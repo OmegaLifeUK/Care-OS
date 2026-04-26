@@ -152,7 +152,9 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
         Route::post('/carer-availability/unavailability/delete', [CarerAvailabilityController::class, 'delete_unavailability'])->name('roster.carer.availability.delete_unavailability');
         Route::post('/carer-availability/overview', [CarerAvailabilityController::class, 'load_overview_data'])->name('roster.carer.availability.load_overview_data');
         Route::post('/carer-availability/load-working-hours', [CarerAvailabilityController::class, 'loadworkinghours'])->name('roster.carer.availability.loadworkinghours');
-		Route::get('/messaging-center', [MessagingCenterController::class, 'index'])->name('roster.carer.availability');
+		Route::get('/messaging-center', [MessagingCenterController::class, 'index'])->name('roster.messaging.center');
+		Route::post('/messaging-center/thread', [MessagingCenterController::class, 'getThread'])->middleware('throttle:30,1');
+		Route::post('/messaging-center/reply', [MessagingCenterController::class, 'reply'])->middleware('throttle:30,1');
 		Route::get('/staff-task', [StaffTaskController::class, 'index'])->name('roster.staff.task');
 		Route::get('/staff-task-detail/{id}', [StaffTaskController::class, 'staffTaskDetail'])->name('roster.stafftask.details');
 		 Route::post('/staff-task/save', [StaffTaskController::class, 'staffTaskSave'])->name('roster.stafftask.save');
@@ -301,7 +303,9 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 	Route::prefix('portal')->middleware(['portal.access'])->group(function () {
 		Route::get('/', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'index'])->name('portal.dashboard');
 		Route::get('/schedule', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'schedule'])->name('portal.schedule');
-		Route::get('/messages', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'comingSoon'])->name('portal.messages');
+		Route::get('/messages', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'messages'])->name('portal.messages');
+		Route::post('/messages/send', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'sendMessage'])->middleware('throttle:30,1')->name('portal.messages.send');
+		Route::post('/messages/read/{id}', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'markMessageRead'])->middleware('throttle:30,1')->name('portal.messages.read')->where('id', '[0-9]+');
 		Route::get('/feedback', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'comingSoon'])->name('portal.feedback');
 		Route::post('/logout', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'logout'])->middleware('throttle:10,1')->name('portal.logout');
 	});

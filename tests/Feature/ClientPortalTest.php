@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use App\User;
 use App\Models\ClientPortalAccess;
+use App\Models\ClientPortalMessage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 
@@ -478,11 +479,224 @@ class ClientPortalTest extends TestCase
         }
     }
 
-    public function test_portal_messages_returns_coming_soon()
+    // ==================== MESSAGING TESTS ====================
+
+    public function test_msg_01_inbox_renders_with_messages()
     {
         $response = $this->actingAsPortal()->get('/portal/messages');
         $response->assertStatus(200);
-        $response->assertSee('Coming Soon');
+        $content = $response->getContent();
+        $this->assertStringContainsString('Messages', $content);
+        $this->assertStringContainsString('message-item', $content);
+        $this->assertStringNotContainsString('Access Denied', $content);
+    }
+
+    public function test_msg_02_permission_denied_when_flag_off()
+    {
+        DB::table('client_portal_accesses')
+            ->where('id', $this->portalAccess->id)
+            ->update(['can_send_messages' => 0]);
+
+        try {
+            $response = $this->actingAsPortal()->get('/portal/messages');
+            $response->assertStatus(200);
+            $content = $response->getContent();
+            $this->assertStringContainsString('Access Denied', $content);
+            $this->assertStringNotContainsString('class="message-item', $content);
+        } finally {
+            DB::table('client_portal_accesses')
+                ->where('id', $this->portalAccess->id)
+                ->update(['can_send_messages' => 1]);
+        }
+    }
+
+    public function test_msg_03_send_message_creates_record()
+    {
+        $response = $this->actingAsPortal()->postJson('/portal/messages/send', [
+            'subject' => 'Test message from tests',
+            'message_content' => 'This is a test message body.',
+            'category' => 'general',
+            'priority' => 'normal',
+        ]);
+        $response->assertStatus(200);
+        $response->assertJson(['status' => true]);
+
+        $this->assertDatabaseHas('client_portal_messages', [
+            'subject' => 'Test message from tests',
+            'client_id' => $this->portalAccess->client_id,
+            'home_id' => $this->portalAccess->home_id,
+            'sender_type' => 'family',
+        ]);
+
+        DB::table('client_portal_messages')
+            ->where('subject', 'Test message from tests')
+            ->delete();
+    }
+
+    public function test_msg_04_send_rejects_invalid_category()
+    {
+        $response = $this->actingAsPortal()->postJson('/portal/messages/send', [
+            'subject' => 'Test',
+            'message_content' => 'Body',
+            'category' => 'invalid_category',
+            'priority' => 'normal',
+        ]);
+        $response->assertStatus(422);
+    }
+
+    public function test_msg_05_mark_as_read()
+    {
+        $staffMsg = ClientPortalMessage::where('client_id', $this->portalAccess->client_id)
+            ->where('home_id', $this->portalAccess->home_id)
+            ->where('sender_type', 'staff')
+            ->where('is_read', 0)
+            ->first();
+
+        if (!$staffMsg) {
+            $this->markTestSkipped('No unread staff message to test');
+        }
+
+        $response = $this->actingAsPortal()->post('/portal/messages/read/' . $staffMsg->id);
+        $response->assertStatus(200);
+        $response->assertJson(['status' => true]);
+
+        $updated = DB::table('client_portal_messages')->where('id', $staffMsg->id)->first();
+        $this->assertEquals(1, $updated->is_read);
+    }
+
+    public function test_msg_06_cross_client_isolation()
+    {
+        $otherClient = DB::table('service_user')
+            ->where('home_id', 8)
+            ->where('id', '!=', $this->portalAccess->client_id)
+            ->first();
+        if (!$otherClient) {
+            $this->markTestSkipped('No other client in home 8');
+        }
+
+        $otherId = DB::table('client_portal_messages')->insertGetId([
+            'home_id' => 8,
+            'client_id' => $otherClient->id,
+            'sender_type' => 'staff',
+            'sender_id' => 44,
+            'sender_name' => 'Test Staff',
+            'recipient_type' => 'family',
+            'subject' => 'IDOR isolation test',
+            'message_content' => 'Should not be visible',
+            'priority' => 'normal',
+            'category' => 'general',
+            'is_read' => 0,
+            'status' => 'sent',
+            'is_deleted' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        try {
+            $response = $this->actingAsPortal()->get('/portal/messages');
+            $content = $response->getContent();
+            $this->assertStringNotContainsString('IDOR isolation test', $content);
+
+            $response = $this->actingAsPortal()->post('/portal/messages/read/' . $otherId);
+            $response->assertJson(['status' => false]);
+        } finally {
+            DB::table('client_portal_messages')->where('id', $otherId)->delete();
+        }
+    }
+
+    public function test_msg_07_send_ignores_tampered_client_id()
+    {
+        $response = $this->actingAsPortal()->postJson('/portal/messages/send', [
+            'subject' => 'IDOR tamper test',
+            'message_content' => 'Trying to send as another client',
+            'category' => 'general',
+            'priority' => 'normal',
+            'client_id' => 999,
+            'home_id' => 999,
+        ]);
+        $response->assertStatus(200);
+        $response->assertJson(['status' => true]);
+
+        $msg = DB::table('client_portal_messages')
+            ->where('subject', 'IDOR tamper test')
+            ->first();
+        $this->assertEquals($this->portalAccess->client_id, $msg->client_id);
+        $this->assertEquals($this->portalAccess->home_id, $msg->home_id);
+
+        DB::table('client_portal_messages')->where('id', $msg->id)->delete();
+    }
+
+    public function test_msg_08_gdpr_staff_first_name_only()
+    {
+        $response = $this->actingAsPortal()->get('/portal/messages');
+        $content = $response->getContent();
+        $this->assertStringContainsString('Allan', $content);
+        $this->assertStringNotContainsString('Allan Smith', $content);
+    }
+
+    public function test_msg_09_admin_thread_loads()
+    {
+        $response = $this->actingAsAdmin()->postJson('/roster/messaging-center/thread', [
+            'client_id' => 27,
+        ]);
+        $response->assertStatus(200);
+        $response->assertJson(['status' => true]);
+        $json = $response->json();
+        $this->assertNotEmpty($json['messages']);
+    }
+
+    public function test_msg_10_admin_thread_rejects_other_home_client()
+    {
+        $otherClient = DB::table('service_user')
+            ->where('home_id', '!=', 8)
+            ->first();
+        if (!$otherClient) {
+            $this->markTestSkipped('No cross-home client for IDOR test');
+        }
+
+        $response = $this->actingAsAdmin()->postJson('/roster/messaging-center/thread', [
+            'client_id' => $otherClient->id,
+        ]);
+        $response->assertStatus(404);
+    }
+
+    public function test_msg_11_admin_reply_creates_message()
+    {
+        $response = $this->actingAsAdmin()->postJson('/roster/messaging-center/reply', [
+            'client_id' => 27,
+            'message_content' => 'Admin reply test from tests',
+        ]);
+        $response->assertStatus(200);
+        $response->assertJson(['status' => true]);
+
+        $this->assertDatabaseHas('client_portal_messages', [
+            'message_content' => 'Admin reply test from tests',
+            'sender_type' => 'staff',
+            'client_id' => 27,
+        ]);
+
+        DB::table('client_portal_messages')
+            ->where('message_content', 'Admin reply test from tests')
+            ->delete();
+    }
+
+    public function test_msg_12_messages_rejects_unauthenticated()
+    {
+        $response = $this->get('/portal/messages');
+        $response->assertStatus(302);
+    }
+
+    public function test_msg_13_dashboard_shows_real_unread_count()
+    {
+        $response = $this->actingAsPortal()->get('/portal');
+        $response->assertStatus(200);
+        $content = $response->getContent();
+        preg_match('/stat-messages.*?stat-value">(\\d+)/s', $content, $matches);
+        $this->assertNotEmpty($matches);
+        // Messages stat card should NOT have "Coming soon" (other cards still do)
+        preg_match('/stat-messages.*?<\/div>\s*<\/div>/s', $content, $cardMatch);
+        $this->assertNotEmpty($cardMatch);
+        $this->assertStringNotContainsString('Coming soon', $cardMatch[0]);
     }
 
     public function test_portal_feedback_returns_coming_soon()
@@ -492,3 +706,4 @@ class ClientPortalTest extends TestCase
         $response->assertSee('Coming Soon');
     }
 }
+

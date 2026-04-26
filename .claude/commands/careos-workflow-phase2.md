@@ -355,6 +355,9 @@ CareRoster runs queries **client-side in JavaScript** (fetches all records, filt
    - [ ] **Report features: parameterised queries** — no raw SQL with user input
    - [ ] **AJAX error callbacks** — show specific messages, not generic "Error"
    - [ ] **Icons use Font Awesome 4.7** — only `fa fa-*` icons
+   - [ ] **Roster pages include roster_header + page-content wrapper** — Every admin/roster Blade view MUST have `@include('frontEnd.roster.common.roster_header')` and wrap content in `<main class="page-content">`. Without this, content hides behind the fixed header. Copy the pattern from `safeguarding.blade.php`.
+   - [ ] **JS/CSS inline in @section('content')** — The admin master layout (`frontEnd.layouts.master`) has NO `@yield('scripts')` or `@yield('styles')`. Any `@section('scripts')` or `@section('styles')` is silently ignored. Put `<style>` and `<script src>` directly inside `@section('content')`. Verify via curl: `grep -c 'your_script.js' response.html`.
+   - [ ] **checkUserAuth digit-stripping** — The middleware strips ALL digits from paths (`preg_replace('/\d/', '', $path)`). Routes like `/portal/messages/read/1` become `portal/messages/read/`. Add BOTH versions (with and without trailing slash) to `$allowed_path`.
 9. Log actions in `docs/logs.md` with teaching notes
 10. **Show the user what was built**
 

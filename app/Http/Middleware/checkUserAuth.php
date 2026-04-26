@@ -184,6 +184,9 @@ class checkUserAuth
                     'portal',
                     'portal/schedule',
                     'portal/messages',
+                    'portal/messages/send',
+                    'portal/messages/read',
+                    'portal/messages/read/',
                     'portal/feedback',
                     'portal/logout'
                 );
@@ -194,6 +197,13 @@ class checkUserAuth
                     'roster/client/portal-access-save',
                     'roster/client/portal-access-revoke',
                     'roster/client/portal-access-delete'
+                );
+
+                // Admin messaging center
+                array_push($allowed_path,
+                    'roster/messaging-center',
+                    'roster/messaging-center/thread',
+                    'roster/messaging-center/reply'
                 );
 
                 // MAR Sheets — prescription management & administration

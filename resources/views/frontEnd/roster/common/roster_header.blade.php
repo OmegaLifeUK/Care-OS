@@ -536,7 +536,7 @@
           <li> <a href="#!"><i class='bx bx-file-detail'></i> <span>Audit Templates</span> </a></li>
           <li> <a href="#!"><i class='bx bx-file-detail'></i> <span>Form Builder</span> </a></li>
           <li> <a href="#!"><i class='bx bx-group'></i> <span>CRM Dashboard</span> </a></li>
-          <li> <a href="#!"><i class='bx  bx-message'></i> <span>Client Comms Hub</span> </a></li>
+          <li> <a href="{{ url('/roster/messaging-center') }}"><i class='bx  bx-message'></i> <span>Client Comms Hub</span> </a></li>
           <li class="header-menu"> <span>System</span> </li>
           <li> <a href="#!"><i class='bx  bx-shield'></i> <span>Role Management</span> </a></li>
           <li> <a href="#!"><i class='bx  bx-cog'></i> <span>Module Settings</span> </a></li>

@@ -7,6 +7,7 @@ use App\Models\ScheduledShift;
 use App\ServiceUser;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Services\Portal\PortalMessageService;
 
 class ClientPortalService
 {
@@ -23,7 +24,9 @@ class ClientPortalService
                 'upcoming_schedule' => $access->can_view_schedule
                     ? $this->getUpcomingScheduleCount($access)
                     : 0,
-                'unread_messages' => 0,
+                'unread_messages' => $access->can_send_messages
+                    ? app(PortalMessageService::class)->getUnreadCount($access)
+                    : 0,
                 'pending_requests' => 0,
                 'notifications' => 0,
             ],
