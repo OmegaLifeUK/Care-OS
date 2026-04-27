@@ -216,6 +216,12 @@ class checkUserAuth
                     'roster/feedback-hub/close'
                 );
 
+                // Report builder
+                array_push($allowed_path,
+                    'roster/reports',
+                    'roster/reports/generate'
+                );
+
                 // MAR Sheets — prescription management & administration
                 array_push($allowed_path,
                     'roster/client/mar-sheet-list',
