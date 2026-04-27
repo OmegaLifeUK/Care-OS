@@ -4,6 +4,72 @@
 
 ---
 
+## Session: 2026-04-27 (Phase 2 Feature 5 — Custom Report Builder)
+
+### Log 11 — PUSH: Phase 2 Feature 5 — Custom Report Builder
+
+**Commit:** `f57c1fd3` — Phase 2 Feature 5: Custom Report Builder with 5 report types, 15 tests
+**Push:** `git push origin komal:main` — 7 files, 1,132 insertions
+
+**Feature classification:** PORT — CareRoster has `Reports.jsx`, `ReportingEngine.jsx`, `CustomReportsPage.jsx` + `CustomReportBuilder.jsx`. We ported a practical subset of 5 report types backed by real Care OS data. Skipped: charts (Recharts is React-only), scheduled reports, saved report configs, custom field builder, AI reports.
+
+**What was built:**
+- Report hub at `/roster/reports` (admin-only, not portal) with 5 clickable report type cards
+- 5 report types: Incident Summary, Training Compliance, MAR Compliance, Shift Coverage, Client Feedback
+- Each report has: date range filter (default last 30 days), type-specific dropdown filters, summary stat badges, sortable data table
+- Client-side CSV export via Blob + URL.createObjectURL + programmatic click-to-download
+- Client-side column sorting — click header to toggle asc/desc, re-renders table in JS
+- Empty state ("No data found") when filters match zero records
+- Loading spinner during AJAX fetch
+- Truncation notice if >500 rows (server caps at 500)
+- `ReportService` with 5 methods (`generateIncidentReport`, `generateTrainingReport`, `generateMARReport`, `generateShiftReport`, `generateFeedbackReport`), all home_id scoped from auth session (never request params), Eloquent query builder with parameterized bindings only
+- `ReportController` updated: `index()` renders page, `generate()` validates input + dispatches to service + returns JSON
+- Report-specific filters: training status (0=Pending/1=In Progress/2=Completed), MAR code (A/R/S), shift type (morning/afternoon/night/waking_night) + shift status (unfilled/assigned/completed/cancelled), feedback type (compliment/complaint/suggestion/concern/general) + feedback status (new/acknowledged/in_progress/resolved/closed)
+- Anonymous feedback privacy: `is_anonymous` flag checked in service — shows "Anonymous" instead of real name
+- `baseUrl` defined inline via `<script>var baseUrl = "{{ url('') }}";</script>` before reports.js include (same pattern as other roster pages)
+- Route: `GET /roster/reports/generate` with `throttle:30,1`
+- Middleware: `roster/reports` and `roster/reports/generate` added to `checkUserAuth.php` `$allowed_path`
+- 15 tests: page load (2), all 5 report types (5), validation invalid/missing type (2), home isolation (1), date filter empty (1), unauthenticated redirect (1), portal user access (1), XSS in filter (1), SQLi in filter (1)
+- Full security review: 13 curl attacks all PASS (CSRF N/A for GET, IDOR cross-home, XSS filter, SQLi filter, mass assignment home_id, rate limiting, unauth, invalid date, SQLi in date, oversized input, XSS stored data, anonymous privacy, UI reachability)
+- Audit: zero `{!! !!}`, zero `DB::raw` with user input (only `selectRaw('feedback_type, COUNT(*) as cnt')` — hardcoded), zero debug statements, zero hardcoded URLs, all `.html()` use `esc()`, all existing tests still pass (228 passed, 1 pre-existing ExampleTest failure)
+
+**Files created:**
+- `app/Services/ReportService.php` — 5 report generator methods, ~330 lines
+- `public/js/roster/reports.js` — card selection, AJAX, sort, CSV, esc() helper, ~220 lines
+- `tests/Feature/ReportBuilderTest.php` — 15 tests
+
+**Files modified:**
+- `app/Http/Controllers/frontEnd/Roster/ReportController.php` — added `generate()` method with validation + match dispatch
+- `resources/views/frontEnd/roster/report/report.blade.php` — replaced empty view with full report hub (cards, filters, summary, table, empty state, CSS)
+- `routes/web.php` — added `GET /reports/generate` with throttle
+- `app/Http/Middleware/checkUserAuth.php` — whitelisted `roster/reports` and `roster/reports/generate`
+
+**Data for home 8 (Aries):**
+- Incidents: 0 records (empty state works)
+- Training: 4 records (3 completed = 75% compliance)
+- MAR administrations: 29 records (27 administered, 1 refused, 1 spoilt = 93.1% compliance)
+- Shifts: 31 records (26 filled, 5 unfilled = 83.9% fill rate)
+- Feedback: 8 records (avg rating 4.1, 5 new, 1 resolved, 2 anonymous)
+
+**Key data discoveries:**
+- `su_incident_report.formdata` is JSON with `{location, brief, time, present, sent_to, info}` — no severity/status/type columns exist (CareRoster prompt assumed they did)
+- `staff_training.status` is tinyint: 0=Pending, 1=In Progress, 2=Completed (not string enums)
+- `staff_training` has NO `home_id` column — must JOIN `training` table and filter via `training.home_id`
+- `mar_administrations.code`: A=Administered, R=Refused, S=Spoilt (not full words)
+- `scheduled_shifts.home_id` is VARCHAR not INT — must cast: `where('home_id', (string) $homeId)`
+- `scheduled_shifts` uses `deleted_at` (Laravel SoftDeletes) not `is_deleted` flag — filter with `whereNull('deleted_at')`
+- `service_user.name` is a single `varchar(255)` column (not split into first/last)
+- `user.name` is also a single `varchar(255)` column
+
+**Teaching notes:**
+- Bash variables truncate large HTML responses (~6KB limit when using `echo "$VAR"`). Always use `curl -o /tmp/file` + `grep /tmp/file` for full-page content checks instead.
+- `selectRaw('column, COUNT(*) as cnt')` is safe for SQL aggregation — the SQL string is hardcoded with no user input interpolated. This is the ONE exception to the "no raw SQL" rule.
+- GET routes that fail Laravel validation return 302 (redirect back with errors) for regular requests, but 422 JSON for AJAX requests (`Accept: application/json` header). Both are correct — the JS sends the header, curl without `-H "Accept: application/json"` does not.
+- No new database tables needed — all 5 reports query existing Phase 1/Phase 2 tables (`su_incident_report`, `staff_training`+`training`, `mar_administrations`+`mar_sheets`, `scheduled_shifts`, `client_portal_feedback`).
+- Always DESCRIBE tables before writing queries — CareRoster prompts often assume column names that don't match the actual Care OS schema.
+
+---
+
 ### Log 10 — Session saved
 
 **Session saved:** `sessions/session23.md` — Full pipeline for Feature 3 (messaging): plan, scaffold, build, test (13 tests), debug, security review (11 attacks), audit, bug fixes (admin JS loading + roster_header wrapper), workflow error prevention updates, push.
