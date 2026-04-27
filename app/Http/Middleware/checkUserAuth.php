@@ -216,10 +216,15 @@ class checkUserAuth
                     'roster/feedback-hub/close'
                 );
 
-                // Report builder
+                // Report builder + scheduled reports
                 array_push($allowed_path,
                     'roster/reports',
-                    'roster/reports/generate'
+                    'roster/reports/generate',
+                    'roster/reports/schedules',
+                    'roster/reports/schedule/store',
+                    'roster/reports/schedule/update',
+                    'roster/reports/schedule/toggle',
+                    'roster/reports/schedule/delete'
                 );
 
                 // MAR Sheets — prescription management & administration

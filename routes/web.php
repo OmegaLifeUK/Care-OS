@@ -171,6 +171,11 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		Route::get('/care-document', [CareDocumentController::class, 'index'])->name('roster.care.document');
 		Route::get('/reports', [ReportController::class, 'index'])->name('roster.report');
 		Route::get('/reports/generate', [ReportController::class, 'generate'])->middleware('throttle:30,1');
+		Route::get('/reports/schedules', [ReportController::class, 'scheduleList'])->middleware('throttle:30,1');
+		Route::post('/reports/schedule/store', [ReportController::class, 'scheduleStore'])->middleware('throttle:30,1');
+		Route::post('/reports/schedule/update', [ReportController::class, 'scheduleUpdate'])->middleware('throttle:30,1');
+		Route::post('/reports/schedule/toggle', [ReportController::class, 'scheduleToggle'])->middleware('throttle:30,1');
+		Route::post('/reports/schedule/delete', [ReportController::class, 'scheduleDelete'])->middleware('throttle:20,1');
 
 		// Frontend Leave Request
 		Route::get('/leave-request', [LeaveRequestController::class, 'index'])->name('roster.leave.request');
