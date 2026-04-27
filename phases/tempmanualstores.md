@@ -3184,3 +3184,49 @@ MAR SHEETS-
  ║ ║  
  ║ Reply "tested" or report bugs. ║  
  ╚══════════════════════════════════════════════════════════════╝
+
+PROD-READY — Manual Test Checklist
+
+Login as komal / 123456 / home Aries at http://127.0.0.1:8000
+
+Page Access
+
+- Sidebar shows "Workflow Automation" link (between Reporting Engine and Audit Templates)
+- Click it → page loads at /roster/workflows with "Workflow Automation" title
+- Stats show 0/0/0/0 (Active/Total/Executed Today/Failed Today)
+- Empty state message appears: "No workflows configured..."  
+
+
+Create Workflow
+
+- Click "+ New Workflow" → modal opens
+- Create "Unfilled Shift Alert": Category=Scheduling, Trigger=Event, Entity=Shifts, Status=unfilled, Min Count=1, Action=Send Notification,
+  Message="There are unfilled shifts this week", Sticky checked, Cooldown=24
+- Save → modal closes, card appears under "Scheduling" group header
+- Stats update: Active=1, Total=1  
+
+
+Create Another
+
+- Create "Daily Summary Email": Category=Reporting, Trigger=Scheduled, Frequency=Daily, Time=18:00, Action=Send Email, Recipients=your  
+  email, Subject="Daily Summary", Message="Here is your daily summary", Cooldown=24
+- Verify it appears under "Reporting" group header  
+
+
+Edit/Toggle/Delete
+
+- Click pencil (edit) → modal opens pre-filled with workflow data
+- Change trigger type → dynamic fields update correctly
+- Click pause button → workflow dims, shows "Paused" badge
+- Click play button → reactivates
+- Click trash → confirm → workflow removed  
+
+
+Artisan Command
+
+- In terminal: php artisan workflows:evaluate
+- Should show triggered/skipped workflows
+- "Recent Executions" section on page shows log entries
+- Run again → condition/event workflows should be "skipped — cooldown active"
+- Check notification table: SELECT \* FROM notification WHERE notification_event_type_id = 25 ORDER BY id DESC LIMIT 5;  
+

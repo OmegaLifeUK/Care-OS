@@ -227,6 +227,17 @@ class checkUserAuth
                     'roster/reports/schedule/delete'
                 );
 
+                // Workflow Automation
+                array_push($allowed_path,
+                    'roster/workflows',
+                    'roster/workflows/list',
+                    'roster/workflows/store',
+                    'roster/workflows/update',
+                    'roster/workflows/toggle',
+                    'roster/workflows/delete',
+                    'roster/workflows/executions'
+                );
+
                 // MAR Sheets — prescription management & administration
                 array_push($allowed_path,
                     'roster/client/mar-sheet-list',

@@ -177,6 +177,15 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		Route::post('/reports/schedule/toggle', [ReportController::class, 'scheduleToggle'])->middleware('throttle:30,1');
 		Route::post('/reports/schedule/delete', [ReportController::class, 'scheduleDelete'])->middleware('throttle:20,1');
 
+		// Workflow Automation
+		Route::get('/workflows', [\App\Http\Controllers\frontEnd\Roster\WorkflowController::class, 'index']);
+		Route::get('/workflows/list', [\App\Http\Controllers\frontEnd\Roster\WorkflowController::class, 'list'])->middleware('throttle:30,1');
+		Route::post('/workflows/store', [\App\Http\Controllers\frontEnd\Roster\WorkflowController::class, 'store'])->middleware('throttle:30,1');
+		Route::post('/workflows/update', [\App\Http\Controllers\frontEnd\Roster\WorkflowController::class, 'update'])->middleware('throttle:30,1');
+		Route::post('/workflows/toggle', [\App\Http\Controllers\frontEnd\Roster\WorkflowController::class, 'toggle'])->middleware('throttle:30,1');
+		Route::post('/workflows/delete', [\App\Http\Controllers\frontEnd\Roster\WorkflowController::class, 'delete'])->middleware('throttle:20,1');
+		Route::get('/workflows/executions', [\App\Http\Controllers\frontEnd\Roster\WorkflowController::class, 'executions'])->middleware('throttle:30,1');
+
 		// Frontend Leave Request
 		Route::get('/leave-request', [LeaveRequestController::class, 'index'])->name('roster.leave.request');
 		Route::post('/leave/update', [LeaveRequestController::class, 'update'])->name('roster.leave.update');

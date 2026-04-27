@@ -4,6 +4,105 @@
 
 ---
 
+## Session: 2026-04-27 (Phase 2 Feature 7 — Workflow Automation Engine)
+
+### Log 16 — BUILD: Phase 2 Feature 7 — Workflow Automation Engine
+
+**Feature classification:** BUILD FOR REAL — CareRoster's workflow system is entirely client-side (localStorage toggles, fake stats). We built a real backend engine.
+
+**What was built:**
+- `/roster/workflows` page — admin CRUD for workflow automation rules with category-grouped cards, stat bar, execution log table
+- 3 trigger types: `scheduled` (time-based like Feature 6), `condition` (data threshold query), `event` (state check)
+- 2 action types: `send_notification` (INSERT into existing `notification` table, event_type_id=25), `send_email` (Laravel Mail via WorkflowNotificationMail)
+- Artisan command `workflows:evaluate` registered in Kernel to run every 15 minutes
+- Execution logging in `workflow_execution_logs` table with trigger data and result
+- Cooldown mechanism — condition/event triggers won't re-fire within cooldown_hours
+- Safety limits: max 20 workflows/home, max 50 executions/hour/home, max 5 email recipients
+
+**5 queryable entities:** incidents (su_incident_report), training (staff_training JOIN training), shifts (scheduled_shifts), medication (mar_administrations JOIN mar_sheets), feedback (client_portal_feedback)
+
+**Data quirks discovered/applied:**
+- `scheduled_shifts` column is `start_date` (not `date`) — discovered via SHOW COLUMNS
+- `notification` table requires `event_id` and `updated_at` (both NOT NULL, no defaults) — added to INSERT
+- `staff_training` has NO `home_id` — must JOIN `training` table (known from Feature 5)
+- `scheduled_shifts.home_id` is VARCHAR — cast with `(string) $homeId` (known from Feature 5)
+
+**Security verified (7 adversarial tests):**
+1. IDOR: update/delete/toggle across homes → ModelNotFoundException (PASS)
+2. Mass assignment: home_id in request → ignored, set from session (PASS)
+3. SQL injection via entity name → whitelist rejects (PASS)
+4. Email CRLF injection → parseRecipients filters out, validateActionConfig rejects empty result (PASS)
+5. Max recipients exceeded → rejected (PASS)
+6. All `.html()` in JS use `esc()` for dynamic data (14 occurrences)
+7. Zero `{!! !!}`, zero `DB::raw` with user input, zero `$guarded = []`
+
+**17 tests pass:** page load, list empty, create success, validate required/trigger_type/action_type, update, toggle, delete soft-delete, home isolation, IDOR 404, execution logs home-only, artisan evaluates/skips inactive/respects cooldown/executes notification, max per home, unauthenticated redirect
+
+**Files created (10):**
+- `app/Models/AutomatedWorkflow.php` — model with $fillable whitelist, JSON casts, scopes
+- `app/Models/WorkflowExecutionLog.php` — model with no timestamps
+- `app/Services/WorkflowEngineService.php` — CRUD, evaluation engine, action execution, logging (~700 lines)
+- `app/Http/Controllers/frontEnd/Roster/WorkflowController.php` — 7 endpoints
+- `app/Console/Commands/EvaluateWorkflows.php` — artisan command
+- `app/Mail/WorkflowNotificationMail.php` — mailable
+- `resources/views/frontEnd/roster/workflow/index.blade.php` — full page with modal
+- `resources/views/emails/workflow_notification.blade.php` — email template
+- `public/js/roster/workflows.js` — CRUD, dynamic form, card rendering, exec log
+- `tests/Feature/WorkflowEngineTest.php` — 17 tests
+
+**Files modified (4):**
+- `routes/web.php` — 7 workflow routes with throttle
+- `app/Http/Middleware/checkUserAuth.php` — whitelisted 7 endpoints
+- `app/Console/Kernel.php` — registered `workflows:evaluate` every 15 minutes
+- `resources/views/frontEnd/roster/common/roster_header.blade.php` — sidebar link
+
+**Teaching notes:**
+- `notification` table has `event_id` NOT NULL — always check SHOW COLUMNS before INSERT into existing tables
+- `ModelNotFoundException` extends `RuntimeException` — catch it separately in controller for proper 404 responses
+- `$fillable` is the security boundary for mass assignment; `home_id` and `created_by` deliberately excluded and set in service layer
+- JSON columns (`trigger_config`, `action_config`) require structure validation in service — whitelist entity/condition names to prevent SQL injection via query dispatch
+- `parseRecipients()` silently drops invalid emails; must check result is non-empty in validation to catch injection attempts
+
+---
+
+### Log 15 — Session saved
+
+### Log 14 — Session saved
+
+**Session saved:** `sessions/session25.md` — Prompt-writing session for Phase 2 Feature 7 (Workflow Automation Engine). Researched CareRoster workflow files (AutomatedWorkflows.jsx, AutomatedWorkflowEngine.jsx, WorkflowActionEditor.jsx), audited existing Care OS notification infrastructure (7,480 rows in `notification` table, 24 event types, NotificationService). Designed real engine with 3 trigger types (scheduled/condition/event), 2 action types (notification/email), cooldown mechanism, execution logging. Created `phases/phase2-feature7-workflow-engine-prompt.md`.
+
+---
+
+### Log 13 — Phase 2 Feature 7 Prompt Written
+
+**Created:** `phases/phase2-feature7-workflow-engine-prompt.md` — Pre-built prompt for Workflow Automation Engine (trigger → action).
+
+**Feature classification:** BUILD FOR REAL — CareRoster's workflow system is entirely client-side (localStorage toggles, hardcoded templates, fake stats). We build a real backend engine with DB-backed workflows, artisan command evaluator, and execution logging.
+
+**Architecture:**
+- 2 new tables: `automated_workflows` (JSON trigger/action configs) + `workflow_execution_logs`
+- 3 trigger types: scheduled (time-based), condition (data threshold), event (state check)
+- 2 action types: send_notification (existing `notification` table) + send_email (Laravel Mail)
+- Artisan command `workflows:evaluate` runs every 15 minutes
+- Cooldown mechanism prevents condition/event triggers from spamming
+- 5 queryable entities: incidents, training, shifts, medication, feedback
+
+**CareRoster reference analysis:**
+- `AutomatedWorkflows.jsx` — 8 hardcoded templates, toggle via localStorage, fake stats, no backend
+- `AutomatedWorkflowEngine.jsx` — 5 utility functions (care plan sync, shift gen, leave sync, geocoding, training assign) — none connected to the UI templates
+- `WorkflowActionEditor.jsx` — Part of form builder, not workflow engine
+- Verdict: UI layout is useful reference, but entire backend is built from scratch
+
+**Key discovery:** Existing `Workflow_notification` model at `app/Models/Workflow_notification.php` references `workflow_notifications` table that DOES NOT EXIST in the database. Legacy/unused — do not touch.
+
+**Existing notification infrastructure:** `notification` table (7,480 rows), `notification_event_type` table (24 types, id 1-24). We add type id=25 "Workflow Automation" and INSERT into `notification` for in-app alerts.
+
+**Safety guards:** Max 20 workflows/home, max 50 executions/hour/home, max 5 email recipients, cooldown per workflow, error isolation.
+
+**10 files to create, 4 to modify, 18 tests planned.**
+
+---
+
 ### Log 12 — Session saved
 
 **Session saved:** `sessions/session24.md` — Full pipeline for Feature 5 (Custom Report Builder): plan with data discovery, build (ReportService + controller + Blade + JS), 15 tests, debug, security review (13 attacks), audit, push. Two commits: `f57c1fd3` (feature) + `4dd21a9c` (logs/session23).
