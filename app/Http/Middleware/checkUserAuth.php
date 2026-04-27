@@ -188,6 +188,7 @@ class checkUserAuth
                     'portal/messages/read',
                     'portal/messages/read/',
                     'portal/feedback',
+                    'portal/feedback/submit',
                     'portal/logout'
                 );
 
@@ -204,6 +205,15 @@ class checkUserAuth
                     'roster/messaging-center',
                     'roster/messaging-center/thread',
                     'roster/messaging-center/reply'
+                );
+
+                // Admin feedback hub
+                array_push($allowed_path,
+                    'roster/feedback-hub',
+                    'roster/feedback-hub/list',
+                    'roster/feedback-hub/acknowledge',
+                    'roster/feedback-hub/respond',
+                    'roster/feedback-hub/close'
                 );
 
                 // MAR Sheets — prescription management & administration

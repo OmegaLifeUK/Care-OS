@@ -479,7 +479,7 @@
           <li> <a href="{{ url('/roster/reports') }}"><i class='bx  bx-file-report'></i> <span> Reports </span> </a>
           </li>
           <li> <a href="#"><i class='bx bx-message'></i> <span>Communications</span></a></li>
-          <li> <a href="#"><i class='bx bx-message'></i> <span>Client Feedback</span> </a></li>
+          <li> <a href="{{ url('/roster/feedback-hub') }}"><i class='bx bx-message'></i> <span>Client Feedback</span> </a></li>
 
           <li class="header-menu"> <span>Supported Living</span> </li>
           <li> <a href="#"><i class='bx bx-dashboard'></i> <span>SL Dashboard</span></a></li>

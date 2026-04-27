@@ -4,6 +4,7 @@ namespace App\Http\Controllers\frontEnd\Portal;
 
 use App\Http\Controllers\Controller;
 use App\Services\Portal\ClientPortalService;
+use App\Services\Portal\PortalFeedbackService;
 use App\Services\Portal\PortalMessageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -106,6 +107,61 @@ class PortalDashboardController extends Controller
         $result = $messageService->markAsRead((int) $id, $portalAccess);
 
         return response()->json(['status' => $result]);
+    }
+
+    public function feedback(Request $request)
+    {
+        $portalAccess = $request->attributes->get('portal_access');
+
+        if (!$portalAccess->can_send_messages) {
+            return view('frontEnd.portal.feedback', [
+                'portal_access' => $portalAccess,
+                'access_denied' => true,
+                'feedback_list' => collect(),
+                'stats' => ['total' => 0, 'with_responses' => 0, 'pending' => 0],
+            ]);
+        }
+
+        $feedbackService = app(PortalFeedbackService::class);
+        $feedbackList = $feedbackService->getFeedbackForPortal($portalAccess);
+        $stats = $feedbackService->getFeedbackStats($portalAccess);
+
+        return view('frontEnd.portal.feedback', [
+            'portal_access' => $portalAccess,
+            'access_denied' => false,
+            'feedback_list' => $feedbackList,
+            'stats' => $stats,
+        ]);
+    }
+
+    public function submitFeedback(Request $request)
+    {
+        $request->validate([
+            'subject' => 'required|string|max:255',
+            'comments' => 'required|string|max:5000',
+            'feedback_type' => 'required|in:compliment,complaint,suggestion,concern,general',
+            'category' => 'required|in:staff_performance,care_quality,communication,punctuality,professionalism,facilities,safety,other',
+            'rating' => 'required|integer|min:1|max:5',
+            'relationship' => 'required|in:self,family,guardian,representative,other',
+            'is_anonymous' => 'nullable|boolean',
+            'wants_callback' => 'nullable|boolean',
+            'contact_email' => 'nullable|email|max:255',
+            'contact_phone' => 'nullable|string|max:50',
+        ]);
+
+        $portalAccess = $request->attributes->get('portal_access');
+
+        if (!$portalAccess->can_send_messages) {
+            return response()->json(['status' => false, 'message' => 'Permission denied'], 403);
+        }
+
+        $feedbackService = app(PortalFeedbackService::class);
+        $feedback = $feedbackService->submitFeedback($portalAccess, $request->only([
+            'subject', 'comments', 'feedback_type', 'category', 'rating',
+            'relationship', 'is_anonymous', 'wants_callback', 'contact_email', 'contact_phone',
+        ]));
+
+        return response()->json(['status' => true, 'feedback' => $feedback]);
     }
 
     public function comingSoon(Request $request)

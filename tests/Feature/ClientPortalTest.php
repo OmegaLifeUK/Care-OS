@@ -699,11 +699,11 @@ class ClientPortalTest extends TestCase
         $this->assertStringNotContainsString('Coming soon', $cardMatch[0]);
     }
 
-    public function test_portal_feedback_returns_coming_soon()
+    public function test_portal_feedback_page_loads()
     {
         $response = $this->actingAsPortal()->get('/portal/feedback');
         $response->assertStatus(200);
-        $response->assertSee('Coming Soon');
+        $response->assertSee('We Value Your Feedback');
     }
 }
 

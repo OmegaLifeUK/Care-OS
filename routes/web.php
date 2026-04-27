@@ -155,6 +155,11 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		Route::get('/messaging-center', [MessagingCenterController::class, 'index'])->name('roster.messaging.center');
 		Route::post('/messaging-center/thread', [MessagingCenterController::class, 'getThread'])->middleware('throttle:30,1');
 		Route::post('/messaging-center/reply', [MessagingCenterController::class, 'reply'])->middleware('throttle:30,1');
+		Route::get('/feedback-hub', [\App\Http\Controllers\frontEnd\Roster\FeedbackHubController::class, 'index'])->name('roster.feedback-hub');
+		Route::get('/feedback-hub/list', [\App\Http\Controllers\frontEnd\Roster\FeedbackHubController::class, 'list'])->middleware('throttle:30,1');
+		Route::post('/feedback-hub/acknowledge', [\App\Http\Controllers\frontEnd\Roster\FeedbackHubController::class, 'acknowledge'])->middleware('throttle:30,1');
+		Route::post('/feedback-hub/respond', [\App\Http\Controllers\frontEnd\Roster\FeedbackHubController::class, 'respond'])->middleware('throttle:30,1');
+		Route::post('/feedback-hub/close', [\App\Http\Controllers\frontEnd\Roster\FeedbackHubController::class, 'close'])->middleware('throttle:20,1');
 		Route::get('/staff-task', [StaffTaskController::class, 'index'])->name('roster.staff.task');
 		Route::get('/staff-task-detail/{id}', [StaffTaskController::class, 'staffTaskDetail'])->name('roster.stafftask.details');
 		 Route::post('/staff-task/save', [StaffTaskController::class, 'staffTaskSave'])->name('roster.stafftask.save');
@@ -306,7 +311,8 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		Route::get('/messages', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'messages'])->name('portal.messages');
 		Route::post('/messages/send', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'sendMessage'])->middleware('throttle:30,1')->name('portal.messages.send');
 		Route::post('/messages/read/{id}', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'markMessageRead'])->middleware('throttle:30,1')->name('portal.messages.read')->where('id', '[0-9]+');
-		Route::get('/feedback', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'comingSoon'])->name('portal.feedback');
+		Route::get('/feedback', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'feedback'])->name('portal.feedback');
+		Route::post('/feedback/submit', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'submitFeedback'])->middleware('throttle:20,1')->name('portal.feedback.submit');
 		Route::post('/logout', [\App\Http\Controllers\frontEnd\Portal\PortalDashboardController::class, 'logout'])->middleware('throttle:10,1')->name('portal.logout');
 	});
 
