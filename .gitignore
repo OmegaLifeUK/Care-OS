@@ -19,6 +19,7 @@ yarn-error.log
 /.vscode
 .DS_Store
 *.sql
+!/setup/database.sql
 *.zip
 storage/logs/*.log
 laravel.log

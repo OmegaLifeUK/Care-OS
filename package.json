@@ -1,7 +1,9 @@
 {
     "private": true,
     "scripts": {
-        "dev": "vite",
+        "dev": "php artisan serve",
+        "setup": "bash setup/install.sh",
+        "vite": "vite",
         "build": "vite build"
     },
     "devDependencies": {
