@@ -4,6 +4,12 @@
 
 ---
 
+### Log 12 — Session saved
+
+**Session saved:** `sessions/session24.md` — Full pipeline for Feature 5 (Custom Report Builder): plan with data discovery, build (ReportService + controller + Blade + JS), 15 tests, debug, security review (13 attacks), audit, push. Two commits: `f57c1fd3` (feature) + `4dd21a9c` (logs/session23).
+
+---
+
 ## Session: 2026-04-27 (Phase 2 Feature 5 — Custom Report Builder)
 
 ### Log 11 — PUSH: Phase 2 Feature 5 — Custom Report Builder
