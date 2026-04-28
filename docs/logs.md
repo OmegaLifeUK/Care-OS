@@ -6,52 +6,210 @@
 
 ## Session: 2026-04-28 (Feature 8 — Pre-built Workflow Templates)
 
-### Log 19 — Feature 8 Built, Tested & Pushed
+### Log 19 — BUILD: Phase 2 Feature 8 — Pre-built Workflow Templates
 
-**Feature classification:** BUILD FOR REAL — CareRoster's 8 workflow templates are localStorage toggles with fake stats. We built real server-side templates with one-click install.
+**Feature classification:** BUILD FOR REAL — CareRoster's `AutomatedWorkflows.jsx` has 8 hardcoded `WORKFLOW_TEMPLATES` objects with localStorage toggles. Toggling ON does nothing — no template is ever written to the database. "Test" shows a fake success toast after 2 seconds. We built real server-side templates with one-click install that creates actual workflow records.
 
-**What was built:**
-- Template gallery section on `/roster/workflows` page — 8 pre-built workflow templates grouped by category
-- One-click install creates real `automated_workflows` DB record with sensible defaults
-- Installed templates are fully editable (they become regular workflows)
-- `template_id` column added to `automated_workflows` for duplicate-install prevention
-- Email templates install as inactive when no recipients configured (needs_config flag)
-- Scheduled templates get correct `next_run_date` on install
-- Gallery is collapsible with localStorage memory
+**Context read before starting:** `docs/logs.md` (prior sessions), `CLAUDE.md` (project conventions), `phases/phase2-feature7-workflow-engine-prompt.md` (Feature 7 that we extend), `app/Services/WorkflowEngineService.php` (existing 717-line engine), `app/Http/Controllers/frontEnd/Roster/WorkflowController.php` (existing 7 endpoints), `app/Models/AutomatedWorkflow.php` (model with $fillable, $casts, scopes), `resources/views/frontEnd/roster/workflow/index.blade.php` (existing Blade page), `public/js/roster/workflows.js` (existing 391-line JS).
 
-**8 templates:** incident_notify_manager, unfilled_shift_alert, training_expiry_warning, medication_missed_alert, incident_spike_alert, feedback_new_alert, daily_summary_email, weekly_shift_report
+---
 
-**Security verified (10 adversarial tests):**
-1. CSRF without token → 419 (PASS)
-2. Mass assignment home_id/created_by/is_deleted → ignored, set from session (PASS)
-3. XSS `<script>` in template_id → rejected by whitelist (PASS)
-4. SQLi `' OR 1=1 --` in template_id → rejected by whitelist (PASS)
-5. Oversized template_id (100 chars) → 422 validation (PASS)
-6. Unauthenticated access → 302/419 redirect (PASS)
-7. Duplicate install → 422 "already installed" (PASS)
-8. Invalid template_id → 422 "Invalid template" (PASS)
-9. Rate limiting on both routes → throttle:30,1 confirmed (PASS)
-10. All JS `.html()` use `esc()` for dynamic data (PASS)
+#### Step 1 — Schema Change: Added `template_id` column
 
-**19 tests pass (18 new + 17 existing workflow + 280 total):** templates endpoint returns 8, marks installed, install creates workflow, sets template_id, prevents duplicate, respects max limit, email installs inactive, scheduled sets next_run_date, rejects invalid, installed is editable/deletable, home isolation, mass assignment blocked, validation, unauthenticated redirect, registry unit tests
+Ran via `DB::statement()` in tinker (not artisan migrate — known issues with older migrations in this project):
+```sql
+ALTER TABLE automated_workflows ADD COLUMN template_id VARCHAR(50) NULL AFTER workflow_name;
+CREATE INDEX idx_template ON automated_workflows (template_id);
+```
+This column is NULL for manually created workflows, contains the template's string ID (e.g., `incident_notify_manager`) for template-installed ones. Used to check "is this template already installed for this home?" to prevent duplicates. Deliberately NOT added to `$fillable` on the model — set only via direct property assignment in the service layer so users can never mass-assign it.
 
-**Files created (2):**
-- `app/Services/WorkflowTemplateRegistry.php` — static class with 8 template definitions
-- `tests/Feature/WorkflowTemplateTest.php` — 19 tests
+#### Step 2 — Created `WorkflowTemplateRegistry` (new file)
 
-**Files modified (6):**
-- `app/Services/WorkflowEngineService.php` — added getTemplates(), getInstalledTemplateIds(), installTemplate() methods
-- `app/Http/Controllers/frontEnd/Roster/WorkflowController.php` — added templates() and installTemplate() endpoints
-- `routes/web.php` — 2 new routes with throttle middleware
-- `app/Http/Middleware/checkUserAuth.php` — whitelisted 2 new endpoints
-- `resources/views/frontEnd/roster/workflow/index.blade.php` — template gallery HTML/CSS section
-- `public/js/roster/workflows.js` — template gallery rendering, install, toggle functions
+`app/Services/WorkflowTemplateRegistry.php` — a static class with a `TEMPLATES` constant array holding all 8 template definitions. Each template has: `template_id`, `workflow_name`, `description`, `category`, `trigger_type`, `trigger_config` (array), `action_type`, `action_config` (array), `cooldown_hours`, `default_active`, `icon` (Boxicons class).
+
+Three static methods:
+- `all()` — returns all 8 templates
+- `find(string $templateId)` — looks up a single template by ID, returns null if not found
+- `validIds()` — returns array of all valid template_id strings (used for whitelist validation)
+
+**Design decision:** Templates defined as a PHP constant, NOT a DB table. They're developer-defined, not user-created. A PHP array is simpler, has no migration, can't be tampered with, and is fast to look up.
+
+The 8 templates and their configs:
+
+| # | template_id | Trigger | Action | Cooldown | Default Active |
+|---|------------|---------|--------|----------|---------------|
+| 1 | `incident_notify_manager` | event: incidents, status=new, min_count=1 | notification (sticky) | 24h | Yes |
+| 2 | `unfilled_shift_alert` | event: shifts, status=unfilled, min_count=3 | notification | 24h | Yes |
+| 3 | `training_expiry_warning` | condition: training, status_is, threshold=5, lookback=30d | notification | 48h | Yes |
+| 4 | `medication_missed_alert` | event: medication, status=R, min_count=1 | notification (sticky) | 12h | Yes |
+| 5 | `incident_spike_alert` | condition: incidents, count_exceeds 5 in 7d | email (empty recipients) | 48h | Yes* |
+| 6 | `feedback_new_alert` | event: feedback, status=new, min_count=1 | notification | 24h | No |
+| 7 | `daily_summary_email` | scheduled: daily at 18:00 | email (empty recipients) | 24h | No |
+| 8 | `weekly_shift_report` | scheduled: weekly Monday at 08:00 | email (empty recipients) | 24h | No |
+
+*`incident_spike_alert` has `default_active=true` in the template BUT installs as **inactive** because it's an email action with empty recipients — the service layer overrides this.
+
+#### Step 3 — Added 3 methods to `WorkflowEngineService`
+
+Added a `// ==================== TEMPLATES ====================` section before the evaluation engine, with `use App\Services\WorkflowTemplateRegistry;` import at the top.
+
+**`getTemplates(int $homeId): array`** — Calls `WorkflowTemplateRegistry::all()` to get all 8 templates, then calls `getInstalledTemplateIds($homeId)` to check which ones this home already has, and adds an `installed` boolean flag to each template before returning.
+
+**`getInstalledTemplateIds(int $homeId): array`** — Queries `AutomatedWorkflow::forHome($homeId)->notDeleted()->whereNotNull('template_id')->pluck('template_id')->toArray()`. Returns array of template_id strings that this home has already installed.
+
+**`installTemplate(string $templateId, int $homeId, int $userId): AutomatedWorkflow`** — The main install logic:
+1. Looks up the template in `WorkflowTemplateRegistry::find()` — throws RuntimeException if not found
+2. Checks for existing install: `AutomatedWorkflow::forHome($homeId)->notDeleted()->where('template_id', $templateId)->exists()` — throws if already installed
+3. Checks max workflows limit (reuses existing `MAX_WORKFLOWS_PER_HOME = 20` constant)
+4. Determines `is_active` — starts with `template['default_active']`, BUT if action_type is `send_email` and recipients are empty, forces inactive regardless
+5. Creates new `AutomatedWorkflow` via direct property assignment (NOT `fill()`) — sets `workflow_name`, `template_id`, `category`, `trigger_type`, `trigger_config`, `action_type`, `action_config`, `cooldown_hours`, `is_active`, `home_id`, `created_by`
+6. For scheduled trigger types, calls existing `calculateNextRunDate()` to set `next_run_date`
+7. Saves and logs `"Workflow template installed: '{template_id}' as #{id} for home {homeId}"`
+
+#### Step 4 — Added 2 controller endpoints
+
+`app/Http/Controllers/frontEnd/Roster/WorkflowController.php`:
+
+**`templates(WorkflowEngineService $service)`** — GET endpoint. Calls `$service->getTemplates($this->homeId())` and returns JSON `{status: true, templates: [...]}`. Home ID comes from auth session via existing `homeId()` helper (same as all other workflow endpoints).
+
+**`installTemplate(Request $request, WorkflowEngineService $service)`** — POST endpoint.
+- Validates: `template_id` required|string|max:50
+- **Whitelist check in controller:** `in_array($request->template_id, WorkflowTemplateRegistry::validIds())` — rejects invalid IDs with 422 BEFORE hitting the service layer (belt-and-suspenders — service also checks)
+- Calls `$service->installTemplate()`, catches RuntimeException for duplicate/max-limit errors
+- Returns `{status, workflow, needs_config}` — `needs_config` is true when the installed workflow is an email action with no recipients, so the frontend can show a "configure recipients" alert
+
+#### Step 5 — Added 2 routes
+
+In `routes/web.php`, inside the existing roster prefix group, after the 7 existing workflow routes:
+```php
+Route::get('/workflows/templates', [WorkflowController::class, 'templates'])->middleware('throttle:30,1');
+Route::post('/workflows/install-template', [WorkflowController::class, 'installTemplate'])->middleware('throttle:30,1');
+```
+Both have rate limiting. No route parameter constraints needed (template_id comes in POST body, not URL).
+
+#### Step 6 — Whitelisted in `checkUserAuth`
+
+Added `'roster/workflows/templates'` and `'roster/workflows/install-template'` to the existing workflow `array_push()` block in `app/Http/Middleware/checkUserAuth.php`. Note: the middleware's digit-stripping (`preg_replace('/\d/', '', $path)`) doesn't affect these paths since they contain no digits.
+
+#### Step 7 — Template gallery Blade HTML/CSS
+
+Added to `resources/views/frontEnd/roster/workflow/index.blade.php`:
+
+**CSS (inside existing `<style>` block):**
+- `.tpl-header` — blue-tinted flex header with click-to-toggle, matches existing `.wf-group-header` styling
+- `.tpl-gallery` — light blue background container with `.collapsed` class for hide/show
+- `.tpl-cat-header` — uppercase category labels matching existing `.wf-group-header` style
+- `.tpl-card` — flex card with icon, body (name + description + badges), and install button
+- `.tpl-card-icon` — 38x38 rounded box with Boxicon, light blue background
+- `.btn-install` — blue button, `.btn-installed` — green static badge
+
+**HTML** — inserted between the `.wf-toolbar` div and the `#wf-list` div:
+```html
+<div id="template-gallery-section">
+    <div class="tpl-header" onclick="toggleGallery()">...</div>
+    <div id="tpl-gallery" class="tpl-gallery">
+        <div class="wf-loading">Loading templates...</div>
+    </div>
+</div>
+```
+The gallery div is populated by JS on page load. Used HTML entities (`&#9650;` / `&#9660;`) for up/down arrows instead of emoji.
+
+#### Step 8 — Template gallery JavaScript
+
+Added to `public/js/roster/workflows.js`:
+
+**In `$(document).ready`:** added `loadTemplates()` and `initGalleryToggle()` calls.
+
+**`loadTemplates()`** — `$.get(baseUrl + '/roster/workflows/templates', ...)` → calls `renderTemplates()` on success.
+
+**`renderTemplates(templates)`** — Groups templates by category, iterates in fixed category order (`compliance, scheduling, clinical, training, hr, engagement, reporting`), builds HTML with category headers and template cards.
+
+**`renderTemplateCard(t)`** — Builds a single card div with:
+- Icon from template's `icon` field (Boxicons class)
+- Name and description (both escaped with `esc()`)
+- Trigger type badge + action type badge (reuses existing `.wf-badge-*` CSS classes from Feature 7)
+- Install button OR "Installed ✓" badge based on `t.installed` flag
+- Card has `id="tpl-{template_id}"` for targeting after install
+
+**`installTemplate(templateId)`** — `$.post(baseUrl + '/roster/workflows/install-template', ...)`:
+- On success: finds the card by ID, replaces `.btn-install` with `.btn-installed` span (no page reload needed), calls `loadWorkflows()` to refresh the main workflow list, shows alert if `res.needs_config` is true
+- On failure: shows error message from response
+
+**`toggleGallery()`** — toggles `.collapsed` class on `#tpl-gallery`, updates arrow text, saves state to `localStorage('wf_gallery_collapsed')`.
+
+**`initGalleryToggle()`** — on page load, checks localStorage and applies collapsed state if previously collapsed.
+
+All dynamic data rendered via existing `esc()` helper (defined at top of workflows.js). Template data is server-defined not user input, but still escaped as defence-in-depth.
+
+#### Step 9 — Tests
+
+Created `tests/Feature/WorkflowTemplateTest.php` with 19 tests:
+
+| # | Test | What it verifies |
+|---|------|-----------------|
+| 1 | `test_templates_endpoint_returns_all_8_templates` | GET /templates returns 8 items |
+| 2 | `test_templates_endpoint_marks_installed_templates` | Pre-installs one template via direct DB insert, checks `installed=true` for that one and `false` for others |
+| 3 | `test_install_template_creates_workflow` | POST install → 200, correct workflow_name, needs_config=false for notification template |
+| 4 | `test_install_template_sets_template_id` | Verifies template_id column is set on the DB record after install |
+| 5 | `test_install_template_prevents_duplicate` | Install same template twice → second returns 422 "already installed" |
+| 6 | `test_install_template_respects_max_limit` | Creates 20 filler workflows, then tries to install template → 422 "Maximum" |
+| 7 | `test_email_template_installs_inactive_without_recipients` | Installs `incident_spike_alert` (email, empty recipients) → needs_config=true, is_active=false |
+| 8 | `test_scheduled_template_sets_next_run_date` | Installs `daily_summary_email` → next_run_date is NOT null |
+| 9 | `test_install_rejects_invalid_template_id` | POST with `nonexistent_template` → 422 |
+| 10 | `test_installed_template_is_editable` | Install a template, then POST to /update with new name → 200, name changed |
+| 11 | `test_installed_template_is_deletable` | Install a template, then POST to /delete → 200, is_deleted=1 |
+| 12 | `test_home_isolation_on_template_installed_status` | Installs template for home 999, checks home 8 still shows all templates as not installed |
+| 13 | `test_template_id_not_mass_assignable` | Creates model, calls `fill(['template_id' => 'injected_value'])`, asserts template_id is still null |
+| 14 | `test_install_validation_requires_template_id` | POST with empty body → 422 (uses `postJson()` — see teaching notes) |
+| 15 | `test_unauthenticated_templates_redirects` | GET without auth → 302 |
+| 16 | `test_unauthenticated_install_redirects` | POST without auth → 302 |
+| 17 | `test_registry_returns_8_templates` | Unit test: `WorkflowTemplateRegistry::all()` returns 8 |
+| 18 | `test_registry_find_returns_correct_template` | Unit test: find('medication_missed_alert') → correct name and category |
+| 19 | `test_registry_find_returns_null_for_unknown` | Unit test: find('does_not_exist') → null |
+
+`tearDown()` cleans up: `AutomatedWorkflow::where('home_id', $this->homeId)->whereNotNull('template_id')->forceDelete()` and same for home 999. Only deletes template-installed workflows, not manually created ones.
+
+**Test result:** 18 passed, 1 warning (pre-existing PHP constant deprecation in `config/constant.php`, not our code). Existing 17 `WorkflowEngineTest` tests still pass. Full suite: 280 passed out of 281 (only failure is pre-existing `ExampleTest` — default Laravel test checking `/` returns 200, gets 302 because of auth redirect).
+
+#### Adversarial Security Review (curl-tested against running server)
+
+Logged in as admin (komal/123456/home 8), tested all attacks:
+
+| # | Attack | Method | Result |
+|---|--------|--------|--------|
+| 1 | CSRF — POST without X-CSRF-TOKEN | `curl -X POST .../install-template -d "template_id=..."` | **PASS** → HTTP 419 |
+| 2 | Mass assignment — `home_id=999&created_by=1&is_deleted=1` | Added extra fields to POST body | **PASS** → home_id=8, created_by=194 (from session, not request) |
+| 3 | XSS — `template_id=<script>alert(1)</script>` | Script tag in template_id field | **PASS** → 422 "Invalid template" (rejected by whitelist before any DB query) |
+| 4 | SQLi — `template_id=' OR 1=1 --` | SQL injection payload | **PASS** → 422 "Invalid template" (rejected by whitelist) |
+| 5 | Oversized input — 100 char template_id | Exceeds max:50 validation | **PASS** → HTTP 422 |
+| 6 | Unauthenticated GET /templates | No cookie jar | **PASS** → HTTP 302 redirect to login |
+| 7 | Unauthenticated POST /install-template | No cookie jar | **PASS** → HTTP 419 (CSRF) |
+| 8 | Duplicate install | Install same template twice | **PASS** → 422 "This template is already installed" |
+| 9 | Invalid template_id | POST with `template_id=not_real` | **PASS** → 422 "Invalid template" |
+| 10 | Rate limiting | Checked route definitions | **PASS** → both routes have `throttle:30,1` |
+
+#### Audit — grep patterns on all new/modified files
+
+1. `DB::raw` / `whereRaw` / `selectRaw` → **CLEAN** (zero in new files)
+2. `{!! !!}` in Blade → **CLEAN** (zero)
+3. `.html()` / `.innerHTML` in JS → all uses either set static HTML strings or use `html` variable built from `esc()`-escaped data in `renderTemplateCard()` / `renderWorkflowCard()`
+4. POST routes without throttle → **CLEAN** (both new routes have throttle; unthrottled routes found are pre-existing legacy `workflow_save_data` etc.)
+5. `$guarded = []` → **CLEAN** (zero in model)
+6. Debug statements (`dd()`, `dump()`, `console.log()`) → **CLEAN** (zero)
+7. Hardcoded URLs → **CLEAN** (zero)
+
+**Commit:** `3cb44403` — 11 files changed, 1,778 insertions
+**Push:** `git push origin komal:main` → success
+
+---
 
 **Teaching notes:**
-- `template_id` deliberately NOT in `$fillable` — set via direct property assignment in service layer only, preventing mass assignment from user input
-- Template IDs validated against a hardcoded PHP whitelist before any DB query — belt-and-suspenders with the `in_array()` check in both controller and service
-- Email templates with empty recipients forced inactive on install — prevents workflows from immediately trying to send to nobody
-- `postJson()` needed in tests for validation-failure assertions (regular `post()` returns 302 redirect on validation failure)
+- **`template_id` NOT in `$fillable`:** This is the key security design. The `installTemplate()` service method sets it via `$workflow->template_id = $template['template_id']` (direct property assignment). Since it's not in `$fillable`, any `fill()` call (e.g., from the update endpoint) silently ignores `template_id` in the input — so a user can't POST `template_id=something` to the update endpoint and fake a template install. Test #13 explicitly verifies this.
+- **Belt-and-suspenders validation:** Template ID is validated in TWO places: (1) Controller checks `in_array($request->template_id, WorkflowTemplateRegistry::validIds())` and returns 422 immediately, (2) Service checks `WorkflowTemplateRegistry::find()` returns non-null. This means even if someone bypasses the controller (e.g., calling the service directly in a future feature), the service still rejects invalid IDs.
+- **Email templates forced inactive:** Templates 5, 7, 8 have `send_email` action with empty `recipients` string. Even though #5 has `default_active=true`, the service detects empty recipients and overrides to `is_active=false`. The controller returns `needs_config=true` so the frontend shows "configure recipients to activate". This prevents a newly installed workflow from immediately trying to send email to nobody (which would log a "No valid recipients" failure in execution logs).
+- **`postJson()` vs `post()` in tests:** Laravel's `$this->post()` submits a form-style request. When validation fails, Laravel redirects back (302) for form requests but returns 422 JSON for AJAX/JSON requests. Test #14 needed `postJson()` to get the expected 422 instead of 302. This is a common Laravel testing gotcha — always use `postJson()` when testing API endpoints that return JSON validation errors.
+- **Gallery collapse with localStorage:** The gallery remembers its collapsed/expanded state in `localStorage('wf_gallery_collapsed')`. This is a UX pattern we should reuse — admin pages with optional sections (like template galleries, help panels) should remember their toggle state so admins aren't constantly re-collapsing things they've already seen.
+- **Templates as PHP constants, not a DB table:** We chose a `private const TEMPLATES` array over a `workflow_templates` table. Advantages: zero migration, can't be tampered with via SQL injection, no cache invalidation concerns, trivially fast. Disadvantage: adding new templates requires a code deploy. For a care home system with ~8 templates defined by developers, the simplicity wins. If we ever need admin-defined templates, we'd add a table then.
 
 ---
 
