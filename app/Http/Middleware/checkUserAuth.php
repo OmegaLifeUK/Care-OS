@@ -235,7 +235,9 @@ class checkUserAuth
                     'roster/workflows/update',
                     'roster/workflows/toggle',
                     'roster/workflows/delete',
-                    'roster/workflows/executions'
+                    'roster/workflows/executions',
+                    'roster/workflows/templates',
+                    'roster/workflows/install-template'
                 );
 
                 // MAR Sheets — prescription management & administration

@@ -185,6 +185,8 @@ Route::group(['middleware' => ['checkUserAuth', 'lock']], function () {
 		Route::post('/workflows/toggle', [\App\Http\Controllers\frontEnd\Roster\WorkflowController::class, 'toggle'])->middleware('throttle:30,1');
 		Route::post('/workflows/delete', [\App\Http\Controllers\frontEnd\Roster\WorkflowController::class, 'delete'])->middleware('throttle:20,1');
 		Route::get('/workflows/executions', [\App\Http\Controllers\frontEnd\Roster\WorkflowController::class, 'executions'])->middleware('throttle:30,1');
+		Route::get('/workflows/templates', [\App\Http\Controllers\frontEnd\Roster\WorkflowController::class, 'templates'])->middleware('throttle:30,1');
+		Route::post('/workflows/install-template', [\App\Http\Controllers\frontEnd\Roster\WorkflowController::class, 'installTemplate'])->middleware('throttle:30,1');
 
 		// Frontend Leave Request
 		Route::get('/leave-request', [LeaveRequestController::class, 'index'])->name('roster.leave.request');

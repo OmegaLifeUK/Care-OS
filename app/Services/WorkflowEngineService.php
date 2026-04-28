@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AutomatedWorkflow;
 use App\Models\WorkflowExecutionLog;
 use App\Mail\WorkflowNotificationMail;
+use App\Services\WorkflowTemplateRegistry;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -174,6 +175,84 @@ class WorkflowEngineService
             'executed_today' => $executedToday,
             'failed_today' => $failedToday,
         ];
+    }
+
+    // ==================== TEMPLATES ====================
+
+    public function getTemplates(int $homeId): array
+    {
+        $templates = WorkflowTemplateRegistry::all();
+        $installedIds = $this->getInstalledTemplateIds($homeId);
+
+        foreach ($templates as &$template) {
+            $template['installed'] = in_array($template['template_id'], $installedIds);
+        }
+
+        return $templates;
+    }
+
+    public function getInstalledTemplateIds(int $homeId): array
+    {
+        return AutomatedWorkflow::forHome($homeId)
+            ->notDeleted()
+            ->whereNotNull('template_id')
+            ->pluck('template_id')
+            ->toArray();
+    }
+
+    public function installTemplate(string $templateId, int $homeId, int $userId): AutomatedWorkflow
+    {
+        $template = WorkflowTemplateRegistry::find($templateId);
+        if (!$template) {
+            throw new \RuntimeException('Unknown template.');
+        }
+
+        $existing = AutomatedWorkflow::forHome($homeId)
+            ->notDeleted()
+            ->where('template_id', $templateId)
+            ->exists();
+
+        if ($existing) {
+            throw new \RuntimeException('This template is already installed.');
+        }
+
+        $count = AutomatedWorkflow::forHome($homeId)->notDeleted()->count();
+        if ($count >= self::MAX_WORKFLOWS_PER_HOME) {
+            throw new \RuntimeException('Maximum of ' . self::MAX_WORKFLOWS_PER_HOME . ' workflows per home.');
+        }
+
+        $isActive = $template['default_active'];
+        if ($template['action_type'] === 'send_email' && empty($template['action_config']['recipients'])) {
+            $isActive = false;
+        }
+
+        $workflow = new AutomatedWorkflow();
+        $workflow->workflow_name = $template['workflow_name'];
+        $workflow->template_id = $template['template_id'];
+        $workflow->category = $template['category'];
+        $workflow->trigger_type = $template['trigger_type'];
+        $workflow->trigger_config = $template['trigger_config'];
+        $workflow->action_type = $template['action_type'];
+        $workflow->action_config = $template['action_config'];
+        $workflow->cooldown_hours = $template['cooldown_hours'];
+        $workflow->is_active = $isActive;
+        $workflow->home_id = $homeId;
+        $workflow->created_by = $userId;
+
+        if ($template['trigger_type'] === 'scheduled') {
+            $config = $template['trigger_config'];
+            $workflow->next_run_date = $this->calculateNextRunDate(
+                $config['frequency'],
+                isset($config['day']) ? (int) $config['day'] : null,
+                $config['time']
+            );
+        }
+
+        $workflow->save();
+
+        Log::info("Workflow template installed: '{$template['template_id']}' as #{$workflow->id} for home {$homeId}");
+
+        return $workflow;
     }
 
     // ==================== EVALUATION ENGINE ====================

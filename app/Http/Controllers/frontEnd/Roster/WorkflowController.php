@@ -127,4 +127,35 @@ class WorkflowController extends Controller
         $logs = $service->getExecutionLogs($this->homeId());
         return response()->json(['status' => true, 'executions' => $logs]);
     }
+
+    public function templates(WorkflowEngineService $service)
+    {
+        $templates = $service->getTemplates($this->homeId());
+        return response()->json(['status' => true, 'templates' => $templates]);
+    }
+
+    public function installTemplate(Request $request, WorkflowEngineService $service)
+    {
+        $request->validate([
+            'template_id' => 'required|string|max:50',
+        ]);
+
+        if (!in_array($request->template_id, \App\Services\WorkflowTemplateRegistry::validIds())) {
+            return response()->json(['status' => false, 'message' => 'Invalid template.'], 422);
+        }
+
+        try {
+            $workflow = $service->installTemplate($request->template_id, $this->homeId(), Auth::user()->id);
+
+            $needsConfig = $workflow->action_type === 'send_email' && empty($workflow->action_config['recipients']);
+
+            return response()->json([
+                'status' => true,
+                'workflow' => $workflow,
+                'needs_config' => $needsConfig,
+            ]);
+        } catch (\RuntimeException $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
 }

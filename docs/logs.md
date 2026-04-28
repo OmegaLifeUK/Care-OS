@@ -4,6 +4,78 @@
 
 ---
 
+## Session: 2026-04-28 (Feature 8 — Pre-built Workflow Templates)
+
+### Log 19 — Feature 8 Built, Tested & Pushed
+
+**Feature classification:** BUILD FOR REAL — CareRoster's 8 workflow templates are localStorage toggles with fake stats. We built real server-side templates with one-click install.
+
+**What was built:**
+- Template gallery section on `/roster/workflows` page — 8 pre-built workflow templates grouped by category
+- One-click install creates real `automated_workflows` DB record with sensible defaults
+- Installed templates are fully editable (they become regular workflows)
+- `template_id` column added to `automated_workflows` for duplicate-install prevention
+- Email templates install as inactive when no recipients configured (needs_config flag)
+- Scheduled templates get correct `next_run_date` on install
+- Gallery is collapsible with localStorage memory
+
+**8 templates:** incident_notify_manager, unfilled_shift_alert, training_expiry_warning, medication_missed_alert, incident_spike_alert, feedback_new_alert, daily_summary_email, weekly_shift_report
+
+**Security verified (10 adversarial tests):**
+1. CSRF without token → 419 (PASS)
+2. Mass assignment home_id/created_by/is_deleted → ignored, set from session (PASS)
+3. XSS `<script>` in template_id → rejected by whitelist (PASS)
+4. SQLi `' OR 1=1 --` in template_id → rejected by whitelist (PASS)
+5. Oversized template_id (100 chars) → 422 validation (PASS)
+6. Unauthenticated access → 302/419 redirect (PASS)
+7. Duplicate install → 422 "already installed" (PASS)
+8. Invalid template_id → 422 "Invalid template" (PASS)
+9. Rate limiting on both routes → throttle:30,1 confirmed (PASS)
+10. All JS `.html()` use `esc()` for dynamic data (PASS)
+
+**19 tests pass (18 new + 17 existing workflow + 280 total):** templates endpoint returns 8, marks installed, install creates workflow, sets template_id, prevents duplicate, respects max limit, email installs inactive, scheduled sets next_run_date, rejects invalid, installed is editable/deletable, home isolation, mass assignment blocked, validation, unauthenticated redirect, registry unit tests
+
+**Files created (2):**
+- `app/Services/WorkflowTemplateRegistry.php` — static class with 8 template definitions
+- `tests/Feature/WorkflowTemplateTest.php` — 19 tests
+
+**Files modified (6):**
+- `app/Services/WorkflowEngineService.php` — added getTemplates(), getInstalledTemplateIds(), installTemplate() methods
+- `app/Http/Controllers/frontEnd/Roster/WorkflowController.php` — added templates() and installTemplate() endpoints
+- `routes/web.php` — 2 new routes with throttle middleware
+- `app/Http/Middleware/checkUserAuth.php` — whitelisted 2 new endpoints
+- `resources/views/frontEnd/roster/workflow/index.blade.php` — template gallery HTML/CSS section
+- `public/js/roster/workflows.js` — template gallery rendering, install, toggle functions
+
+**Teaching notes:**
+- `template_id` deliberately NOT in `$fillable` — set via direct property assignment in service layer only, preventing mass assignment from user input
+- Template IDs validated against a hardcoded PHP whitelist before any DB query — belt-and-suspenders with the `in_array()` check in both controller and service
+- Email templates with empty recipients forced inactive on install — prevents workflows from immediately trying to send to nobody
+- `postJson()` needed in tests for validation-failure assertions (regular `post()` returns 302 redirect on validation failure)
+
+---
+
+### Log 18 — Feature 8 Prompt Written
+
+**Created:** `phases/phase2-feature8-prebuilt-workflows-prompt.md` — Pre-built Workflow Templates (final Phase 2 feature).
+
+8 templates defined: incident→notify manager, unfilled shift alert, training expiry warning, missed medication alert, incident spike alert, feedback new alert, daily summary email, weekly shift report. Template gallery UI on existing workflow page, one-click install, duplicate prevention, seeder command, 16 tests planned.
+
+Schema change: adds `template_id VARCHAR(50) NULL` column to `automated_workflows`. 1 new file (WorkflowTemplateRegistry.php), 8 files to modify.
+
+---
+
+### Log 17 — Feature 7 Committed & Pushed
+
+**Commit:** `6d8c72d3` — Phase 2 Feature 7: Workflow Automation Engine (18 files, 3,203 lines).
+**Push:** `git push origin komal:main` → success.
+
+Manual testing completed: both scheduled (#140) and event (#139) triggers verified firing end-to-end via artisan command. User tested all CRUD operations in browser at `/roster/workflows` — "nothing breaks".
+
+**Session saved:** `sessions/session26.md`
+
+---
+
 ## Session: 2026-04-27 (Phase 2 Feature 7 — Workflow Automation Engine)
 
 ### Log 16 — BUILD: Phase 2 Feature 7 — Workflow Automation Engine

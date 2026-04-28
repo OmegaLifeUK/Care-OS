@@ -13,6 +13,8 @@ var allWorkflows = [];
 $(document).ready(function () {
     loadWorkflows();
     loadExecutions();
+    loadTemplates();
+    initGalleryToggle();
     showTriggerFields();
     showActionFields();
 });
@@ -387,4 +389,103 @@ function renderExecutions(execs) {
 
     html += '</tbody></table>';
     $('#wf-exec-list').html(html);
+}
+
+// ==================== TEMPLATE GALLERY ====================
+
+function loadTemplates() {
+    $.get(baseUrl + '/roster/workflows/templates', function (res) {
+        if (!res.status) return;
+        renderTemplates(res.templates || []);
+    });
+}
+
+function renderTemplates(templates) {
+    if (!templates.length) {
+        $('#tpl-gallery').html('<div class="wf-empty" style="padding:20px;">No templates available.</div>');
+        return;
+    }
+
+    var grouped = {};
+    var catOrder = ['compliance', 'scheduling', 'clinical', 'training', 'hr', 'engagement', 'reporting'];
+    for (var i = 0; i < templates.length; i++) {
+        var t = templates[i];
+        var cat = t.category || 'other';
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(t);
+    }
+
+    var html = '';
+    for (var ci = 0; ci < catOrder.length; ci++) {
+        var cat = catOrder[ci];
+        if (!grouped[cat]) continue;
+        html += '<div class="tpl-cat-header">' + esc(cat) + '</div>';
+        for (var j = 0; j < grouped[cat].length; j++) {
+            html += renderTemplateCard(grouped[cat][j]);
+        }
+    }
+
+    $('#tpl-gallery').html(html);
+}
+
+function renderTemplateCard(t) {
+    var triggerBadge = '<span class="wf-badge wf-badge-' + esc(t.trigger_type) + '">' + esc(t.trigger_type) + '</span>';
+    var actionBadge = t.action_type === 'send_notification'
+        ? '<span class="wf-badge wf-badge-notification">notification</span>'
+        : '<span class="wf-badge wf-badge-email">email</span>';
+
+    var installBtn = t.installed
+        ? '<span class="btn-installed">Installed &#10003;</span>'
+        : '<button class="btn-install" onclick="installTemplate(\'' + esc(t.template_id) + '\')">Install</button>';
+
+    return '<div class="tpl-card" id="tpl-' + esc(t.template_id) + '">' +
+        '<div class="tpl-card-icon"><i class="bx ' + esc(t.icon || 'bx-zap') + '"></i></div>' +
+        '<div class="tpl-card-body">' +
+            '<div class="tpl-card-name">' + esc(t.workflow_name) + '</div>' +
+            '<div class="tpl-card-desc">' + esc(t.description) + '</div>' +
+            '<div class="tpl-card-badges">' + triggerBadge + ' ' + actionBadge + '</div>' +
+        '</div>' +
+        installBtn +
+    '</div>';
+}
+
+function installTemplate(templateId) {
+    $.post(baseUrl + '/roster/workflows/install-template', { template_id: templateId }, function (res) {
+        if (res.status) {
+            var card = $('#tpl-' + templateId);
+            card.find('.btn-install').replaceWith('<span class="btn-installed">Installed &#10003;</span>');
+            loadWorkflows();
+
+            if (res.needs_config) {
+                alert('Workflow installed! Please edit it to add email recipients before it can send.');
+            }
+        } else {
+            alert(res.message || 'Failed to install template.');
+        }
+    }).fail(function (xhr) {
+        var msg = 'Failed to install template.';
+        if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+        alert(msg);
+    });
+}
+
+function toggleGallery() {
+    var gallery = $('#tpl-gallery');
+    var btn = $('#tpl-toggle-btn');
+    if (gallery.hasClass('collapsed')) {
+        gallery.removeClass('collapsed');
+        btn.html('&#9650; Hide');
+        localStorage.setItem('wf_gallery_collapsed', '0');
+    } else {
+        gallery.addClass('collapsed');
+        btn.html('&#9660; Show');
+        localStorage.setItem('wf_gallery_collapsed', '1');
+    }
+}
+
+function initGalleryToggle() {
+    if (localStorage.getItem('wf_gallery_collapsed') === '1') {
+        $('#tpl-gallery').addClass('collapsed');
+        $('#tpl-toggle-btn').html('&#9660; Show');
+    }
 }

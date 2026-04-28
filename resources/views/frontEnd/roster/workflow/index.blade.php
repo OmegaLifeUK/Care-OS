@@ -92,6 +92,52 @@
     .config-section-title { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 10px; text-transform: uppercase; }
 
     .wf-loading { text-align: center; padding: 40px; color: #999; }
+
+    /* Template Gallery */
+    .tpl-header {
+        display: flex; align-items: center; gap: 15px; cursor: pointer;
+        padding: 14px 20px; background: #f0f7ff; border-radius: 10px 10px 0 0;
+        border: 1px solid #d0e3f7; margin-bottom: 0;
+    }
+    .tpl-header-title { font-size: 16px; font-weight: 600; color: #2c3e50; }
+    .tpl-header-sub { font-size: 13px; color: #777; flex: 1; }
+    .tpl-toggle { font-size: 12px; color: #3498db; font-weight: 600; }
+    .tpl-gallery {
+        background: #f8fbff; border: 1px solid #d0e3f7; border-top: none;
+        border-radius: 0 0 10px 10px; padding: 20px; margin-bottom: 25px;
+    }
+    .tpl-gallery.collapsed { display: none; }
+    .tpl-cat-header {
+        font-size: 13px; font-weight: 700; color: #777; text-transform: uppercase;
+        letter-spacing: 0.5px; margin: 15px 0 8px; padding-bottom: 4px;
+        border-bottom: 1px solid #e0e8f0;
+    }
+    .tpl-cat-header:first-child { margin-top: 0; }
+    .tpl-card {
+        display: flex; align-items: center; gap: 14px;
+        background: #fff; border-radius: 8px; padding: 14px 18px; margin-bottom: 8px;
+        border: 1px solid #e9ecef;
+    }
+    .tpl-card-icon {
+        width: 38px; height: 38px; border-radius: 8px; background: #eef2ff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; color: #3498db; flex-shrink: 0;
+    }
+    .tpl-card-body { flex: 1; }
+    .tpl-card-name { font-size: 14px; font-weight: 600; color: #2c3e50; margin-bottom: 2px; }
+    .tpl-card-desc { font-size: 12px; color: #888; margin-bottom: 4px; }
+    .tpl-card-badges { display: flex; gap: 4px; }
+    .btn-install {
+        background: #3498db; color: #fff; border: none; border-radius: 6px;
+        padding: 6px 16px; font-size: 12px; font-weight: 600; cursor: pointer;
+        white-space: nowrap;
+    }
+    .btn-install:hover { background: #2980b9; }
+    .btn-installed {
+        background: #27ae60; color: #fff; border: none; border-radius: 6px;
+        padding: 6px 16px; font-size: 12px; font-weight: 600; cursor: default;
+        white-space: nowrap;
+    }
 </style>
 
 <div class="wf-container">
@@ -107,6 +153,18 @@
 
     <div class="wf-toolbar">
         <button class="btn-new-wf" onclick="openCreateModal()">+ New Workflow</button>
+    </div>
+
+    <!-- Template Gallery -->
+    <div id="template-gallery-section">
+        <div class="tpl-header" onclick="toggleGallery()">
+            <span class="tpl-header-title">Template Gallery</span>
+            <span class="tpl-header-sub">Browse pre-built workflows — click Install to add</span>
+            <span class="tpl-toggle" id="tpl-toggle-btn">&#9650; Hide</span>
+        </div>
+        <div id="tpl-gallery" class="tpl-gallery">
+            <div class="wf-loading">Loading templates...</div>
+        </div>
     </div>
 
     <div id="wf-list"><div class="wf-loading">Loading workflows...</div></div>
